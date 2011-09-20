@@ -1,0 +1,59 @@
+\documentclass{report}
+
+\usepackage{latexsym}
+\usepackage[latin1]{inputenc}
+
+\begin{document}
+\section*{Quenched.cc e Unquenched.cc}
+Piccola ``documentazione'' sulla struttura del codice. Per ora tratta solo
+del programma principale, sia nella versione quenched
+(\textbf{Quenched.cc}) che unqueched (\textbf{Quenched.cc}). Ho tenrato di renderlo il più possibile modulare, conforme alla struttura standard dei codici di QCD e facilmente leggibile\\
+Schematicamente:\\
+\\
+\begin{tabular}{l}
+\hline
+\textbf{Corpo principale del programma}\\
+\hline
+\end{tabular}
+\begin{description}
+\item[initialize()]: inizializza i parametri per la simulazione,
+  leggendoli da file o da riga di comando.
+\item alloca il reticolo, il campo gluone ed eventualmente il campo fermione.
+\item[QuenchedAllocate()/UnquenchedAllocate()]: inizializza il campo
+  gluone, da freddo o da configurazione.
+\item [for i = 1\ldots Sweep do]
+\begin{description}
+\item {}
+\item[NsptEvolve()]: \emph{Sweep} passi di evoluzione NSPT
+\item[AggiornaParametri()]: lettura del \emph{damocle} e correzione dei parametri
+\end{description}
+\item[end]
+\item [NsptFinalize()]: chiude il logfile, salva il campo e dealloca tutto.
+\end{description}
+Tralasciando per un attimo l'inizializzazione dei parametri e l'allocazione dei campi (anche se questa seconda ha a che fare con la parallelizzazione), uno sguardo alla dinamica mostra questa strutturazione:\\
+\\
+\begin{tabular}{l}
+\hline
+\textbf{NsptEvolve}\\
+\hline
+\end{tabular}
+\begin{description}
+\item [for i = 1\ldots Beat do]
+\begin{description}
+\item {}
+\item[gauge\_wilson()]: evoluzione di gauge, eventualmente improved, misura della placchetta e della norma
+\item[fermion\_wilson()] (solo in caso unquenched): evoluzione della parte fermionica
+\item[zero\_modes\_subtraction()]: sottrae il momento nullo al campo di gauge
+\item [stochastic\_gauge\_fixing()]: fissaggio della gauge stocastica
+\end{description}
+\item[end]
+\end{description}
+
+
+
+
+
+
+
+
+\end{document}

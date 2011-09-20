@@ -1,0 +1,8 @@
+taglia	20 20 20 20
+ordine	6
+conf	../../../trunk/result/tls_nf2_20x20x20x20_a0.05_tg0.015_tf0.015_o8.10
+out	result/curr
+prop	result/prop
+alpha	.25
+
+

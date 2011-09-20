@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="61"
+   name=""
+   committed-date="2008-09-25T15:02:21.103138Z"
+   url="svn://ignazio.fis.unipr.it/home/direnzo/OUrepos/PRlgt/trunk/result"
+   last-author="michele.brambilla"
+   kind="dir"
+   uuid="e01b58ac-ff4b-0410-8749-ba7027373dee"
+   revision="129"/>
+<entry
+   name="plaquette"
+   kind="dir"/>
+</wc-entries>

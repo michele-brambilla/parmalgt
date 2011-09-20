@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="101"
+   name=""
+   committed-date="2010-02-02T14:22:39.441165Z"
+   url="svn://ignazio.fis.unipr.it/home/direnzo/OUrepos/PRlgt/trunk/spectr"
+   last-author="michele.brambilla"
+   kind="dir"
+   uuid="e01b58ac-ff4b-0410-8749-ba7027373dee"
+   revision="129"/>
+<entry
+   committed-rev="101"
+   name="Dirac.cfg"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2010-02-02T14:22:39.441165Z"
+   checksum="d3ff6e539a3f0e441a0332decbc75b09"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="73"
+   name="test_dd.pl"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2008-11-06T08:20:45.164525Z"
+   checksum="c5b2dc9193feb96251cd849c67c6348e"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="101"
+   name="dirac_spec.h"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2010-02-02T14:22:39.441165Z"
+   checksum="5035182665f8d3469596289a2d798467"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="71"
+   name="test_d.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2008-10-29T11:43:54.408396Z"
+   checksum="0f86f214f01087f318b54809e40f85aa"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="101"
+   name="diractest.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2010-02-02T14:22:39.441165Z"
+   checksum="ea229d3fe048e048a93b471a47056a4e"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="test_lus.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="725097397225f08cef75fdf2018f4c30"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   name="spettri"
+   kind="dir"/>
+<entry
+   committed-rev="76"
+   name="test_dd.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="1e3aa38cb8574c4234e4795561178054"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="101"
+   name="dirac_par.h"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2010-02-02T14:22:39.441165Z"
+   checksum="ecd80f00d6603cf58a4cb847e59b3167"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="73"
+   name="test_lus.pl"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2008-11-06T08:20:45.164525Z"
+   checksum="f81f56f9643d2dc34be444071ab426b9"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="101"
+   name="makefile"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2010-02-02T14:22:39.441165Z"
+   checksum="1e081934b9fbb80732adbcb6753a2ab2"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="TestSpectr.cfg"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="dd80b728b2387af1cc313f387921e5ff"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+</wc-entries>

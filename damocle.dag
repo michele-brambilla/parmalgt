@@ -1,0 +1,6 @@
+SWEEP		1000 
+BEAT		100
+tau_g		0.030
+alpha		-0.05
+save_config	1
+kill_run	0

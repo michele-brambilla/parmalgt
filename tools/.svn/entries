@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="128"
+   name=""
+   committed-date="2011-09-06T15:57:36.367616Z"
+   url="svn://ignazio.fis.unipr.it/home/direnzo/OUrepos/PRlgt/trunk/tools"
+   last-author="michele.brambilla"
+   kind="dir"
+   uuid="e01b58ac-ff4b-0410-8749-ba7027373dee"
+   revision="129"/>
+<entry
+   committed-rev="128"
+   name="fftTest.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-09-06T15:57:36.367616Z"
+   checksum="9b8c0241c52a67c1939f60ddc11570bd"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="119"
+   name="Conversion.txt"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-25T15:38:45.644976Z"
+   checksum="dbcd27783af87d77092ce677496f3f0b"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="127"
+   name="NewWilLoop.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-08-10T15:00:17.086271Z"
+   checksum="1a30b5f4b815c8b30eb7b053c22b495c"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="128"
+   name="Loop.cfg"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-09-06T15:57:36.367616Z"
+   checksum="81551bb404d5a74ce4276e5560e489be"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="118"
+   name="plaq.pl"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-14T22:46:00.267724Z"
+   checksum="47d28af5cebccf558df9abbf37ffe7fb"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="119"
+   name="testGM.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-25T15:38:45.644976Z"
+   checksum="542a3ae99a97719f9a67ab9a20c985ed"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="119"
+   name="ConvertCouplings.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-25T15:38:45.644976Z"
+   checksum="072db45059f5c09f1a81305d28387967"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="124"
+   name="WilLoop.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-08-10T09:44:33.191724Z"
+   checksum="1a30b5f4b815c8b30eb7b053c22b495c"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="126"
+   name="makefile"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-08-10T14:57:08.315363Z"
+   checksum="2740f9791a743ed653426ca7b103e750"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="128"
+   name="testAccuracy.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-09-06T15:57:36.367616Z"
+   checksum="b37e13cadd5ccc5706749b7c52ef2765"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+</wc-entries>

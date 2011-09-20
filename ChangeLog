@@ -1,0 +1,105 @@
+2009-04-01  michele.brambilla  <michele@dhcp02.fis.unipr.it>
+
+	* QCDenvNODEpt.h (class ptGluon_fld): Added methods for save and
+	read both field configurations and a plaquette, used to verify the
+	correctness of saved/readed field.
+	
+	* algo.h: added measure of the plaquette (PLAQUETTE_MEAS) at fixed
+	configuration and comparison between two
+	plaquettes(PLAQUETTE_CHECK).
+
+	* PTjnk.cc: When reads a configuration compares the measure of the
+	plaquette with its value on the old run. If wrong, the program
+	stops. At the end of the run (and at every checkpoint) saves the
+	value of the plaquette.  Prints the norm of the gluon field in a
+	file.
+
+	* WILjnk.cc: When reads a configuration compares the measure of
+	the plaquette with its value on the old run. If wrong, the program
+	stops. At the end of the run (and at every checkpoint) saves the
+	value of the plaquette.  Prints the norm of the gluon field in a
+	file.
+
+2008-06-09  Michele  <michele@ubuntu.localdomain>
+
+	* QCDenvNODE.h: Added definitions for perturbative fields. These
+	are exactly those defined in QCDenvNODEpt.h. For further
+	information see the description of QCDenvNODEpt.h
+
+	* QCDenvNODEpt.h: ***** ADDED ***** 
+	Environment based on
+	perturbative objects. It contains perturbative fields
+	definitions. Every field act exactly like the non perturbative
+	version. It needs the lat class defined in QCDenvNODE.h.
+
+	* QCDpt.h: ***** ADDED *****
+	Declarations for QCDpt.cc, see below.
+
+	* QCDpt.cc: ***** ADDED ****** 
+	Definitions of perturbative
+	mathematical and physical objects: SU3 matricies and gluons,
+	and (yet to be implemented) CVectors and SpinColors. They act
+	quite exactly like non PT corresponding objects, but contains any
+	operation order by order. The maximal PT order is - up to now -
+	fixed in a define.  The matricies so defined have 3 indexes, two
+	dealing with the first and last non vanishing elements in the PT
+	series and the third about the kind of matrix, SU3 int the
+	group(flag = 1) or algebra(flag = 0) or none of the two(flag = 2).
+
+2008-05-28  Michele  <michele@ubuntu.localdomain>
+
+	* QCDconf.txt: ***** ADDED ***** Configuration file for QCDjnk3,
+	in order to don't have to recompile every time to change trivial
+	settings like the number of leapfrog and metropolis steps, the
+	delta tau integration time for leapfrog, the lattice size, assumed
+	to be squared, the test of time reversion and the possibility to
+	starts from the last configurartion obtained
+
+2008-05-27  Michele  <michele.brambilla@fis.unipr.it>
+
+	* QCDjnk3.cc: ***** ADDED *****
+	New test program for pure gauge.
+
+	* QCDenvNODE.h (class Gluon_fld): Added operator = to copy a whole
+	gluon field. Corrected staple method, that was wrong.
+
+	* MyQCD.h (class Gluon): now it copies gluon with a memcpy.
+
+	* MyMath.cc
+	(SU3rand): Changed random matrix generation using Gell-Mann times
+	.5, according usual notation.
+	(generate_gauss): After the change described over here, it needs a
+	different normalization in the gaussian random number generator,
+	form exp(-p^2) to exp(-p^2/2).
+
+2008-05-20  Michele  <michele.brambilla@fis.unipr.it>
+
+	* QCDjnk.cc: ***** ADDED *****
+
+	* QCDenvNODE.h: corrected procedure for
+	computation of the staple and get for negative values of the step.
+
+2008-05-14  Michele  <michele.brambilla@fis.unipr.it>
+
+	* QCDjnk2.cc: **** ADDED ****
+	Pure gauge test program.
+
+	* MyQCD.h (class Gluon): removed unused method "set".
+
+	* MyMath.cc: removed copy constructor for SU3, alloved memory copy
+	using memcpy and added rehermitianization method.
+
+	* MyMath.h (class SU3): Memory is no longer allocated dinamically,
+	but statically - user must remeber to initialize the element or
+	errors can occur!! Added definition for rehermitianization of su3
+	matricies and modified some methods usin memcpy.
+
+2008-05-12  Michele  <michele.brambilla@fis.unipr.it>
+
+	* QCDenvNODE.h: Added declaration of class at the beginning of
+	file, in order to avoid errors in friendhip relations between
+	different classes, and modified staple method.
+
+	* MyMath.cc (SU3rand): New function, generates a random su3
+	matrix (in the algebra).
+

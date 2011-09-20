@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="121"
+   name=""
+   committed-date="2011-04-13T16:50:21.133624Z"
+   url="svn://ignazio.fis.unipr.it/home/direnzo/OUrepos/PRlgt/trunk/perform"
+   last-author="michele.brambilla"
+   kind="dir"
+   uuid="e01b58ac-ff4b-0410-8749-ba7027373dee"
+   revision="129"/>
+<entry
+   committed-rev="76"
+   name="accessi.gp"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="34acbdbeebe793201d1d0043e6ccd4c2"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="accessi3.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="629ce741293fa1d1b51288e866a8095d"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="accessi.pl"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="3797f1d626e0ed838899b9ade3ead9ce"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   name="stampa"
+   kind="dir"/>
+<entry
+   committed-rev="76"
+   name="ptjnk.gp"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="a31c7c765e0f344f8684f5f746fb3cc1"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="README"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="d56ad498940dcb3d045cbe5627dc4c39"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="verifica.gp"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="16e57d8de9c5a72573e8f9128000d33a"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="accessi.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="2daf533e64e80633b69cd6fda312e3f3"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="accessi3.gp"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="121626ec9ff2ececad8959ec8b3a3fbd"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="ptconf.txt"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="8e25d2675ca472657969f055e7b42d81"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="testflops.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="3581f3f08a56164c4c89a8a8cdb2f72b"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="verifica.c"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="709a03d4064f94130e1cf12857d9f8e4"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="76"
+   name="ptjnk.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="b847a89582c7b1ea1d9ef3d89ec5bf8d"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="121"
+   name="verifica.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-04-13T16:50:21.133624Z"
+   checksum="7256f48e5a331e420bb8501dea7e2d27"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="121"
+   name="makefile"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-04-13T16:50:21.133624Z"
+   checksum="e48e2ea678cbb3e2d17015553ba4018f"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   name="result"
+   kind="dir"/>
+<entry
+   committed-rev="76"
+   name="verifica1.gp"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-01-29T17:08:40.350696Z"
+   checksum="b20a4198a099fb37237ed167f4a9ee40"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+</wc-entries>

@@ -1,0 +1,27 @@
+## Piccoli programmi per testare le basi e il programma PRlgt. ##
+
+Il programma "verifiche.c" permette il calcolo delle prestazioni 
+di picco nel calcolo di somme e moltiplicazioni scalari e 
+perturbative con l'algebra sviluppata. Il calcolo delle prestazioni
+e' effettuato sia tramite la funzione clock() che la funzione 
+gettimeofday().
+
+Il programma "Accessi.cc" permette il calcolo delle latenze di 
+accesso ai dati nel reticolo, confrontando il metodo get() con
+la corrispondente funzione amica. Il tempo necessario per le copie
+dei dati viene determinato all'avvio del programma e sottratto
+al tempo misurato.
+Il calcolo dei tempi viene effettuato al variare della taglia del 
+reticolo.
+
+Il programma "PTjnk.cc" esegue il calcolo dei flops effettivi
+durante l'esecuzione del generatore di configurazioni. Sono state
+disattivate la gauge fixing e la cancellazione del momento nullo.
+Sono effettuate diverse simulazioni al variare della taglia del 
+reticolo.
+
+Tutti i programmi generano dei grafici delle prestazioni utilizzando
+gnuplot e i corrispondenti script (.gp).
+Per la compilazione e l'esecuzione e' sufficiente aggiungere i 
+target presenti in "add_to_makefile" nel makefile della dir contenente
+i file oggetto.

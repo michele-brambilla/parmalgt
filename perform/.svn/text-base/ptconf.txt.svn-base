@@ -1,0 +1,11 @@
+taglia		6 6 6 6
+SWEEP	  	1000
+BEAT		100
+seed 		5135
+tau		0.02
+alpha		-0.05
+init_status	0
+no_term		0
+plaq_out	./result/plaquette/plaq
+last_conf	./result/conf
+

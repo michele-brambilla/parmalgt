@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="128"
+   name=""
+   committed-date="2011-09-06T15:57:36.367616Z"
+   url="svn://ignazio.fis.unipr.it/home/direnzo/OUrepos/PRlgt/trunk/renorm"
+   last-author="michele.brambilla"
+   kind="dir"
+   uuid="e01b58ac-ff4b-0410-8749-ba7027373dee"
+   revision="129"/>
+<entry
+   committed-rev="120"
+   name="RenLib.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-25T16:48:59.328468Z"
+   checksum="4928ce13586a09b93826bcdbddd5ad60"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="122"
+   name="NewRenorm.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-06-20T14:23:16.779342Z"
+   checksum="4db7e12f5fc1142cb806ba517c0e9c69"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="128"
+   name="RenLib.h"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-09-06T15:57:36.367616Z"
+   checksum="4a9977a4bc159dffe496261c387efa84"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="128"
+   name="GaugeFixing.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-09-06T15:57:36.367616Z"
+   checksum="7dea028413808f861bbb6bd349b52d09"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="128"
+   name="gf.h"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-09-06T15:57:36.367616Z"
+   checksum="c9111fc4e355694cd1915e947b49192b"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="122"
+   name="Ren.cfg"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-06-20T14:23:16.779342Z"
+   checksum="a5865890aae62d5e9bc527ef45daf4af"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="118"
+   name="momREF.txt"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-14T22:46:00.267724Z"
+   checksum="e5562b8d0cb0db0289a11f14c354a323"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="119"
+   name="renorm.cc"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-25T15:38:45.644976Z"
+   checksum="8d6f79a39f3c79cdfc4c72e3e3230016"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="99"
+   name="running.sh"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2010-01-22T18:49:12.688093Z"
+   checksum="62dfcb31465a908a3b3de107be918358"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="119"
+   name="GF.cfg"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-25T15:38:45.644976Z"
+   checksum="50f3126c8002f8f4a9ef42af7740e871"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="128"
+   name="makefile"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-09-06T15:57:36.367616Z"
+   checksum="0fe67a004fd43dd1e83e8f9e1d236ac8"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="119"
+   name="renorm_pars.h"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2011-03-25T15:38:45.644976Z"
+   checksum="94717c63d7d6680050165fe247fe0398"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   name="result"
+   kind="dir"/>
+</wc-entries>

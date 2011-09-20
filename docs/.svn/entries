@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="94"
+   name=""
+   committed-date="2009-11-06T11:24:36.134114Z"
+   url="svn://ignazio.fis.unipr.it/home/direnzo/OUrepos/PRlgt/trunk/docs"
+   last-author="michele.brambilla"
+   kind="dir"
+   uuid="e01b58ac-ff4b-0410-8749-ba7027373dee"
+   revision="129"/>
+<entry
+   committed-rev="94"
+   name="little.pdf"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-11-06T11:24:36.134114Z"
+   checksum="5702f4bc7a66a5d131c690e5cbcc7873"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+<entry
+   committed-rev="94"
+   name="little.tex"
+   text-time="2011-09-20T16:40:50.000000Z"
+   committed-date="2009-11-06T11:24:36.134114Z"
+   checksum="9a2c6ac923cc2522845d1baab57af2c1"
+   last-author="michele.brambilla"
+   kind="file"
+   prop-time="2011-09-20T16:40:50.000000Z"/>
+</wc-entries>
