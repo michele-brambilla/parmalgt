@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "fftw3.h"
+#include <fftw3.h>
 
 #include "QCDenvNODE.h"
 
