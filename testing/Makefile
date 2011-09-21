@@ -79,5 +79,5 @@ MyMath.o : $(USER_DIR)/../MyMath.cc
 MyRand.o : $(USER_DIR)/../MyRand.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/../MyRand.cc
 
-test_Bgfield: test_Bgfield.o gtest_main.a MyMath.o MyRand.o
+test_Bgfield: test_Bgfield.o gtest-all.o gtest_main.o MyMath.o MyRand.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
