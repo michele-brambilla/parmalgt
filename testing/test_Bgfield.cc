@@ -1,4 +1,7 @@
 #incude "Background.h"
 #include "gtest/gtest.h"
 
-// new comment
+// We need a test for the AbelianBgf class
+
+TEST(AbelianBgf, ApplyFromRight){
+}
