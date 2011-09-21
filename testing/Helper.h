@@ -20,7 +20,7 @@ struct SU3Cmp {
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Sep 21 19:12:29 2011
-  SU3Cmp(SU3 A, SU3 B) : a(A), b(B) {}
+  SU3Cmp(const SU3 &A, const SU3 &B) : a(A), b(B) {}
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -32,9 +32,10 @@ struct SU3Cmp {
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Sep 21 19:14:08 2011
   bool operator()
-  (const double& eps = std::numeric_limits<double>::epsilon()*3){
+  (const double& eps = std::numeric_limits<double>::epsilon()*3)
+    const {
     bool result = true;
-    for (Cplx *aptr = a.whr, *bptr = b.whr;
+    for (Cplx const * aptr = a.whr, * bptr = b.whr;
 	 aptr != a.whr + 9 && result;
 	 ++aptr, ++bptr)
       if (fabs(aptr->re - bptr->re) > eps ||
@@ -42,6 +43,6 @@ struct SU3Cmp {
 	result = false;
     return result;
   }
-  SU3 &a, &b;
+  const SU3 &a, &b;
 };
 #endif

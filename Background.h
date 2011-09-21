@@ -62,7 +62,7 @@ namespace bgf {
   private:
     std::vector<Cplx> v_;
   };
-  
+
 }
 
 #endif
