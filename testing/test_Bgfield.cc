@@ -20,9 +20,9 @@ public:
   SU3 A;
 };
 
-class AbeianBgfUnitBTest : public CommonBgfTest, public ::testing::Test {
+class AbeianBgfTest : public CommonBgfTest, public ::testing::Test {
 public:
-  AbeianBgfUnitBTest() {
+  AbeianBgfTest() {
     for (int i = 0; i < 3; ++i){
       su3B.whr[i*4] = Cplx(r.Rand(), r.Rand());
       bgfB[i] = su3B.whr[i*4];
@@ -32,11 +32,30 @@ public:
   bgf::AbelianBgf bgfB;
 };
 
-TEST_F(AbeianBgfUnitBTest, ApplyFromRight){
-  ASSERT_TRUE( SU3Cmp(bgfB.ApplyFromLeft(A), su3B*A)() );
+class TrivialBgfTest : public CommonBgfTest, public ::testing::Test { 
+public:
+  bgf::TrivialBgf One;
 };
 
-TEST_F(AbeianBgfUnitBTest, ApplyFromLeft){
+TEST(AbelianBgfConstructorTest, ThrowsOnWrongSize){
+  std::vector<Cplx> v(4);
+  ASSERT_THROW({bgf::AbelianBgf b(v);}, bgf::InitializedWithWrongSize);
+}
+
+TEST_F(AbeianBgfTest, ApplyFromRight){
+  ASSERT_TRUE( SU3Cmp(bgfB.ApplyFromLeft(A), su3B*A)() );
+}
+
+TEST_F(AbeianBgfTest, ApplyFromLeft){
   ASSERT_TRUE( SU3Cmp(bgfB.ApplyFromRight(A), A*su3B)() );
-};
+}
+
+TEST_F(TrivialBgfTest, ApplyFromRight){
+  ASSERT_TRUE( SU3Cmp(One.ApplyFromRight(A), A)() );
+}
+
+TEST_F(TrivialBgfTest, ApplyFromLeft){
+  ASSERT_TRUE( SU3Cmp(One.ApplyFromLeft(A), A)() );
+}
+
 
