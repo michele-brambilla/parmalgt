@@ -27,7 +27,7 @@ CXXFLAGS += -g -Wall -Wextra
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = test_Bgfield
+TESTS = test_Bgfield test_Helper
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -70,8 +70,13 @@ gtest_main.a : gtest-all.o gtest_main.o
 # function.
 
 
-test_Bgfield.o : $(USER_DIR)/test_Bgfield.cc $(GTEST_HEADERS)
+test_Bgfield.o : $(USER_DIR)/test_Bgfield.cc $(GTEST_HEADERS) \
+	$(USER_DIR)/Helper.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test_Bgfield.cc
+
+test_Helper.o : $(USER_DIR)/test_Helper.cc $(GTEST_HEADERS) \
+	$(USER_DIR)/Helper.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test_Helper.cc
 
 MyMath.o : $(USER_DIR)/../MyMath.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/../MyMath.cc
@@ -80,4 +85,7 @@ MyRand.o : $(USER_DIR)/../MyRand.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/../MyRand.cc
 
 test_Bgfield: test_Bgfield.o gtest-all.o gtest_main.o MyMath.o MyRand.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+test_Helper: test_Helper.o gtest-all.o gtest_main.o MyMath.o MyRand.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
