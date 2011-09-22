@@ -27,7 +27,7 @@ CXXFLAGS += -g -Wall -Wextra
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = test_Bgfield test_Helper
+TESTS = test_Bgfield.exe test_Helper.exe
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -40,6 +40,20 @@ all : $(TESTS)
 
 clean :
 	rm -f $(TESTS) gtest.a gtest_main.a *.o
+
+check : all
+	@passed=0; \
+	total=0; \
+	list=' $(TESTS) '; \
+	for test in $$list; do \
+	  total=$$((total + 1)); \
+	  ./$$test;\
+	  if [ "$$?" -eq "0" ]; then \
+            passed=$$((passed + 1)); \
+          fi; \
+	done; \
+	echo "[ DONE ]"; \
+	echo "[ $$passed of $$total tests passed ]" 
 
 # Builds gtest.a and gtest_main.a.
 
@@ -71,7 +85,7 @@ gtest_main.a : gtest-all.o gtest_main.o
 
 
 test_Bgfield.o : $(USER_DIR)/test_Bgfield.cc $(GTEST_HEADERS) \
-	$(USER_DIR)/Helper.h
+	$(USER_DIR)/Helper.h $(USER_DIR)/../Background.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test_Bgfield.cc
 
 test_Helper.o : $(USER_DIR)/test_Helper.cc $(GTEST_HEADERS) \
@@ -84,8 +98,8 @@ MyMath.o : $(USER_DIR)/../MyMath.cc
 MyRand.o : $(USER_DIR)/../MyRand.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/../MyRand.cc
 
-test_Bgfield: test_Bgfield.o gtest-all.o gtest_main.o MyMath.o MyRand.o
+test_Bgfield.exe: test_Bgfield.o gtest-all.o gtest_main.o MyMath.o MyRand.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
-test_Helper: test_Helper.o gtest-all.o gtest_main.o MyMath.o MyRand.o
+test_Helper.exe: test_Helper.o gtest-all.o gtest_main.o MyMath.o MyRand.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
