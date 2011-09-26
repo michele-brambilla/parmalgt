@@ -3,6 +3,8 @@
 
 #include "MyMath.h" // SU3
 #include <vector>
+#include <algorithm>
+#include <functional>
 
 ///
 /// Background field classes
@@ -30,6 +32,12 @@ namespace bgf {
     }
     virtual SU3 ApplyFromRight ( const SU3 & U) const {
       return U;
+    }
+    template <class C> TrivialBgf & operator*= (const C&) {
+      return *this;
+    }
+    template <class C> TrivialBgf operator* (const C&) const {
+      return *this;
     }
   };
 
@@ -59,10 +67,53 @@ namespace bgf {
 	  result.whr[3*i + j] = v_[j] * U.whr[3*i + j];
       return result;
     }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Generic *= operator template.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Sep 26 18:28:23 2011
+    template<class C>
+    AbelianBgf& operator*= ( const C& alpha ) {
+      std::transform ( v_.begin(), v_.end(), v_.begin(),
+		       std::bind1st( std::multiplies<C>(), alpha));
+      return *this;
+    }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Generic multiplication.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Sep 26 18:28:36 2011
+    template<class C>
+    AbelianBgf operator* (const C& alpha ) const {
+      AbelianBgf result(*this);
+      return result *= alpha;
+    }
   private:
     std::vector<Cplx> v_;
   };
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Specialization of *= and * operator for AbelianBgf type.
+  ///
+  ///  The Arithmetics are quite straight forward, altough the
+  ///  AbelianBgf*AbelianBgf multiplication is a special case.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Mon Sep 26 18:25:58 2011
+
+  template<> inline AbelianBgf& AbelianBgf::operator*= 
+  ( const AbelianBgf& other ){
+    std::transform  (v_.begin(), v_.end(), other.v_.begin(),
+		     v_.begin(), std::multiplies<Cplx>() );
+    return *this;
+  }
+  
 }
 
 #endif
