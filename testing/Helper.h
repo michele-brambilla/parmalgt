@@ -1,6 +1,8 @@
 #ifndef _HELPER_H_
 #define _HELPER_H_
 #include "MyMath.h"
+#include <limits>
+#include <iostream>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -36,8 +38,7 @@ struct SU3Cmp {
     const {
     bool result = true;
     for (Cplx const * aptr = a.whr, * bptr = b.whr;
-	 aptr != a.whr + 9 && result;
-	 ++aptr, ++bptr)
+	 aptr != a.whr + 9 && result; ++aptr, ++bptr)
       if (fabs(aptr->re - bptr->re) > eps ||
 	  fabs(aptr->im - bptr->im) > eps)
 	result = false;

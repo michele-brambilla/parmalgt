@@ -135,7 +135,7 @@ inline Cplx   cbrt(Cplx);
 inline Cplx    sin(Cplx);
 inline Cplx    cos(Cplx);
 inline Cplx    tan(Cplx);
-inline Cplx    exp(Cplx);
+Cplx    exp(Cplx);
 inline Cplx   asin(Cplx);
 inline Cplx   acos(Cplx);
 inline Cplx   atan(Cplx);

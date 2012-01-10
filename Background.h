@@ -54,7 +54,7 @@ namespace bgf {
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
-  ///  Abelian \f$SU3\f$ background field.
+  ///  Abelian \f$SU(3)\f$ background field.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Tue Sep 27 11:08:30 2011
@@ -72,10 +72,12 @@ namespace bgf {
     ///  not equal to three.
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Tue Sep 27 11:07:14 2011
-    explicit AbelianBgf(const std::vector<Cplx> &v) throw(InitializedWithWrongSize): v_(v){
+    explicit AbelianBgf(const std::vector<Cplx> &v) 
+      throw(InitializedWithWrongSize): v_(v){
       if (v_.size() != 3)
 	throw InitializedWithWrongSize();
     }
+    
     explicit AbelianBgf(const int &t) : v_(Vt_[t]) { };
     AbelianBgf() : v_(3){ }
     Cplx & operator[](const short& s){
@@ -173,11 +175,9 @@ namespace bgf {
 		      -eta * (-0.5 + nu)  / L,
 		      -( eta * (0.5 + nu) + pi/3.) / L};
       Vt_ = std::vector< std::vector<Cplx> >(T, std::vector<Cplx>(3));
-      for (int t = 1; t < T; ++t)
+      for (int t = 0; t < T; ++t)
 	for (int k = 0; k < 3; ++k)
 	  Vt_[t][k] = exp(Cplx(0,eps[k] * t - iC[k]));
-      for (int k = 0; k < 3; ++k)
-	Vt_[0][k] = Cplx(1.,0.);
     }
   private:
     //////////////////////////////////////////////////////////////////////

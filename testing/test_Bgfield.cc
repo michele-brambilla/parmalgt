@@ -1,6 +1,7 @@
 #include "Background.h"
 #include "gtest/gtest.h"
 #include "Helper.h"
+#include <cstdlib> // for rand
 
 // We need a test for the AbelianBgf class...
 
@@ -70,4 +71,42 @@ TEST_F(TrivialBgfTest, ApplyFromLeft){
   ASSERT_TRUE( SU3Cmp(One.ApplyFromLeft(A), A)() );
 }
 
-
+TEST(AbelianBgf, KnownValues){
+  //  This tests the constructor
+  //     bgf::AbelianBgf::AbelianBgf(int t),
+  //  using the formula
+  //    V(x0) = V(x0 = 0)* exp{ i a E x0 }
+  std::srand(123); 
+  // Unit 3x3 matrix
+  SU3 su3One;
+  su3One.whr[0] = 1;
+  su3One.whr[4] = 1;
+  su3One.whr[8] = 1;
+  // pi / 3
+  double pio3 = std::atan(1.)*4./3;
+  // do 1000 checks
+  for (int _n = 0; _n < 1000; ++_n){
+    // random T, L (< 100), eta, nu
+    int L = std::rand() % 100;
+    int T = std::rand() % 100;
+    double eta = r.Rand();
+    double nu = r.Rand();
+    // initialize the background field
+    bgf::AbelianBgf::init(T, L, eta, nu);
+    // random x0
+    int x0 = r.Rand()*T;
+    // now calculate 
+    //       exp (i E t) = dV
+    //           = exp ( - i gamma * x0 * diag(2,-1,-1) )
+    double gamma = 1./L/T * (eta + pio3);
+    SU3 su3dV;
+    su3dV.whr[0] = exp(Cplx(0, -2.*gamma*x0));
+    su3dV.whr[4] = exp(Cplx(0, gamma*x0));
+    su3dV.whr[8] = exp(Cplx(0, gamma*x0));
+    // get V(x0) and V(0)
+    bgf::AbelianBgf V(x0);
+    bgf::AbelianBgf V0(0);
+    EXPECT_TRUE( SU3Cmp(V0.ApplyFromLeft(su3dV),
+                        V.ApplyFromLeft(su3One))());
+  }
+}

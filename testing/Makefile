@@ -98,7 +98,11 @@ MyMath.o : $(USER_DIR)/../MyMath.cc
 MyRand.o : $(USER_DIR)/../MyRand.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/../MyRand.cc
 
-test_Bgfield.exe: test_Bgfield.o gtest-all.o gtest_main.o MyMath.o MyRand.o
+Background.o : $(USER_DIR)/../Background.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/../Background.cc
+
+test_Bgfield.exe: test_Bgfield.o gtest-all.o gtest_main.o MyMath.o MyRand.o \
+	Background.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
 test_Helper.exe: test_Helper.o gtest-all.o gtest_main.o MyMath.o MyRand.o
