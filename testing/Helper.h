@@ -40,8 +40,13 @@ struct SU3Cmp {
     for (Cplx const * aptr = a.whr, * bptr = b.whr;
 	 aptr != a.whr + 9 && result; ++aptr, ++bptr)
       if (fabs(aptr->re - bptr->re) > eps ||
-	  fabs(aptr->im - bptr->im) > eps)
+	  fabs(aptr->im - bptr->im) > eps){
+        std::cout << aptr->re << ", " << aptr->im 
+                  << std::endl
+                  << bptr->re << ", " << bptr->im 
+                  << std:: endl;
 	result = false;
+      }
     return result;
   }
   const SU3 &a, &b;

@@ -121,6 +121,9 @@ namespace bgf {
 	  result.whr[3*i + j] = v_[j] * U.whr[3*i + j];
       return result;
     }
+    bool operator==(const AbelianBgf& other) const{
+      return v_ == other.v_;
+    }
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///

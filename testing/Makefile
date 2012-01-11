@@ -27,7 +27,7 @@ CXXFLAGS += -g -Wall -Wextra
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
-TESTS = test_Bgfield.exe test_Helper.exe
+TESTS = test_Bgfield.exe test_Helper.exe test_newQCDpt.exe test_SU3.exe
 
 # All Google Test headers.  Usually you shouldn't change this
 # definition.
@@ -88,11 +88,19 @@ test_Bgfield.o : $(USER_DIR)/test_Bgfield.cc $(GTEST_HEADERS) \
 	$(USER_DIR)/Helper.h $(USER_DIR)/../Background.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test_Bgfield.cc
 
+test_SU3.o : $(USER_DIR)/test_SU3.cc $(GTEST_HEADERS) \
+	$(USER_DIR)/Helper.h $(USER_DIR)/../MyMath.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test_SU3.cc
+
+test_newQCDpt.o : $(USER_DIR)/test_newQCDpt.cc $(GTEST_HEADERS) \
+	$(USER_DIR)/Helper.h $(USER_DIR)/../newQCDpt.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test_newQCDpt.cc
+
 test_Helper.o : $(USER_DIR)/test_Helper.cc $(GTEST_HEADERS) \
 	$(USER_DIR)/Helper.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/test_Helper.cc
 
-MyMath.o : $(USER_DIR)/../MyMath.cc
+MyMath.o : $(USER_DIR)/../MyMath.cc $(USER_DIR)/../MyMath.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(USER_DIR)/../MyMath.cc
 
 MyRand.o : $(USER_DIR)/../MyRand.cc
@@ -105,5 +113,12 @@ test_Bgfield.exe: test_Bgfield.o gtest-all.o gtest_main.o MyMath.o MyRand.o \
 	Background.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
 
+test_newQCDpt.exe: test_newQCDpt.o gtest-all.o MyMath.o MyRand.o	\
+	Background.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
 test_Helper.exe: test_Helper.o gtest-all.o gtest_main.o MyMath.o MyRand.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+test_SU3.exe: test_SU3.o gtest-all.o gtest_main.o MyMath.o MyRand.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@

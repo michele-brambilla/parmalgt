@@ -43,7 +43,13 @@ TEST(AbelianBgfConstructorTest, ThrowsOnWrongSize){
   std::vector<Cplx> v(4);
   ASSERT_THROW({bgf::AbelianBgf b(v);}, bgf::InitializedWithWrongSize);
 }
-
+TEST_F(AbelianBgfTest, CopyConstructor){
+  bgf::AbelianBgf Bcopy(bgfB);
+  bgf::AbelianBgf Ccopy = bgfC;
+  ASSERT_TRUE(Bcopy == bgfB);
+  ASSERT_TRUE(Ccopy == bgfC);
+  ASSERT_FALSE(Bcopy == Ccopy);
+}
 TEST_F(AbelianBgfTest, ApplyFromRight){
   ASSERT_TRUE( SU3Cmp(bgfB.ApplyFromLeft(A), su3B*A)() );
 }

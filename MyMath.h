@@ -464,6 +464,20 @@ private:
 public:
   Cplx whr[9];
 
+  // Added by Dirk on Jan. 11, 2012
+  // easy access to the elements through the () operator
+  // const and non-const versions
+  const Cplx& operator()(int i, int j) const
+  { return whr[i*3 + j];}
+  Cplx& operator()(int i, int j)
+  { return whr[i*3 + j];}
+  // iterators
+  typedef Cplx const * const_iterator;
+  typedef Cplx * iterator;
+  iterator begin(void) {return whr;}
+  const_iterator begin(void) const {return whr;}
+  iterator end(void) {return whr + 9;}
+  const_iterator end(void) const {return whr + 9;}
   SU3 (){};
 
   SU3 (const Cplx *matr) {
@@ -651,7 +665,18 @@ public:
     return *this;
   }
 
+  //*/
+  // My Version (DH)
+
+  SU3& operator *= (const Cplx& z){
+    for (iterator i = begin(); i != end(); ++i) *i *= z;
+    return *this;
+  }
+  /*/
+  // Old Version
+  
   void operator*=(const Cplx& z) {
+    std::cout << "Hello *= Cplx\n";
     whr[0].re = z.re * whr[0].re - z.im * whr[0].im;
     whr[0].im = z.re * whr[0].im + z.im * whr[0].re;
     whr[1].re = z.re * whr[1].re - z.im * whr[1].im;
@@ -671,7 +696,7 @@ public:
     whr[8].re = z.re * whr[8].re - z.im * whr[8].im;
     whr[8].im = z.re * whr[8].im + z.im * whr[8].re;    
   }
-  
+  //*/
   void operator/=(const Cplx& z) { 
     Cplx den(1./z);
     whr[0].re = den.re * whr[0].re - den.im * whr[0].im;
