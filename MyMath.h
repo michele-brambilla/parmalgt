@@ -665,6 +665,11 @@ public:
     return *this;
   }
 
+  //
+  // This little execise is supposed to show a bug in the *=  operator
+  // defined below. The plain multiplication works ...
+  //
+
   //*/
   // My Version (DH)
 
@@ -673,12 +678,17 @@ public:
     return *this;
   }
   /*/
-  // Old Version
+  // Old Version -- BUGGY
   
   void operator*=(const Cplx& z) {
-    std::cout << "Hello *= Cplx\n";
+    // The problem lies here ...
+    // we should insert a
+    // double tmp = whr[0].re;
     whr[0].re = z.re * whr[0].re - z.im * whr[0].im;
+    // and replace this line with
     whr[0].im = z.re * whr[0].im + z.im * whr[0].re;
+    //whr[0].im = z.re * whr[0].im + z.im * tmp;
+    //                                   --------
     whr[1].re = z.re * whr[1].re - z.im * whr[1].im;
     whr[1].im = z.re * whr[1].im + z.im * whr[1].re;
     whr[2].re = z.re * whr[2].re - z.im * whr[2].im;

@@ -41,6 +41,7 @@ struct SU3Cmp {
 	 aptr != a.whr + 9 && result; ++aptr, ++bptr)
       if (fabs(aptr->re - bptr->re) > eps ||
 	  fabs(aptr->im - bptr->im) > eps){
+        std::cout << "at i = " << aptr - a.whr << std::endl;
         std::cout << aptr->re << ", " << aptr->im 
                   << std::endl
                   << bptr->re << ", " << bptr->im 

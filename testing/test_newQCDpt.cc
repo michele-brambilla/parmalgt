@@ -15,6 +15,9 @@ double nu = r.Rand();
 // initialize the background field
 
 
+// Simple test base class defining two random 
+// perturbative SU3s ,,,
+
 class AbelianBgfTest: public ::testing::Test {
 public:
   AbelianBgfTest() : 
@@ -27,10 +30,16 @@ public:
   BGptSU3<bgf::AbelianBgf> MyPtSU3A, MyPtSU3B;
 };
 
+// Multiplication of two ptSU3s of the form
+// A = V(t1) + g_0^2 A1 + ... ,
+// B = V(t2) + g_0^2 B1 + ... , and
+// One = 1
+
 TEST_F(AbelianBgfTest, SimpleMultiply){
   std::vector<Cplx> v(3, 1);
-  bgf::AbelianBgf UnitBgf(v);
-  BGptSU3<bgf::AbelianBgf> One(UnitBgf);
+  bgf::AbelianBgf UnitBgf(v); // unit bgf diag(1,1,1)
+  BGptSU3<bgf::AbelianBgf> One(UnitBgf); // unit matrix
+  // to be extra safe, check multiplication from left and right
   BGptSU3<bgf::AbelianBgf> ACopy = One*MyPtSU3A;
   BGptSU3<bgf::AbelianBgf> BCopy = MyPtSU3B*One;
   for (int i = 0; i < PTORD; ++i){
@@ -38,6 +47,8 @@ TEST_F(AbelianBgfTest, SimpleMultiply){
     ASSERT_TRUE( SU3Cmp(BCopy[i], MyPtSU3B[i])() );
   }
 }
+
+// Testing the scalar multiplicatiohn
 
 TEST_F(AbelianBgfTest, ScalarMultiply){
   Cplx alpha(r.Rand(), r.Rand());
@@ -58,22 +69,8 @@ TEST_F(AbelianBgfTest, ScalarMultiply){
   }
 }
 
-TEST(SU3, Multiplication){
-  SU3 A, Acpy, alphaA;
-  Cplx alpha(r.Rand(), r.Rand());
-  for (SU3::iterator ait = A.begin(), 
-         aait = alphaA.begin(),
-         acpit = Acpy.begin(); 
-       ait != A.end(); ++ait, ++aait, ++acpit){
-    *ait = Cplx(r.Rand(), r.Rand());
-    *acpit = *ait;
-    *aait = *ait*alpha;
-  }
-  Acpy *= alpha;
-  EXPECT_TRUE ( SU3Cmp( alphaA, alpha*A)() );
-  EXPECT_TRUE ( SU3Cmp( alphaA, A*alpha)() );
-  EXPECT_TRUE ( SU3Cmp( alphaA, Acpy)() );
-}
+// we need a main function here because we have to initialize the
+// background field class...
 
 int main(int argc, char **argv) {
   bgf::AbelianBgf::init(T, L, eta, nu);
