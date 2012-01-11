@@ -134,7 +134,7 @@ namespace bgf {
     template<class C>
     AbelianBgf& operator*= ( const C& alpha ) {
       std::transform ( v_.begin(), v_.end(), v_.begin(),
-		       std::bind1st( std::multiplies<C>(), alpha));
+		       std::bind1st( std::multiplies<Cplx>(), alpha));
       return *this;
     }
     //////////////////////////////////////////////////////////////////////
@@ -148,6 +148,39 @@ namespace bgf {
     AbelianBgf operator* (const C& alpha ) const {
       AbelianBgf result(*this);
       return result *= alpha;
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Addition and subtraction of a sclar.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Wed Jan 11 18:03:06 2012
+    template<class C>
+    AbelianBgf& operator+= (const C& alpha ){
+      std::transform ( v_.begin(), v_.end(), v_.begin(),
+		       std::bind1st( std::plus<C>(), alpha));
+      return *this;
+    }
+    AbelianBgf& operator+= (const AbelianBgf& alpha ){
+      std::transform (v_.begin(), v_.end(), alpha.v_.begin(),
+                      v_.begin(), std::plus<Cplx>());
+      return *this;
+    }
+    template<class C>
+    AbelianBgf& operator-= (const C& alpha ){
+      return *this += (-alpha);
+    }
+    template<class C>
+    AbelianBgf operator+ (const C& alpha ) const {
+      AbelianBgf result(*this);
+      return result += alpha;
+    }
+    template<class C>
+    AbelianBgf operator- (const C& alpha ) const {
+      AbelianBgf result(*this);
+      return result -= alpha;
     }
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////

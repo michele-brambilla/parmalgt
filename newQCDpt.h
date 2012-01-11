@@ -35,13 +35,93 @@ class BGptSU3{
   const SU3& operator[](const int& i) const { return ptU_[i]; }
   B& bgf() { return bgf_; }
   const B& bgf() const { return bgf_; }
+  
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Multiplication-Assign.
+  ///
+  ///  Multiply each order by a given factor.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:41:26 2012
 
   template <class C> BGptSU3& operator*=(const C &z) {
     for(int i = 0; i < PTORD; i++)  ptU_[i] *= z;
     bgf_ *= z;
     return *this;
   };
+  
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Division-Assign. 
+  ///
+  ///  See operator *=.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:42:49 2012
+  template <class C> BGptSU3& operator/=(const C &z) {
+    for(int i = 0; i < PTORD; i++)  ptU_[i] /= z;
+    bgf_ /= z;
+    return *this;
+  };
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Addition-Assign
+  ///
+  ///  Adding a scalar will only affect the lowest order in the
+  ///  expansion.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:43:19 2012
+  template <class C> BGptSU3& operator+=(const C &z) {
+    bgf_ += z;
+    return *this;
+  }; 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Subtract-Assign.
+  ///
+  ///  c.f. operator -=
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:44:12 2012
+  template <class C> BGptSU3& operator-=(const C &z) {
+    bgf_ -= z;
+    return *this;
+  };
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Addition-(Subtraction-)Assign for BGptSU3.
+  ///
+  ///  Here, we have to perform the operation order by order.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:44:39 2012
+  BGptSU3& operator+=(const BGptSU3 &z) {
+    for(int i = 0; i < PTORD; i++)  ptU_[i] += z[i];
+    bgf_ += z.bgf();
+    return *this;
+  };
+  BGptSU3& operator-=(const BGptSU3 &z) {
+    for(int i = 0; i < PTORD; i++)  ptU_[i] -= z[i];
+    bgf_ -= z.bgf();
+    return *this;
+  };
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Multipy-Assign.
+  ///
+  ///  This version is specialized for the BGptSU3 type.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:45:50 2012
   BGptSU3& operator*=(const BGptSU3& A) {
     SU3 tmp[allocORD];
     // Handle products that involve pert. orders > 1
@@ -60,6 +140,14 @@ class BGptSU3{
     return *this;
   };
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Randiomize the matrices for each order, not the backgorund
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:46:17 2012
+
   void randomize() {
     static MyRand r(1235431);
     for (int i = 0; i < PTORD; ++i)
@@ -68,17 +156,33 @@ class BGptSU3{
           ptU_[i](j, k) = Cplx(r.Rand(), r.Rand());
   };
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Mulitplication, Division, Addition, Subtraction.
+  ///
+  ///  To implement those, we reduce, reuse, recycle the
+  ///  assign-operators! Not that we don't have to care about whether
+  ///  or not we deal with a scalar, because the assign operators
+  ///  already take care of this.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Jan 11 18:46:45 2012
+
   template<class C> BGptSU3 operator*(const C& z) const {
     BGptSU3 result(*this);
     return result *= z;
   };
-  
   template <class C> BGptSU3 operator/(const C& z) const{
     return *this * (1./z);
   };
-  
-  template <class C> BGptSU3& operator/=(const C &z){
-    return *this *= 1./z;
+  template <class C> BGptSU3 operator+(const C& z) const{
+    BGptSU3 result(*this);
+    return result += z;
+  };
+  template <class C> BGptSU3 operator-(const C& z) const{
+    BGptSU3 result(*this);
+    return result -= z;
   };
 
 

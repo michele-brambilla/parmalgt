@@ -48,6 +48,18 @@ TEST_F(AbelianBgfTest, SimpleMultiply){
   }
 }
 
+// Test the addition,
+// A+A == 2*A
+
+TEST_F(AbelianBgfTest, Add){
+  BGptSU3<bgf::AbelianBgf> A_times_2 = MyPtSU3A*2.;
+  BGptSU3<bgf::AbelianBgf> A_plus_A = MyPtSU3A + MyPtSU3A;
+  for (int i = 0; i < PTORD; ++i)
+    ASSERT_TRUE( SU3Cmp(A_times_2[i], A_plus_A[i])() );
+  ASSERT_TRUE( A_times_2.bgf() ==  A_plus_A.bgf() );
+}
+
+
 // Testing the scalar multiplicatiohn
 
 TEST_F(AbelianBgfTest, ScalarMultiply){
@@ -68,6 +80,8 @@ TEST_F(AbelianBgfTest, ScalarMultiply){
     EXPECT_TRUE ( SU3Cmp( beta_B[i], b)());
   }
 }
+
+
 
 // we need a main function here because we have to initialize the
 // background field class...
