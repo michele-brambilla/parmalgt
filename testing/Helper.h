@@ -3,6 +3,7 @@
 #include "MyMath.h"
 #include <limits>
 #include <iostream>
+#include <gtest/gtest.h>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -33,22 +34,18 @@ struct SU3Cmp {
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Sep 21 19:14:08 2011
-  bool operator()
+  ::testing::AssertionResult operator()
   (const double& eps = std::numeric_limits<double>::epsilon()*3)
     const {
-    bool result = true;
     for (Cplx const * aptr = a.whr, * bptr = b.whr;
-	 aptr != a.whr + 9 && result; ++aptr, ++bptr)
+	 aptr != a.whr + 9; ++aptr, ++bptr)
       if (fabs(aptr->re - bptr->re) > eps ||
-	  fabs(aptr->im - bptr->im) > eps){
-        std::cout << "at i = " << aptr - a.whr << std::endl;
-        std::cout << aptr->re << ", " << aptr->im 
-                  << std::endl
-                  << bptr->re << ", " << bptr->im 
-                  << std:: endl;
-	result = false;
-      }
-    return result;
+	  fabs(aptr->im - bptr->im) > eps)
+        return ::testing::AssertionFailure() 
+          << "at i = " << aptr - a.whr << std::endl << "  ("
+          << aptr->re << ", " << aptr->im << 
+          ") !=\n  ("<< bptr->re << ", " << bptr->im << ")";
+    return  ::testing::AssertionSuccess();
   }
   const SU3 &a, &b;
 };
