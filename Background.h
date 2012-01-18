@@ -278,6 +278,11 @@ namespace bgf {
     else
       return AbelianBgf(factory.get(t));
   };
+  
+  inline AbelianBgf unit(const Cplx& alpha = Cplx(1.0,0.)){
+    three_vec_t alpha_v = {alpha, alpha, alpha};
+    return AbelianBgf(alpha_v);
+  };
 }
 
 #endif

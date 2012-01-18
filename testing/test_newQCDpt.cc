@@ -9,6 +9,8 @@ const int AL_ORD = 10;
 
 typedef BGptSU3<bgf::AbelianBgf, AL_ORD, PT_ORD> ptSU3;
 typedef BGptCVector<AL_ORD, PT_ORD> ptCVector;
+typedef BGptGluon<bgf::AbelianBgf, AL_ORD, PT_ORD, 4> ptGluon;
+typedef BGptSpinColor<AL_ORD, PT_ORD, 4> ptSpinColor;
 
 MyRand r(23797);
 
@@ -40,10 +42,7 @@ public:
 // One = 1
 
 TEST_F(AbelianBgfTest, SimpleMultiply){
-  //std::vector<Cplx> v(3, 1);
-  three_vec_t v = {1,1,1};
-  bgf::AbelianBgf UnitBgf(v); // unit bgf diag(1,1,1)
-  ptSU3 One(UnitBgf); // unit matrix
+  ptSU3 One(bgf::unit()); // unit matrix
   // to be extra safe, check multiplication from left and right
   ptSU3 ACopy = One*MyPtSU3A;
   ptSU3 BCopy = MyPtSU3B*One;
@@ -54,9 +53,7 @@ TEST_F(AbelianBgfTest, SimpleMultiply){
 }
 
 TEST(AbelianBgf, Multiply){
-  three_vec_t v = {1,1,1};
-  bgf::AbelianBgf UnitBgf(v); // unit bgf diag(1,1,1)
-  ptSU3 A(UnitBgf), B(UnitBgf);
+  ptSU3 A(bgf::unit()), B(bgf::unit());
   SU3 One, Zero;
   for (int i = 0; i < 3; ++i)
     One(i,i) = Cplx(1,0);
@@ -125,9 +122,7 @@ TEST(BGptCVector, ProductWithSU3){
   ptCVector v, w;
   SU3 One;
   CVector OneV, ZeroV;
-  three_vec_t u = {1,1,1};
-  bgf::AbelianBgf UnitBgf(u); // unit bgf diag(1,1,1)
-  ptSU3 A(UnitBgf);
+  ptSU3 A(bgf::unit());
   for (int i = 0; i < 3; ++i){
     One(i,i) = Cplx(1,0);
     OneV.whr[i] = Cplx(1,0);
@@ -143,6 +138,32 @@ TEST(BGptCVector, ProductWithSU3){
   ASSERT_TRUE(w[4] == ZeroV);
   ASSERT_TRUE(w[5] == OneV*Cplx(6,0));
   ASSERT_TRUE(w[6] == ZeroV);
+}
+
+TEST(BGptSpinColor, ProductWithGluon){
+  ptGluon U;
+  SU3 One;
+  CVector OneV, ZeroV;
+  ptSU3 A(bgf::unit());
+  ptSpinColor psi, chi;
+  for (int i = 0; i < 3; ++i){
+    One(i,i) = Cplx(1,0);
+    OneV.whr[i] = Cplx(1,0);
+  }
+  for (int i = 0; i < 4; ++i){
+    U[i].bgf() = bgf::unit();
+    U[i][i] = One*i;
+    psi[i][5] = OneV*i;
+  }
+  chi = psi*U;
+  for (int i = 0; i < 4; ++i)
+    for (int j = 0; j <= PT_ORD; ++j)
+      if (i && j == 5)
+        ASSERT_TRUE(chi[i][j] == OneV*Cplx(i));
+      else if (i && j == 5 + i + 1)
+        ASSERT_TRUE(chi[i][j] == OneV*Cplx(i)*Cplx(i));
+      else
+        ASSERT_TRUE(chi[i][j] == ZeroV);
 }
 
 // we need a main function here because we have to initialize the

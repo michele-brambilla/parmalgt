@@ -9,10 +9,6 @@
 #include <Types.h>
 #include <Background.h>
 
-//class ptSU3;
-//class ptCVector;
-class ptGluon;
-class ptSpinColor;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -203,7 +199,10 @@ public:
   typedef BGptGluon self_t;
   typedef typename array_t::iterator iterator;
   typedef typename array_t::const_iterator const_iterator;
-
+  // access
+  pt_su3_t& operator[](const int& i){ return U_[i]; }
+  const pt_su3_t& operator[](const int& i) const { return U_[i]; }
+  // iterators
   iterator begin(){return U_.begin();}
   const_iterator begin() const {return U_.begin();}
   iterator end(){return U_.end();}
@@ -222,7 +221,7 @@ public:
   }
 
   pt_su3_t operator*(const self_t& other) const{
-    return std::inner_product(this->begin(), this->end(),
+    return std::inner_product(begin(), end(),
                               other.begin(), pt_su3_t());
   }
   
@@ -314,8 +313,8 @@ public:
   }
 
   bool operator==(const self_t& other) const {
-    for (const_iterator i = this->begin(), j = other.begin();
-         i != this->end(); ++i, ++j)
+    for (const_iterator i = begin(), j = other.begin();
+         i != end(); ++i, ++j)
       if (*i != *j)
         return false;
     return true;
@@ -384,6 +383,19 @@ public:
   self_t operator/(const C& alpha) const {
     self_t result;
     return result /= alpha;
+  }
+  template <class BGF>
+  self_t operator*(const BGptGluon<BGF, AL_ORD, PT_ORD, DIM>& U) 
+    const {
+    self_t result;
+    // outer iteration 0 ... DIM
+    const_iterator this_mu = begin();
+    iterator psi_mu = result.begin();
+    typename BGptGluon<BGF, AL_ORD, PT_ORD, DIM>\
+      ::const_iterator U_mu = U.begin();
+    for(; this_mu != end(); ++this_mu, ++psi_mu, ++U_mu)
+      *psi_mu = *this_mu* *U_mu;
+    return result;
   }
 private:
   vec_t psi_;
