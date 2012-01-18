@@ -1,10 +1,14 @@
-int PTORD = 6;
-
 #include "newQCDpt.h"
 #include <Background.h>
 #include "gtest/gtest.h"
 #include "Helper.h"
 #include <cstdlib> // for rand
+
+const int PT_ORD = 8;
+const int AL_ORD = 10;
+
+typedef BGptSU3<bgf::AbelianBgf, AL_ORD, PT_ORD> ptSU3;
+typedef BGptCVector<AL_ORD, PT_ORD> ptCVector;
 
 MyRand r(23797);
 
@@ -21,13 +25,13 @@ double nu = r.Rand();
 class AbelianBgfTest: public ::testing::Test {
 public:
   AbelianBgfTest() : 
-    MyPtSU3A(bgf::AbelianBgf(T*r.Rand())), 
-    MyPtSU3B(bgf::AbelianBgf(T*r.Rand())) 
+    MyPtSU3A(), 
+    MyPtSU3B() 
   { 
     MyPtSU3A.randomize();
     MyPtSU3B.randomize();
   }
-  BGptSU3<bgf::AbelianBgf> MyPtSU3A, MyPtSU3B;
+  ptSU3 MyPtSU3A, MyPtSU3B;
 };
 
 // Multiplication of two ptSU3s of the form
@@ -36,25 +40,46 @@ public:
 // One = 1
 
 TEST_F(AbelianBgfTest, SimpleMultiply){
-  std::vector<Cplx> v(3, 1);
+  //std::vector<Cplx> v(3, 1);
+  three_vec_t v = {1,1,1};
   bgf::AbelianBgf UnitBgf(v); // unit bgf diag(1,1,1)
-  BGptSU3<bgf::AbelianBgf> One(UnitBgf); // unit matrix
+  ptSU3 One(UnitBgf); // unit matrix
   // to be extra safe, check multiplication from left and right
-  BGptSU3<bgf::AbelianBgf> ACopy = One*MyPtSU3A;
-  BGptSU3<bgf::AbelianBgf> BCopy = MyPtSU3B*One;
-  for (int i = 0; i < PTORD; ++i){
+  ptSU3 ACopy = One*MyPtSU3A;
+  ptSU3 BCopy = MyPtSU3B*One;
+  for (int i = 0; i < PT_ORD; ++i){
     ASSERT_TRUE( SU3Cmp(ACopy[i], MyPtSU3A[i])() );
     ASSERT_TRUE( SU3Cmp(BCopy[i], MyPtSU3B[i])() );
   }
+}
+
+TEST(AbelianBgf, Multiply){
+  three_vec_t v = {1,1,1};
+  bgf::AbelianBgf UnitBgf(v); // unit bgf diag(1,1,1)
+  ptSU3 A(UnitBgf), B(UnitBgf);
+  SU3 One, Zero;
+  for (int i = 0; i < 3; ++i)
+    One(i,i) = Cplx(1,0);
+  A[2] = One*2;
+  B[4] = One*3;
+  ptSU3 AB = A*B;
+  ASSERT_TRUE( SU3Cmp(AB[0], Zero)() );
+  ASSERT_TRUE( SU3Cmp(AB[1], Zero)() );
+  ASSERT_TRUE( SU3Cmp(AB[2], One*2)() );
+  ASSERT_TRUE( SU3Cmp(AB[3], Zero)() );
+  ASSERT_TRUE( SU3Cmp(AB[4], One*3)() );
+  ASSERT_TRUE( SU3Cmp(AB[5], Zero)() );
+  ASSERT_TRUE( SU3Cmp(AB[6], Zero)() );
+  ASSERT_TRUE( SU3Cmp(AB[7], One*6)() );
 }
 
 // Test the addition,
 // A+A == 2*A
 
 TEST_F(AbelianBgfTest, Add){
-  BGptSU3<bgf::AbelianBgf> A_times_2 = MyPtSU3A*2.;
-  BGptSU3<bgf::AbelianBgf> A_plus_A = MyPtSU3A + MyPtSU3A;
-  for (int i = 0; i < PTORD; ++i)
+  ptSU3 A_times_2 = MyPtSU3A*2.;
+  ptSU3 A_plus_A = MyPtSU3A + MyPtSU3A;
+  for (int i = 0; i < PT_ORD; ++i)
     ASSERT_TRUE( SU3Cmp(A_times_2[i], A_plus_A[i])() );
   ASSERT_TRUE( A_times_2.bgf() ==  A_plus_A.bgf() );
 }
@@ -65,9 +90,9 @@ TEST_F(AbelianBgfTest, Add){
 TEST_F(AbelianBgfTest, ScalarMultiply){
   Cplx alpha(r.Rand(), r.Rand());
   Cplx beta(r.Rand(), r.Rand());
-  BGptSU3<bgf::AbelianBgf> beta_B = MyPtSU3B;
+  ptSU3 beta_B = MyPtSU3B;
   beta_B *= beta;
-  for (int i = 0; i < PTORD; ++i){
+  for (int i = 0; i < PT_ORD; ++i){
     SU3 a = MyPtSU3A[i];
     SU3 b = MyPtSU3B[i];
     // multipy 'by hand'
@@ -81,13 +106,50 @@ TEST_F(AbelianBgfTest, ScalarMultiply){
   }
 }
 
+TEST(BGptCVector, ArithmeticPlusSelf){
+  ptCVector u, v, w;
+  for( ptCVector::iterator i = v.begin(), j = w.begin();
+         i != v.pt_end(); ++i, ++j)
+    for (int k = 0; k < 3; ++k){
+      i->whr[k] = Cplx(r.Rand(), r.Rand());
+      j->whr[k] = i->whr[k]*3;
+    }
+  u = v+v;
+  u += v;
+  for( ptCVector::iterator i = u.begin(), j = w.begin();
+         i != u.pt_end(); ++i, ++j)
+    ASSERT_TRUE(*i == *j);
+}
 
+TEST(BGptCVector, ProductWithSU3){
+  ptCVector v, w;
+  SU3 One;
+  CVector OneV, ZeroV;
+  three_vec_t u = {1,1,1};
+  bgf::AbelianBgf UnitBgf(u); // unit bgf diag(1,1,1)
+  ptSU3 A(UnitBgf);
+  for (int i = 0; i < 3; ++i){
+    One(i,i) = Cplx(1,0);
+    OneV.whr[i] = Cplx(1,0);
+  }
+  A[3] = One*2;
+  for (int i = 0; i < 3; ++i)
+    v[1].whr[i] = Cplx(3,0);
+  w = v*A;
+  ASSERT_TRUE(w[0] == ZeroV);
+  ASSERT_TRUE(w[1] == OneV*Cplx(3,0));
+  ASSERT_TRUE(w[2] == ZeroV);
+  ASSERT_TRUE(w[3] == ZeroV);
+  ASSERT_TRUE(w[4] == ZeroV);
+  ASSERT_TRUE(w[5] == OneV*Cplx(6,0));
+  ASSERT_TRUE(w[6] == ZeroV);
+}
 
 // we need a main function here because we have to initialize the
 // background field class...
 
 int main(int argc, char **argv) {
-  bgf::AbelianBgf::init(T, L, eta, nu);
+  bgf::get_abelian_bgf(0,0,T, L, eta, nu);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

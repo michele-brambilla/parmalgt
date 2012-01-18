@@ -123,7 +123,7 @@ public:
     return ((z.re == re)&&(z.im == im));
   }
 
-  bool operator !=(const Cplx& z){
+  bool operator !=(const Cplx& z) const {
     return !((z.re == re)&&(z.im == im));
   }
 
@@ -1360,7 +1360,14 @@ public:
     res.whr[2].im = -V.whr[2].im;
     return res;
   }
-
+  /// Added: Jan. 18, 2012 DH
+  bool operator==(const CVector& other) const {
+    for (const Cplx *i = this->whr, *j = other.whr; 
+         i != this->whr + 3; ++i, ++j)
+      if (*i != *j)
+        return false;
+    return true;
+  }
 }; // end class CVector
 
 

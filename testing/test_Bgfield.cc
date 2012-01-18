@@ -39,10 +39,7 @@ public:
   bgf::TrivialBgf One;
 };
 
-TEST(AbelianBgfConstructorTest, ThrowsOnWrongSize){
-  std::vector<Cplx> v(4);
-  ASSERT_THROW({bgf::AbelianBgf b(v);}, bgf::InitializedWithWrongSize);
-}
+
 TEST_F(AbelianBgfTest, CopyConstructor){
   bgf::AbelianBgf Bcopy(bgfB);
   bgf::AbelianBgf Ccopy = bgfC;
@@ -61,6 +58,23 @@ TEST_F(AbelianBgfTest, ApplyFromLeft){
 TEST_F(AbelianBgfTest, BgfProduct){
   SU3 D = (bgfB*bgfC).ApplyFromLeft(su3One);
   ASSERT_TRUE( SU3Cmp(D, su3B*su3C)() );
+}
+
+TEST_F(AbelianBgfTest, VectorProduct){
+  CVector b, c, Bb, cC;
+  for (int i = 0; i < 3; ++i){
+    c.whr[i] =  Cplx(r.Rand(), r.Rand());
+    b.whr[i] =  Cplx(r.Rand(), r.Rand());
+  }
+  cC = bgfC.ApplyFromRight(c);
+  Bb = bgfB.ApplyFromLeft(b);
+  for (int i = 0; i < 3; ++i){
+    ASSERT_DOUBLE_EQ(cC.whr[i].re, (bgfC[i]*c.whr[i]).re);
+    ASSERT_DOUBLE_EQ(cC.whr[i].im, (bgfC[i]*c.whr[i]).im);
+    ASSERT_DOUBLE_EQ(Bb.whr[i].re, (bgfB[i]*b.whr[i]).re);
+    ASSERT_DOUBLE_EQ(Bb.whr[i].im, (bgfB[i]*b.whr[i]).im);
+
+  }
 }
 
 TEST_F(AbelianBgfTest, CplxProduct){
@@ -93,12 +107,12 @@ TEST(AbelianBgf, KnownValues){
   // do 1000 checks
   for (int _n = 0; _n < 1000; ++_n){
     // random T, L (< 100), eta, nu
-    int L = std::rand() % 100;
-    int T = std::rand() % 100;
+    int L = std::rand() % 100 + 10;
+    int T = std::rand() % 100 + 10;
     double eta = r.Rand();
     double nu = r.Rand();
     // initialize the background field
-    bgf::AbelianBgf::init(T, L, eta, nu);
+    bgf::AbelianBgfFactory factory(T, L, eta, nu);
     // random x0
     int x0 = r.Rand()*T;
     // now calculate 
@@ -110,8 +124,8 @@ TEST(AbelianBgf, KnownValues){
     su3dV.whr[4] = exp(Cplx(0, gamma*x0));
     su3dV.whr[8] = exp(Cplx(0, gamma*x0));
     // get V(x0) and V(0)
-    bgf::AbelianBgf V(x0);
-    bgf::AbelianBgf V0(0);
+    bgf::AbelianBgf V(factory.get(x0));
+    bgf::AbelianBgf V0(factory.get(0));
     EXPECT_TRUE( SU3Cmp(V0.ApplyFromLeft(su3dV),
                         V.ApplyFromLeft(su3One))());
   }

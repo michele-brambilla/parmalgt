@@ -24,3 +24,12 @@ TEST(SU3, Multiplication){
   Acpy *= alpha; // <- here, it hits the fan
   EXPECT_TRUE ( SU3Cmp( alphaA, Acpy)() ); // does not work
 }
+
+// Test if initialized to zero
+TEST(SU3, InitWithZero){
+  SU3 A,B;
+  // force A to zero
+  for (SU3::iterator ait = A.begin();
+       ait != A.end(); ++ait) *ait = Cplx(0,0);
+  ASSERT_TRUE( SU3Cmp (A, B)() );
+}

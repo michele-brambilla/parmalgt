@@ -3,11 +3,14 @@
 
 #include "MyQCD.h"
 #include <algorithm>
+#include <numeric>
 #include <MyRand.h>
 #include <iostream>
+#include <Types.h>
+#include <Background.h>
 
-class ptSU3;
-class ptCVector;
+//class ptSU3;
+//class ptCVector;
 class ptGluon;
 class ptSpinColor;
 
@@ -21,16 +24,16 @@ class ptSpinColor;
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Tue Oct 11 16:23:38 2011
 
-template <class B>
+template <class B, int AL_ORD, int PT_ORD>
 class BGptSU3{
- private:
-  B bgf_;
-  SU3 ptU_[allocORD];
-
  public:
+  // array type using template typedef
+  typedef typename array_t<SU3, AL_ORD>::Type su3_array_t;
 
   explicit BGptSU3(const B& bgf) : bgf_(bgf) { }
-   
+  // Default constructor, needed such that BGptSU3 may be used in a
+  // std::array type.
+  BGptSU3() : bgf_() { }
   SU3& operator[](const int& i) { return ptU_[i]; }
   const SU3& operator[](const int& i) const { return ptU_[i]; }
   B& bgf() { return bgf_; }
@@ -47,7 +50,7 @@ class BGptSU3{
   ///  \date Wed Jan 11 18:41:26 2012
 
   template <class C> BGptSU3& operator*=(const C &z) {
-    for(int i = 0; i < PTORD; i++)  ptU_[i] *= z;
+    for(int i = 0; i < PT_ORD; i++)  ptU_[i] *= z;
     bgf_ *= z;
     return *this;
   };
@@ -62,7 +65,7 @@ class BGptSU3{
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:42:49 2012
   template <class C> BGptSU3& operator/=(const C &z) {
-    for(int i = 0; i < PTORD; i++)  ptU_[i] /= z;
+    for(int i = 0; i < PT_ORD; i++)  ptU_[i] /= z;
     bgf_ /= z;
     return *this;
   };
@@ -104,12 +107,12 @@ class BGptSU3{
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:44:39 2012
   BGptSU3& operator+=(const BGptSU3 &z) {
-    for(int i = 0; i < PTORD; i++)  ptU_[i] += z[i];
+    for(int i = 0; i < PT_ORD; i++)  ptU_[i] += z[i];
     bgf_ += z.bgf();
     return *this;
   };
   BGptSU3& operator-=(const BGptSU3 &z) {
-    for(int i = 0; i < PTORD; i++)  ptU_[i] -= z[i];
+    for(int i = 0; i < PT_ORD; i++)  ptU_[i] -= z[i];
     bgf_ -= z.bgf();
     return *this;
   };
@@ -123,20 +126,21 @@ class BGptSU3{
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:45:50 2012
   BGptSU3& operator*=(const BGptSU3& A) {
-    SU3 tmp[allocORD];
+    //SU3 tmp[allocORD];
+    su3_array_t tmp;
     // Handle products that involve pert. orders > 1
-    for (int i = 0; i < PTORD - 1; ++i)
-      for (int j = 0; j < PTORD  - 1 - i; ++j)
+    for (int i = 0; i < PT_ORD - 1; ++i)
+      for (int j = 0; j < PT_ORD  - 1 - i; ++j)
 	tmp[i + j + 1] += ptU_[j ] *A[i];
     // Include first order contributions
-    for (int i = 0; i < PTORD; ++i)
+    for (int i = 0; i < PT_ORD; ++i)
       tmp[i] += bgf_.ApplyFromLeft(A[i]) +
 	A.bgf_.ApplyFromRight(ptU_[i]);
     // Zeroth order.
     bgf_ *= A.bgf_;
     // copy
     //ptU_ = tmp;
-    std::copy(tmp, tmp + allocORD, ptU_);
+    std::swap(tmp, ptU_);
     return *this;
   };
 
@@ -150,7 +154,7 @@ class BGptSU3{
 
   void randomize() {
     static MyRand r(1235431);
-    for (int i = 0; i < PTORD; ++i)
+    for (int i = 0; i < PT_ORD; ++i)
       for (int j = 0; j < 3; ++j)
         for (int k = 0; k < 3; ++k)
           ptU_[i](j, k) = Cplx(r.Rand(), r.Rand());
@@ -185,62 +189,205 @@ class BGptSU3{
     return result -= z;
   };
 
-
-  /*
-  inline friend BGptSU3 log(const BGptSU3& U){
-    BGptSU3 result = U, Bnew, res = U;
-    double segno = -1, aux;
-    result.flag = 0;
-
-    for(int i = 2; i <= PTORD; i++){
-     Bnew.zero();
-     for(int iU = 1; iU < PTORD; iU++){
-       for(int iB = i-1; iB <= PTORD - iU; iB++){
- 	Bnew.ptU[iU+iB-1] += B.ptU[iB-1]*U.ptU[iU-1];
-       }
-     }
-     for(int eq = 0; eq < PTORD; eq++){
-       B.ptU[eq] = Bnew.ptU[eq];
-     }
-     aux = segno/(double)i;
-     res += aux*B;
-     segno = -segno;
-    }
-    res.flag = 0;
-    
-    return res;
-  }
-  
-  inline friend BGptSU3 exp(const BGptSU3& A){
-    BGptSU3 B = A, Bnew, res = A;
-    double den;
-
-    for(int i = 2; i <= PTORD; i++){
-      
-      Bnew.zero();
-      for(int iA = 1; iA < PTORD; iA++){
-        for(int iB = i-1; iB <= PTORD - iA; iB++){
-	  Bnew.ptU[iA+iB-1] += B.ptU[iB-1]*A.ptU[iA-1];
-        }
-      }
-      
-      den = 1./(double)i;
-      
-      B = den*Bnew;
-      res += B;
-    }
-    res.flag = 1;
-    return res;
- }
-  */
-
-  //BGptSU3& reH();
-
-  //void prout();
-
+private:
+  B bgf_;
+  su3_array_t ptU_;
 };
 
 
-// --- end of ptSU3 declarations ---
+template <class BGF,  int AL_ORD, int PT_ORD, int DIM>
+class BGptGluon {
+public:
+  typedef BGptSU3<BGF, AL_ORD, PT_ORD> pt_su3_t;
+  typedef typename array_t<pt_su3_t, DIM>::Type array_t;
+  typedef BGptGluon self_t;
+  typedef typename array_t::iterator iterator;
+  typedef typename array_t::const_iterator const_iterator;
+
+  iterator begin(){return U_.begin();}
+  const_iterator begin() const {return U_.begin();}
+  iterator end(){return U_.end();}
+  const_iterator end() const {return U_.end();}
+
+  template <class C>
+  self_t& operator*=(const C& other){
+    for (iterator i = begin(); i != end(); ++i) *i *= other;
+    return *this;
+  }
+
+  template <class C>
+  self_t& operator/=(const C& other){
+    for (iterator i = begin(); i != end(); ++i) *i /= other;
+    return *this;
+  }
+
+  pt_su3_t operator*(const self_t& other) const{
+    return std::inner_product(this->begin(), this->end(),
+                              other.begin(), pt_su3_t());
+  }
+  
+private:
+  array_t U_;
+};
+
+template  <int AL_ORD, int PT_ORD>
+class BGptCVector {
+public:
+  typedef typename array_t<CVector, AL_ORD + 1>::Type vec_t;
+  typedef BGptCVector self_t;
+  typedef typename vec_t::iterator iterator;
+  typedef typename vec_t::const_iterator const_iterator;
+  // template tyedef for multiplicaion wit BGptSU3
+  template <class BGF> struct pt_su3_t {
+    typedef BGptSU3<BGF, AL_ORD, PT_ORD> Type;
+  };
+
+  /// Iterators
+  iterator begin() { return v_.begin(); }
+  iterator end() { return v_.end(); }
+  const_iterator begin() const { return v_.begin(); }
+  const_iterator end() const { return v_.end(); }
+  /// Iterators
+  iterator pt_end() { return v_.begin() + PT_ORD + 1; }
+  const_iterator pt_end() const { return v_.begin() + PT_ORD + 1; }
+
+  /// Access operators
+  CVector& operator[](const int& i){ return v_[i]; }
+  const CVector& operator[](const int& i) const { return v_[i]; }
+
+  /// Arithmetic
+  self_t& operator+=(const self_t& other){
+    const_iterator j = other.begin();
+    for (iterator i = begin(); 
+         i != pt_end(); ++i, ++j) *i += *j;
+    return *this;
+  }
+  self_t& operator-=(const self_t& other){
+    const_iterator j = other.begin();
+    for (iterator i = begin(); 
+         i != pt_end(); ++i, ++j) *i += *j;
+    return *this;
+  }
+  self_t operator+(const self_t& other) const{
+    self_t result(*this);
+    return result += other;
+  }
+  self_t operator-(const self_t& other) const{
+    self_t result(*this);
+    return result -= other;
+  }
+  template <class C>
+  self_t& operator*=(const C& alpha) {
+    for(iterator i = begin(); i != pt_end(); ++i)
+      *i *= alpha;
+    return *this;
+  }
+  template <class C>
+  self_t& operator/=(const C& alpha) {
+    for(iterator i = begin(); i != pt_end(); ++i)
+      *i /= alpha;
+    return *this;
+  }
+  template <class C>
+  self_t operator*(const C& alpha) const {
+    self_t result;
+    return result *= alpha;
+  }
+  template <class C>
+  self_t operator/(const C& alpha) const {
+    self_t result;
+    return result /= alpha;
+  }  
+  template <class BGF>
+  self_t operator*(const BGptSU3<BGF, AL_ORD, PT_ORD>& other) const{
+    self_t result;
+    // Handle products that involve pert. orders > 1
+    // note that other[i] is of perturbative order i+1!
+    for (int i = 1; i < PT_ORD + 1; ++i)
+      for (int j = 0; j < i; ++j)
+        result[i] += v_[j] * other[i - j - 1];
+    
+    // Handle the products involving other.bgf
+    for (int i = 0; i < PT_ORD + 1; ++i)
+      result[i] += other.bgf().ApplyFromLeft(v_[i]);
+    return result;
+  }
+
+  bool operator==(const self_t& other) const {
+    for (const_iterator i = this->begin(), j = other.begin();
+         i != this->end(); ++i, ++j)
+      if (*i != *j)
+        return false;
+    return true;
+  }
+private:
+  vec_t v_;
+};
+
+template  <int AL_ORD, int PT_ORD, int DIM>
+class BGptSpinColor {
+public:
+  typedef BGptCVector<AL_ORD, PT_ORD> pt_vec_t;
+  typedef typename array_t<pt_vec_t, DIM>::Type vec_t;
+  typedef typename vec_t::iterator iterator;
+  typedef typename vec_t::const_iterator const_iterator;
+  typedef BGptSpinColor self_t;
+  
+  // access
+  pt_vec_t& operator[](const int& i){ return psi_[i]; }
+  const pt_vec_t& operator[](const int& i) const { return psi_[i]; }
+  
+  // iterators
+  iterator begin() { return psi_.begin(); }
+  iterator end() { return psi_.end(); }
+  const_iterator begin() const { return psi_.begin(); }
+  const_iterator end() const { return psi_.end(); }
+
+  // arithmetic with self
+  self_t& operator+=(const self_t& other){
+    const_iterator j = other.begin();
+    for (iterator i = begin(); i != end(); ++i, ++j) *i += *j;
+    return *this;
+  }
+  self_t& operator-=(const self_t& other){
+    const_iterator j = other.begin();
+    for (iterator i = begin(); i != end(); ++i, ++j) *i -= *j;
+    return *this;
+  }
+  self_t operator+(const self_t& other) const{
+    self_t result(*this);
+    return result += other;
+  }
+  self_t operator-(const self_t& other) const{
+    self_t result(*this);
+    return result -= other;
+  }
+  // scalar arithmetic
+    template <class C>
+  self_t& operator*=(const C& alpha) {
+    for(iterator i = begin(); i != end(); ++i)
+      *i *= alpha;
+    return *this;
+  }
+  template <class C>
+  self_t& operator/=(const C& alpha) {
+    for(iterator i = begin(); i != end(); ++i)
+      *i /= alpha;
+    return *this;
+  }
+  template <class C>
+  self_t operator*(const C& alpha) const {
+    self_t result;
+    return result *= alpha;
+  }
+  template <class C>
+  self_t operator/(const C& alpha) const {
+    self_t result;
+    return result /= alpha;
+  }
+private:
+  vec_t psi_;
+  
+};
 
 #endif
