@@ -59,7 +59,7 @@ TEST(AbelianBgf, Multiply){
     One(i,i) = Cplx(1,0);
   A[2] = One*2;
   B[4] = One*3;
-  ptSU3 AB = A*B;
+  ptSU3 AB = A * B;
   ASSERT_TRUE( SU3Cmp(AB[0], Zero)() );
   ASSERT_TRUE( SU3Cmp(AB[1], Zero)() );
   ASSERT_TRUE( SU3Cmp(AB[2], One*2)() );
@@ -155,7 +155,7 @@ TEST(BGptSpinColor, ProductWithGluon){
     U[i][i] = One*i;
     psi[i][5] = OneV*i;
   }
-  chi = psi*U;
+  chi = psi*U; // <-- check this
   for (int i = 0; i < 4; ++i)
     for (int j = 0; j <= PT_ORD; ++j)
       if (i && j == 5)

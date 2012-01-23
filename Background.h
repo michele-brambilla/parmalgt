@@ -265,6 +265,7 @@ namespace bgf {
     std::vector <three_vec_t> Vt_;
   };
 
+  /// Returns V_\mu(t)
   inline AbelianBgf get_abelian_bgf(const int& t,
                                     const int& mu,
                                     const int& T = -1,

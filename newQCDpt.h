@@ -217,6 +217,7 @@ public:
   template <class C>
   self_t& operator/=(const C& other){
     for (iterator i = begin(); i != end(); ++i) *i /= other;
+    //for ( auto i : *this ) *i /= other;
     return *this;
   }
 

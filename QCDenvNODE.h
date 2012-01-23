@@ -98,8 +98,6 @@ inline int get(SU3_fld *W,int n,int step,int dir){
 }
 
   
-
-  
 class Gluon_fld{
  private:
   latt   *Z;
