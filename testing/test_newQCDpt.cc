@@ -166,6 +166,74 @@ TEST(BGptSpinColor, ProductWithGluon){
         ASSERT_TRUE(chi[i][j] == ZeroV);
 }
 
+TEST(BGptSU3Test, dag){
+  ptSU3 A(bgf::random()), B;
+  A.randomize();
+  B = dag(A);
+  for (int r = 0; r < PT_ORD; ++r)
+    for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j){
+        ASSERT_DOUBLE_EQ( B[r](i,j).re, A[r](j,i).re );
+      }
+}
+
+TEST(BGptSU3Test, exp){
+  ptSU3 A(bgf::random()), B;
+  A.randomize();
+  // this assumes A is in the q representation ...
+  B = exp(A);
+  // calculate the first few terms by hand ...
+  // tree level
+  ASSERT_TRUE(A.bgf() == B.bgf());
+  // one loop
+  ASSERT_TRUE(SU3Cmp(A.bgf().ApplyFromRight(A[0]),B[0])());
+  // two loop
+  SU3 e = A.bgf().ApplyFromRight(A[0]*A[0]*0.5 + A[1]);  
+  ASSERT_TRUE(SU3Cmp(e,B[1])());
+  // three loop
+  e = A[0]*A[0]*A[0]/6. + A[0]*A[1]*.5 + A[1]*A[0]*.5 + A[2];
+  e = A.bgf().ApplyFromRight(e);
+  double eps = std::numeric_limits<double>::epsilon() * 10;
+  ASSERT_TRUE(SU3Cmp(e,B[2])(eps));
+}
+TEST(BGptSU3Test, log){
+  ptSU3 A(bgf::random()), B, Atil;
+  A.randomize();
+  // this assumes A is in the q representation ...
+  B = log(A);
+  // construct Atilde
+  bgf::AbelianBgf Vinv = A.bgf().inverse();
+  for(int i = 0; i < PT_ORD; ++i)
+    Atil[i] = Vinv.ApplyFromRight(A[i]);
+  // tree level
+  ASSERT_TRUE(A.bgf() == B.bgf());
+  // one loop
+  ASSERT_TRUE( SU3Cmp(Atil[0], B[0])() );
+  // two loop
+  SU3 e = Atil[1] - Atil[0]*Atil[0]*0.5;
+  ASSERT_TRUE( SU3Cmp(e, B[1])() );
+  // three loop
+  e = Atil[2] - (Atil[0]*Atil[1] + Atil[1]*Atil[0])*0.5 
+    + Atil[0]*Atil[0]*Atil[0]/3;
+  ASSERT_TRUE( SU3Cmp(e, B[2])() );
+}
+
+// Now, we want to check if log(exp(A)) = A holds...
+TEST(BGptSU3Test, logexp){
+  ptSU3 A(bgf::random()), B;
+  A.randomize();
+  // this assumes A is in the q representation ...
+  B = log(exp(A));
+  // tree level
+  ASSERT_TRUE(A.bgf() == B.bgf());
+  // higher orders
+  // a quick and dirty estimate gives that the round-off error should
+  // be around 100 * epsilon * n at order n ...
+  double eps = std::numeric_limits<double>::epsilon() * 200;
+  for (int r = 0; r < PT_ORD; ++r)
+    ASSERT_TRUE( SU3Cmp(A[r], B[r])(eps * (r+1)) ) << "r = " << r;
+}
+
 // we need a main function here because we have to initialize the
 // background field class...
 

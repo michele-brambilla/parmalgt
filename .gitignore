@@ -29,3 +29,8 @@ testing/.libs/
 testing/config.guess
 testing/test_*
 testing/config.h.in
+*.aux
+*.log
+*.pdf
+makefile.local
+config.h

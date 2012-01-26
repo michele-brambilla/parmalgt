@@ -467,10 +467,10 @@ public:
   // Added by Dirk on Jan. 11, 2012
   // easy access to the elements through the () operator
   // const and non-const versions
-  const Cplx& operator()(int i, int j) const
-  { return whr[i*3 + j];}
-  Cplx& operator()(int i, int j)
-  { return whr[i*3 + j];}
+  const Cplx& operator()(int i, int j) const  { return whr[i*3 + j]; }
+  Cplx& operator()(int i, int j)  { return whr[i*3 + j]; }
+  const Cplx& operator[](int i) const { return whr[i]; }
+  Cplx& operator[](int i) { return whr[i]; }
   // iterators
   typedef Cplx const * const_iterator;
   typedef Cplx * iterator;
@@ -478,6 +478,8 @@ public:
   const_iterator begin(void) const {return whr;}
   iterator end(void) {return whr + 9;}
   const_iterator end(void) const {return whr + 9;}
+  
+
   SU3 (){};
 
   SU3 (const Cplx *matr) {

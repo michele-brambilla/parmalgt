@@ -16,7 +16,7 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 bin_PROGRAMS = test_Bgfield test_Helper test_SU3 test_newQCDpt
 
 test_Bgfield_SOURCES = test_Bgfield.cc ../MyRand.cc \
-		       ../MyMath.cc ../Background.cc
+		       ../MyMath.cc 
 test_Bgfield_LDADD = lib/libgtest_main.la
 
 test_Helper_SOURCES = test_Helper.cc ../MyRand.cc
@@ -26,7 +26,7 @@ test_SU3_SOURCES = test_SU3.cc ../MyMath.cc ../MyRand.cc
 test_SU3_LDADD = lib/libgtest_main.la
 
 test_newQCDpt_SOURCES = test_newQCDpt.cc ../MyMath.cc \
-                        ../MyRand.cc ../Background.cc
+                        ../MyRand.cc
 test_newQCDpt_LDADD = lib/libgtest.la
 
 TESTS = ${bin_PROGRAMS}

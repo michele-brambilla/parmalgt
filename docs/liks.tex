@@ -1,0 +1,152 @@
+\documentclass[a4paper]{scrartcl}
+
+\usepackage{amsmath}
+
+\title{Links with an Abelian background field.}
+
+\newcommand{\ord}[1]{\ensuremath{^{(#1)}}}
+
+\begin{document}
+\maketitle
+
+Assume we have a background field $V$ and fluctuations $q$, such that
+we can write the links as
+%
+\begin{equation}
+  \label{eq:1}
+  U = \exp\{q\} V.
+\end{equation}
+%
+We will use two different ways to express the perturbative expansion
+of (\ref{eq:1}),
+%
+\begin{align}
+  \label{eq:3}
+  U =&\; V + g\, U\ord 1 + g^2\, U\ord 2 + \ldots\\
+  \label{eq:5}
+    =&\; \left (
+      1 + g\, \tilde U\ord 1 + g^2\, \tilde U\ord 2 + \ldots
+      \right) V \equiv \tilde U \,V.
+\end{align}
+%
+The connection to the perturbative expansion of the algebra
+valued $q$-field,
+%
+\begin{equation}
+  \label{eq:2}
+  q = g\, q\ord 1 + g^2 q \ord 2 + \ldots
+\end{equation}
+%
+can be established writing (\ref{eq:1}) explicitly,
+%
+\begin{equation}
+  \label{eq:4}
+  \exp \{ q \} = 1 + g \, q \ord 1 + g^2\, \left\{
+    q \ord 2 + \frac 1 2 \left(q\ord 1\right)^2 \right\}
+   + \ldots,
+\end{equation}
+%
+and identifying the terms in the series with the ones in
+(\ref{eq:5}) order by order. To go from the group to the algebra, one
+has to calculate
+%
+\begin{equation}
+  \label{eq:6}
+  q = \log\{\tilde U\} = g\, \tilde U \ord 1 + g^2 \, \left\{
+    \tilde U \ord 2 - \frac 1 2 \left( \tilde U \ord 1 \right)^2
+    \right \} + \ldots,
+\end{equation}
+%
+and compare the terms with the naive series
+%
+\begin{equation}
+  \label{eq:7}
+  q = g\,q\ord 1 + g^2 \,q\ord 2 + \ldots
+\end{equation}
+%
+again, order by order in the coupling.
+
+\subsection*{Arithmetic}
+\label{sec:arithmetic}
+
+The multiplication rule for the representation (\ref{eq:3}) is rather
+simple, we get (setting $U\ord 0 \equiv V$ and $\tilde U \ord 0 \equiv
+1$)
+%
+\begin{equation}
+  \label{eq:8}
+  \left ( U' \times U \right)\ord i = \sum_{j = 0}^{i} {U'}\ord j U
+  \ord{i-j} = \sum_{j = 0}^{i} {\tilde U '}\hspace{0em}\ord j V' 
+  {\tilde U} \ord {i- j}V.
+\end{equation}
+%
+Finally, we have
+%
+\begin{equation}
+  \label{eq:9}
+  \widetilde {\left( U' \times U \right)}\ord i = \left ( U' \times U
+  \right)\ord i \left(V'\times V \right)^{-1}.
+\end{equation}
+%
+For the addition, we have the following rules,
+%
+\begin{equation}
+  \label{eq:10}
+  \left ( U' + U \right)\ord i = {U'}\ord i + U \ord i = {\tilde U'}
+  \hspace{0em}\ord i V' + {\tilde U}\ord i V,
+\end{equation}
+%
+and again, we must perform
+%
+\begin{equation}
+  \label{eq:11}
+  \widetilde {\left( U' + U\right)}\ord i = \left ( U' + U
+  \right)\ord i \left(V' + V \right)^{-1}.
+\end{equation}
+
+\subsection*{Implementation}
+\label{sec:implementation}
+
+Inspecting the addition and multiplication rules given in the last
+section, it seems beneficial to store the link variables in the
+expansion (\ref{eq:3}). Only for applying the exponential function,
+the form (\ref{eq:5}) is needed.
+
+\subsubsection*{Exponential and Logarithm}
+\label{sec:expon-logar}
+
+If the natural logarithm $\log$ is applied to a \texttt{BGptSU3}
+instance, the method will assume that the link is stored as described
+above and first calculate
+%
+\begin{equation}
+  \label{eq:12}
+  \tilde U = 1 + g\,U\ord 1 V^{-1} + g^2\,U \ord 2 V^{-1} + \ldots.
+\end{equation}
+%
+Then, it will calculate $q = \log \{\tilde U\}$ using the Mercator
+series
+%
+\begin{equation}
+  \label{eq:13}
+  \log \{\tilde U\} = \sum_{i=1}^{\mathrm{PT\_ORD}} 
+  (-1)^{n+1} \frac {(\tilde U - 1)^n} n,
+\end{equation}
+%
+aborting the series at the highest perturbative order considered
+(i.e. \texttt{PT\_ORD} in the code).
+
+When the exponential function is applied, the code assumes that we
+have stored the algebra valued fields $q$ in the \texttt{BGptSU3}
+instance given as the argument to the $\exp$ function. The background
+field stored in any \texttt{BGptSU3} is \emph{always} assumed to be
+$V$. The exponential is then evaluated in the usual way,
+%
+\begin{equation}
+  \label{eq:14}
+  \tilde U = \exp \{ q\} = \sum_{i = 0}^{\mathrm{PT\_ORD}} \frac {q^n}{n!},
+\end{equation}
+%
+and finally the $U\ord i = {\tilde U}\ord i V$ are returned. One may
+now check that indeed $U = \exp\{\log\{U\}\}V$ holds.
+\end{document}

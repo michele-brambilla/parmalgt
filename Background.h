@@ -7,6 +7,7 @@
 #include <functional>
 #include <math.h>
 #include <Types.h>
+#include <MyRand.h>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -55,6 +56,7 @@ namespace bgf {
     template <class C> TrivialBgf operator* (const C&) const {
       return *this;
     }
+    TrivialBgf inverse() const { return *this; }
   };
 
   //////////////////////////////////////////////////////////////////////
@@ -194,6 +196,11 @@ namespace bgf {
       AbelianBgf result(*this);
       return result -= alpha;
     }
+    AbelianBgf inverse() const {
+      AbelianBgf result;
+      for (int i = 0; i < 3; ++i) result[i] = 1./v_[i];
+      return result;
+    };
   private:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -282,6 +289,12 @@ namespace bgf {
   
   inline AbelianBgf unit(const Cplx& alpha = Cplx(1.0,0.)){
     three_vec_t alpha_v = {alpha, alpha, alpha};
+    return AbelianBgf(alpha_v);
+  };
+  
+  inline AbelianBgf random(){
+    static MyRand r(134);
+    three_vec_t alpha_v = {r.Rand(), r.Rand(), r.Rand()};
     return AbelianBgf(alpha_v);
   };
 }
