@@ -180,14 +180,19 @@ private:
 
 template <class B, int AL_ORD, int PT_ORD>
 class BGptSU3{
- public:
+public:
+  // self type
+  typedef BGptSU3 self_t;
   // array type using template typedef
   typedef typename array_t<SU3, AL_ORD>::Type su3_array_t;
+  // and associated iterators
+  typedef typename su3_array_t::iterator iterator;
+  typedef typename su3_array_t::const_iterator const_iterator;
 
   explicit BGptSU3(const B& bgf) : bgf_(bgf) { }
-  // Default constructor, needed such that BGptSU3 may be used in a
+  // Default constructor, needed such that self_t may be used in a
   // std::array type.
-  BGptSU3() : bgf_() { }
+  BGptSU3() : bgf_(bgf::unit()) { }
   SU3& operator[](const int& i) { return ptU_[i]; }
   const SU3& operator[](const int& i) const { return ptU_[i]; }
   B& bgf() { return bgf_; }
@@ -195,6 +200,11 @@ class BGptSU3{
   
   su3_array_t& ptU() { return ptU_; };
   const su3_array_t& ptU() const { return ptU_; };
+
+  const_iterator begin() const { return ptU_.begin(); }
+  const_iterator end() const { return ptU_.end(); }
+  iterator begin() { return ptU_.begin(); }
+  iterator end() { return ptU_.end(); }
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -206,7 +216,7 @@ class BGptSU3{
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:41:26 2012
 
-  template <class C> BGptSU3& operator*=(const C &z) {
+  template <class C> self_t& operator*=(const C &z) {
     for(int i = 0; i < PT_ORD; i++)  ptU_[i] *= z;
     bgf_ *= z;
     return *this;
@@ -221,7 +231,7 @@ class BGptSU3{
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:42:49 2012
-  template <class C> BGptSU3& operator/=(const C &z) {
+  template <class C> self_t& operator/=(const C &z) {
     for(int i = 0; i < PT_ORD; i++)  ptU_[i] /= z;
     bgf_ /= z;
     return *this;
@@ -237,7 +247,7 @@ class BGptSU3{
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:43:19 2012
-  template <class C> BGptSU3& operator+=(const C &z) {
+  template <class C> self_t& operator+=(const C &z) {
     bgf_ += z;
     return *this;
   };
@@ -250,7 +260,7 @@ class BGptSU3{
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:44:12 2012
-  template <class C> BGptSU3& operator-=(const C &z) {
+  template <class C> self_t& operator-=(const C &z) {
     bgf_ -= z;
     return *this;
   };
@@ -264,21 +274,21 @@ class BGptSU3{
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:44:39 2012
-  BGptSU3& operator+=(const BGptSU3 &z) {
+  self_t& operator+=(const self_t &z) {
     for(int i = 0; i < PT_ORD; i++)  ptU_[i] += z[i];
     bgf_ += z.bgf();
     return *this;
   };
-  BGptSU3& operator-=(const BGptSU3 &z) {
+  self_t& operator-=(const self_t &z) {
     for(int i = 0; i < PT_ORD; i++)  ptU_[i] -= z[i];
     bgf_ -= z.bgf();
     return *this;
   };
-  BGptSU3& operator+=(const pt_q<AL_ORD, PT_ORD> &z) {
+  self_t& operator+=(const pt_q<AL_ORD, PT_ORD> &z) {
     for(int i = 0; i < PT_ORD; i++)  ptU_[i] += z[i];
     return *this;
   };
-  BGptSU3& operator-=(const pt_q<AL_ORD, PT_ORD> &z) {
+  self_t& operator-=(const pt_q<AL_ORD, PT_ORD> &z) {
     for(int i = 0; i < PT_ORD; i++)  ptU_[i] -= z[i];
     return *this;
   };
@@ -291,7 +301,7 @@ class BGptSU3{
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:45:50 2012
-  BGptSU3& operator*=(const BGptSU3& A) {
+  self_t& operator*=(const self_t& A) {
     //SU3 tmp[allocORD];
     su3_array_t tmp;
     // Handle products that involve pert. orders > 1
@@ -338,21 +348,61 @@ class BGptSU3{
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:46:45 2012
 
-  template<class C> BGptSU3 operator*(const C& z) const {
-    BGptSU3 result(*this);
+  template<class C> self_t operator*(const C& z) const {
+    self_t result(*this);
     return result *= z;
   };
-  template <class C> BGptSU3 operator/(const C& z) const{
+  template <class C> self_t operator/(const C& z) const{
     return *this * (1./z);
   };
-  template <class C> BGptSU3 operator+(const C& z) const{
-    BGptSU3 result(*this);
+  template <class C> self_t operator+(const C& z) const{
+    self_t result(*this);
     return result += z;
   };
-  template <class C> BGptSU3 operator-(const C& z) const{
-    BGptSU3 result(*this);
+  template <class C> self_t operator-(const C& z) const{
+    self_t result(*this);
     return result -= z;
   };
+  void id(){
+    std::fill(begin(),end(),SU3());
+    bgf_.set_to_one();
+  }
+  void zero(){
+    std::fill(begin(),end(),SU3());
+    bgf_.set_to_zero();
+  }
+  /// Trace
+  void Tr(Cplx *tt) const {
+    for(int i = 0; i < PTORD; i++)
+      tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
+    tt[0] = bgf_.Tr();
+  }
+  /// Make traceless
+  void Trless(){
+    Cplx z;
+    for(int i = 0; i < PTORD; i++){
+      z = D3*(ptU_[i][0] + ptU_[i][4] + ptU_[i][8]);
+      ptU_[i][0] -= z;
+      ptU_[i][4] -= z;
+      ptU_[i][8] -= z;
+    }
+    bgf_.set_to_zero();
+  }
+  self_t& reH(){
+    //for(int i = 0; i < PTORD; i++) ptU_[i].reH();
+    //bgf_.reH();
+    Cplx tr;
+    for(int i = 0; i < PTORD; i++){
+      ptU_[i] -= dag(ptU_[i]);
+      ptU_[i] *= .5;
+      tr = ptU_[i].Tr()/3.;
+      ptU_[i][0] -= tr;
+      ptU_[i][4] -= tr;
+      ptU_[i][8] -= tr;
+    }
+    //bgf_.set_to_zero();
+    return *this;
+  }
 
 private:
   B bgf_;
@@ -380,6 +430,7 @@ dag( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
     // conjugate
     for (int j = 0; j < 9; ++j) res[i][j].im = -res[i][j].im;
   }
+  res.bgf() = U.bgf().dag();
   return res;
 };
 
@@ -392,27 +443,8 @@ dag( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
 ///  \date Tue Jan 24 16:56:39 2012
 
 template <class B, int AL_ORD, int PT_ORD>
-inline BGptSU3<B, AL_ORD, PT_ORD> 
-exp( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
-  // Make a copy of U (since exp U = 1 + U + ...)
-  BGptSU3<B, AL_ORD, PT_ORD> result(U);
-  // The pt orders are stored here:
-  pt_q<AL_ORD, PT_ORD> q;
-  // set q = U - V
-  std::copy(result.ptU().begin(), result.ptU().end(),
-            q.ptq().begin());
-  pt_q<AL_ORD, PT_ORD> tmp(q); // store q^i here
-  // calculate \tilde U = exp{q} up to order PT_ORD
-  for (int i = 2; i <= PT_ORD; ++i){
-    tmp *= q; // construct
-    tmp /= i; // q^i / ( i! )
-    result += tmp; // sum it up!
-  }
-  // convert to U^(i) = \tilde U^(i) V 
-  for (int i = 0; i < PT_ORD; ++i)
-    result[i] = result.bgf().ApplyFromRight(result[i]);
-  return result;
-}; 
+BGptSU3<B, AL_ORD, PT_ORD> 
+exp( const BGptSU3<B, AL_ORD, PT_ORD>& );
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -655,6 +687,9 @@ public:
       *psi_mu = *this_mu* *U_mu;
     return result;
   }
+  void uno_p_gmu(SpinColor&, int, int);
+  void uno_m_gmu(SpinColor&, int, int);
+
 private:
   vec_t psi_;
   

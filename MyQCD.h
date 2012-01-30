@@ -72,6 +72,9 @@ class SpinColor {
  public:
   CVector psi[dim];
 
+  CVector& operator[] (const int& i) { return psi[i]; }
+  const CVector& operator[] (const int& i) const { return psi[i]; }
+
   SpinColor(){};
 
   SpinColor(const SpinColor& P) {

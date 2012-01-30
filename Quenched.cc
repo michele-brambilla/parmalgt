@@ -1,5 +1,6 @@
 #include<fstream>
 #include<string>
+#include <fenv.h>
 
 #include"nspt.h"
 #include "MassC.h"
@@ -458,7 +459,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
 
     for(int i = 0; i < act_pars.iVol; i++){
       for(int mu = 0; mu < dim; mu++){
-	Umu.W[i].U[mu].id();
+	Umu.W[i][mu].id();
       }
     }
 
@@ -609,6 +610,8 @@ int NsptFinalize(ptGluon_fld& Umu, int t){
 
 
 int main(int argc, char** argv){
+
+  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);  // Enable fpe
 
   if( initialize(argc, argv) ){ exit(1); }
 

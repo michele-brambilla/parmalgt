@@ -24,4 +24,8 @@ Todo list for the Schrödinger Functional implementation
 ** Links (newQCDpt)[3/3]
 - [X] Dagger operator
 - [X] exp
-- [X] log
+  - [X] log
+
+* Remarks etc.
+- [ ] comparing QCDpt.cc and MyMath.cc, the reH() methods seem to do
+  different things!
