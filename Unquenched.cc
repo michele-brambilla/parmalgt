@@ -460,7 +460,7 @@ int UnquenchedAllocate(ptGluon_fld& Umu){
 
     for(int i = 0; i < act_pars.iVol; i++){
       for(int mu = 0; mu < dim; mu++){
-	Umu.W[i].U[mu].id();
+	Umu.W[i][mu].id();
       }
     }
 

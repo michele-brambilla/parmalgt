@@ -4,6 +4,7 @@
 #include "MyMath.h"
 #include <vector>
 #include <algorithm>
+#include <numeric>
 #include <functional>
 #include <math.h>
 #include <Types.h>
@@ -33,6 +34,11 @@ namespace bgf {
     /// Right multiplication.
     virtual SU3 ApplyFromRight ( const SU3 & ) const = 0;
     virtual CVector ApplyFromRight ( const CVector & ) const = 0;
+    // set to zero, or one
+    virtual void set_to_one () = 0;
+    virtual void set_to_zero () = 0;
+    // Trace
+    virtual Cplx Tr() const = 0;
   };
 
   /// Trivial (unit) background field.
@@ -57,6 +63,10 @@ namespace bgf {
       return *this;
     }
     TrivialBgf inverse() const { return *this; }
+    void set_to_one() { }
+    void set_to_zero() { throw std::exception(); } // not possible ...
+    TrivialBgf dag() const { return *this; }
+    Cplx Tr() const { return 3; };
   };
 
   //////////////////////////////////////////////////////////////////////
@@ -80,10 +90,25 @@ namespace bgf {
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Tue Sep 27 11:07:14 2011
     explicit AbelianBgf(const three_vec_t &v) : v_(v){ }
-    AbelianBgf() : v_(){ }
+    AbelianBgf() : v_(){ std::fill(v_.begin(), v_.end(), 1); }
     Cplx & operator[](const short& s){
       return v_[s];
     }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Iterators
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Fri Jan 27 13:06:31 2012
+
+    typedef three_vec_t::iterator iterator;
+    typedef three_vec_t::const_iterator const_iterator;
+    iterator begin() { return v_.begin(); }
+    iterator end() { return v_.end(); }
+    const_iterator begin() const { return v_.begin(); }
+    const_iterator end() const { return v_.end(); }
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
@@ -154,6 +179,18 @@ namespace bgf {
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
+    ///  Generic /= operator template.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Sep 26 18:28:23 2011
+    template<class C>
+    AbelianBgf& operator/= ( const C& alpha ) {
+      *this *= 1./alpha;
+      return *this;
+    }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
     ///  Generic multiplication.
     ///
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
@@ -182,6 +219,11 @@ namespace bgf {
                       v_.begin(), std::plus<Cplx>());
       return *this;
     }
+    AbelianBgf operator-() const{
+      AbelianBgf result;
+      for (int i = 0; i < 3; ++i) result[i] = -v_[i];
+      return result;
+    }
     template<class C>
     AbelianBgf& operator-= (const C& alpha ){
       return *this += (-alpha);
@@ -200,7 +242,19 @@ namespace bgf {
       AbelianBgf result;
       for (int i = 0; i < 3; ++i) result[i] = 1./v_[i];
       return result;
-    };
+    }
+    void set_to_one() { std::fill(v_.begin(), v_.end(), 1); }
+    void set_to_zero() { std::fill(v_.begin(), v_.end(), 0); }
+    /// Trace
+    Cplx Tr() const {
+      return std::accumulate(v_.begin(), v_.end(), Cplx(0));
+    }
+    AbelianBgf dag() const {
+      AbelianBgf result(*this);
+      for (int i = 0; i < 3; ++i) result[i].im = -result[i].im;
+      return result;
+    }
+    void reH() { for (int i = 0; i < 3; ++i) v_[i].re = 0.; }
   private:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -228,6 +282,15 @@ namespace bgf {
     std::transform  (v_.begin(), v_.end(), other.v_.begin(),
 		     v_.begin(), std::multiplies<Cplx>() );
     return *this;
+  }
+
+  inline std::ostream& operator<<(std::ostream& os, const AbelianBgf& b){
+    os << "{ ";
+    for (AbelianBgf::const_iterator i = b.begin();
+           i != b.end(); ++i)
+      os << "(" << i->re << ", " << i->im << ") ";
+    os << "}";
+    return os;
   }
  
   class AbelianBgfFactory {

@@ -1094,6 +1094,11 @@ class CVector {
 public:
   Cplx whr[3];
 
+  // Added: DH on Jan. 26, 2012
+  // access operators
+  Cplx& operator[] (const int& i) { return whr[i]; };
+  const Cplx& operator[] (const int& i) const { return whr[i]; };
+
   CVector (){};
 
   CVector (Cplx *vec) {

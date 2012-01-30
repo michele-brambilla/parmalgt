@@ -90,8 +90,8 @@ void gauge_wilson(ptGluon_fld& Umu){
       w1[0] += w[0];
       for (int i1=1; i1 <= PTORD; i1++){		
 	w1[i1] += w[i1];
-	norm[i1-1] += ((U[link_c].ptU[i1-1]*dag(U[link_c].ptU[i1-1])).Tr()).re;
-	trU[mu][i1-1] += U[link_c].ptU[i1-1].Tr();
+	norm[i1-1] += ((U[link_c][i1-1]*dag(U[link_c][i1-1])).Tr()).re;
+	trU[mu][i1-1] += U[link_c][i1-1].Tr();
       }
 
       
@@ -111,7 +111,7 @@ void gauge_wilson(ptGluon_fld& Umu){
       W1 *= act_pars.tau_g;
       
       // Aggiungo fluttuazione al primo ordine
-      W1.ptU[0] -= act_pars.stau*SU3rand(Rand[0]);
+      W1[0] -= act_pars.stau*SU3rand(Rand[0]);
       U[link_c] = exp(W1)*U[link_c];	
       
       // Contributo del momento nullo
@@ -184,9 +184,9 @@ void gauge_wilson(ptGluon_fld& Umu){
 	      for (int i1=1; i1 <= PTORD; i1++){
 		ww1[tid][i1] += ww[tid][i1];
 
-		normm[tid][i1-1] += ((U[link_c].ptU[i1-1]*dag(U[link_c].ptU[i1-1])).Tr()).re;
+		normm[tid][i1-1] += ((U[link_c][i1-1]*dag(U[link_c][i1-1])).Tr()).re;
 
-		ttrU[tid][mu][i1-1] += U[link_c].ptU[i1-1].Tr();
+		ttrU[tid][mu][i1-1] += U[link_c][i1-1].Tr();
 	      }
 
 	      // Se ho azioni improved faccio lo stesso sulle
@@ -198,19 +198,20 @@ void gauge_wilson(ptGluon_fld& Umu){
 		ww2[tid][i1] += ww[tid][i1];
 	      }
       
-	      Ww1[tid] = act_pars.c0*Ww1[tid] + act_pars.c1*Ww2[tid];
+	      Ww1[tid] = Ww1[tid]*act_pars.c0 + Ww2[tid] * act_pars.c1;
 #endif
+              
 	      // Costringo nell'algebra
 	      Ww1[tid]  = Ww1[tid].reH();					
-	      Ww1[tid] *= act_pars.tau_g;
-      
-	      // Aggiungo fluttuazione al primo ordine
-	      Ww1[tid].ptU[0] -= act_pars.stau*SU3rand(Rand[tid]);
-	      U[link_c] = exp(Ww1[tid])*U[link_c];	
-      
+	      Ww1[tid] *= act_pars.tau_g;  
+    
+	      // Aggiungo fluttuazione al primo ordine	
+              Ww1[tid][0] -= act_pars.stau*SU3rand(Rand[tid]);
+	      U[link_c] = exp(Ww1[tid])*U[link_c];	 
+              std::cout << U[link_c].bgf() << std::endl;
 	      // Contributo del momento nullo
 	      MMm[tid][mu] += log(U[link_c]);		
-      
+              
       
 	    } //end mu
 	    
@@ -314,13 +315,13 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 
   // Sottraggo il momento nullo
   for( int iv = 0; iv < act_pars.iVol; iv++){
-    ZeroMom += Xi.psi[iv];
+    ZeroMom += Xi[iv];
   }
   ZeroMom *= act_pars.rVol;
 
   for( int iv = 0; iv < act_pars.iVol; iv++){
-    Xi.psi[iv] -= ZeroMom;
-    Pmu.scfld->psi[iv] = Xi.psi[iv];
+    Xi[iv] -= ZeroMom;
+    Pmu.scfld->psi[iv] = Xi[iv];
   }
 
 #else
@@ -334,7 +335,7 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
     Xi.gauss(Rand,tid);
 #pragma omp for
     for(int iv = 0; iv < act_pars.iVol; iv++){
-      ZM[tid] += Xi.psi[iv];
+      ZM[tid] += Xi[iv];
     }
   }
   
@@ -346,8 +347,8 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
   
 #pragma omp parallel for num_threads(NTHR)
   for( int iv = 0; iv < act_pars.iVol; iv++){
-    Xi.psi[iv] -= ZeroMom;
-    Pmu.scfld->psi[iv] = Xi.psi[iv];
+    Xi[iv] -= ZeroMom;
+    Pmu.scfld->psi[iv] = Xi[iv];
   } // pragma omp parallel for -> now single thread
   
 
@@ -365,13 +366,13 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
       
       // variabile d'appoggio
       W.zero();
-      XiTmp   = Xi.psi[Umu.Z->L[curr][offset+mu]];
-      // PsiTmp  = Pmu.psi[site_c];
+      XiTmp   = Xi[Umu.Z->L[curr][offset+mu]];
+      // PsiTmp  = Pmu[site_c];
       // PsiTmp += PsiTmp.gmleft(mu);
 
       for(int nu = 0; nu < dim; nu++)
 	{
-	  PsiTmp.psi[nu] = Pmu.psi[site_c].psi[nu] + gmuval[mu][nu]*Pmu.psi[site_c].psi[gmuind[mu][nu]];
+	  PsiTmp[nu] = Pmu[site_c][nu] + gmuval[mu][nu]*Pmu[site_c][gmuind[mu][nu]];
 	}
 
       // Calcola la forza
@@ -380,8 +381,8 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 	  for(int j = 0; j < 3; j++){
 	    
 	    for(int alpha = 0; alpha < dim; alpha++){  
-	      W.ptU[ord+1].whr[j+3*k] += ~(XiTmp.psi[alpha].whr[j])*
-		PsiTmp.psi[alpha].ptCV[ord].whr[k];
+	      W[ord+1].whr[j+3*k] += ~(XiTmp[alpha].whr[j])*
+		PsiTmp[alpha][ord].whr[k];
 	    } // alpha
 	    
 	  } // colore, j
@@ -389,9 +390,9 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
       } // ord
       
       // Step evoluzione
-      W = W*dag(Umu.W[site_c].U[mu]);
+      W = W*dag(Umu.W[site_c][mu]);
       W.reH();
-      Umu.W[site_c].U[mu]= exp(act_pars.tau_f*W)*Umu.W[site_c].U[mu];
+      Umu.W[site_c][mu]= exp(act_pars.tau_f*W)*Umu.W[site_c][mu];
     } // mu
 
   } // loop sui siti
@@ -413,13 +414,14 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 	      
 	      // variabile d'appoggio
 	      Ww[tid].zero();
-	      XT[tid]   = Xi.psi[Umu.Z->L[curr][offset+mu]];
-	      // PT[tid]  = Pmu.psi[site_c];
+	      XT[tid]   = Xi[Umu.Z->L[curr][offset+mu]];
+	      // PT[tid]  = Pmu[site_c];
 	      // PT[tid] += PT[tid].gmleft(mu);
 
 	      for(int nu = 0; nu < dim; nu++)
 		{
-		  PT[tid].psi[nu] = Pmu.psi[site_c].psi[nu] + gmuval[mu][nu]*Pmu.psi[site_c].psi[gmuind[mu][nu]];
+		  PT[tid][nu] = Pmu[site_c][nu] + 
+                    Pmu[site_c][gmuind[mu][nu]] * gmuval[mu][nu];
 		}
 	      
 	      // Calcola la forza
@@ -428,8 +430,8 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 		  for(int j = 0; j < 3; j++){
 		    
 		    for(int alpha = 0; alpha < dim; alpha++){  
-		      Ww[tid].ptU[ord+1].whr[j+3*k] += ~(XT[tid].psi[alpha].whr[j])*
-			PT[tid].psi[alpha].ptCV[ord].whr[k];
+		      Ww[tid][ord+1].whr[j+3*k] += ~(XT[tid][alpha].whr[j])*
+			PT[tid][alpha][ord].whr[k];
 		    } // alpha
 		    
 		  } // colore, j
@@ -437,9 +439,9 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 	      } // ord
 	      
 	      // Step evoluzione
-	      Ww[tid] = Ww[tid]*dag(Umu.W[site_c].U[mu]);
+	      Ww[tid] = Ww[tid]*dag(Umu.W[site_c][mu]);
 	      Ww[tid].reH();
-	      Umu.W[site_c].U[mu]= exp(act_pars.tau_f*Ww[tid])*Umu.W[site_c].U[mu];
+	      Umu.W[site_c][mu]= exp(Ww[tid]*act_pars.tau_f)*Umu.W[site_c][mu];
 	    } // mu
 	    
 #if ntz > 1
@@ -483,10 +485,10 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
   #ifndef __PARALLEL_OMP__
   for(int i = 0; i < act_pars.iVol; i++){
     for(int mu = 0; mu < dim; mu++){
-      W = log(Umu.W[i].U[mu]);
+      W = log(Umu.W[i][mu]);
       W -= MM[mu];
       W.reH();
-      Umu.W[i].U[mu]  = exp(W);
+      Umu.W[i][mu]  = exp(W);
     }
   }
   #else
@@ -503,10 +505,10 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
 	    curr = y3 + act_pars.sz[3]*(y2 + act_pars.sz[2]*(y1 + act_pars.sz[1]*y0) );
 
 	    for(int mu = 0; mu < dim; mu++){
-	      Ww[tid] = log(Umu.W[curr].U[mu]);
+	      Ww[tid] = log(Umu.W[curr][mu]);
 	      Ww[tid] -= MM[mu];
 	      Ww[tid].reH();
-	      Umu.W[curr].U[mu]  = exp(Ww[tid]);
+	      Umu.W[curr][mu]  = exp(Ww[tid]);
 	    } // mu
 
 	  } // y3
@@ -539,13 +541,13 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
     
     // calcolo il DmuUmu e lo metto nell'algebra
     for(int mu = 0; mu < dim; mu++){
-      W += Umu.W[site_c].U[mu] - Umu.W[Umu.Z->L[curr][mu]].U[mu];
+      W += Umu.W[site_c][mu] - Umu.W[Umu.Z->L[curr][mu]][mu];
     }
     W -= dag(W);
     
     // Forma alternativa
     // for(int mu = 0; mu < dim; mu++){
-    //   W += log(Umu.W[site_c].U[mu])- log(Umu.W[Umu.Z->L[curr][mu]].U[mu]);
+    //   W += log(Umu.W[site_c][mu])- log(Umu.W[Umu.Z->L[curr][mu]][mu]);
     // }
 
     W.Trless();
@@ -556,8 +558,8 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
     
     // Moltiplico sul link corrente a sx e sul precedente a dx
     for(int mu = 0; mu < dim; mu++){
-      Umu.W[site_c].U[mu] = W1*Umu.W[site_c].U[mu];
-      Umu.W[Umu.Z->L[curr][mu]].U[mu] = Umu.W[Umu.Z->L[curr][mu]].U[mu]*W2;
+      Umu.W[site_c][mu] = W1*Umu.W[site_c][mu];
+      Umu.W[Umu.Z->L[curr][mu]][mu] = Umu.W[Umu.Z->L[curr][mu]][mu]*W2;
     }
     
   } // loop sui siti
@@ -580,25 +582,25 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	    // calcolo il DmuUmu e lo metto nell'algebra
 	    Ww[tid].zero();
 	    for(int mu = 0; mu < dim; mu++){
-	      Ww[tid] += Umu.W[site_c].U[mu] - Umu.W[Umu.Z->L[curr][mu]].U[mu];
+	      Ww[tid] += Umu.W[site_c][mu] - Umu.W[Umu.Z->L[curr][mu]][mu];
 	    }
 
-	    // Ww[tid] = Umu.W[site_c].U[0] - Umu.W[Umu.Z->L[curr][0]].U[0];
+	    // Ww[tid] = Umu.W[site_c][0] - Umu.W[Umu.Z->L[curr][0]][0];
 	    // for(int mu = 1; mu < dim; mu++){
-	    //   Ww[tid] += Umu.W[site_c].U[mu] - Umu.W[Umu.Z->L[curr][mu]].U[mu];
+	    //   Ww[tid] += Umu.W[site_c][mu] - Umu.W[Umu.Z->L[curr][mu]][mu];
 	    // }
 
 	    Ww[tid] -= dag(Ww[tid]);
 	    Ww[tid].Trless();
 	    
 	    // Preparo le trasformazioni di gauge
-	    Ww1[tid] = exp( act_pars.alpha*Ww[tid]);
-	    Ww2[tid] = exp(-act_pars.alpha*Ww[tid]);
+	    Ww1[tid] = exp( Ww[tid] * act_pars.alpha);
+	    Ww2[tid] = exp(Ww[tid] * -act_pars.alpha);
 	    
 	    // Moltiplico sul link corrente a sx e sul precedente a dx
 	    for(int mu = 0; mu < dim; mu++){
-	      Umu.W[site_c].U[mu] = Ww1[tid]*Umu.W[site_c].U[mu];
-	      Umu.W[Umu.Z->L[curr][mu]].U[mu] = Umu.W[Umu.Z->L[curr][mu]].U[mu]*Ww2[tid];
+	      Umu.W[site_c][mu] = Ww1[tid]*Umu.W[site_c][mu];
+	      Umu.W[Umu.Z->L[curr][mu]][mu] = Umu.W[Umu.Z->L[curr][mu]][mu]*Ww2[tid];
 	    }
 
 #if ntz > 1
@@ -636,8 +638,8 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
     }
     for(int mu = 0; mu < dim; mu++){
       for (int i1=0; i1 < allocORD; i1++){		
-	knorm[i1][curr] += ( Umu.W[curr].U[mu].ptU[i1]*
-			     dag(Umu.W[curr].U[mu].ptU[i1]) 
+	knorm[i1][curr] += ( Umu.W[curr][mu][i1]*
+			     dag(Umu.W[curr][mu][i1]) 
 			     ).Tr().re;
       }
     }
@@ -647,7 +649,7 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
   
   for(curr = 0; curr < act_pars.iVol; curr++){
     for(int mu = 0; mu < dim; mu++){
-      Umu.W[curr].U[mu] *= act_pars.rVol;
+      Umu.W[curr][mu] *= act_pars.rVol;
     }
   }
 
@@ -726,8 +728,8 @@ void FAstochastic_gauge_fixing(ptGluon_fld& Umu){
     }
     for(int mu = 0; mu < dim; mu++){
       for (int i1=0; i1 < allocORD; i1++){		
-	knorm[i1][curr] += ( Umu.W[curr].U[mu].ptU[i1]*
-			     dag(Umu.W[curr].U[mu].ptU[i1]) 
+	knorm[i1][curr] += ( Umu.W[curr][mu][i1]*
+			     dag(Umu.W[curr][mu][i1]) 
 			     ).Tr().re;
       }
     }
@@ -737,7 +739,7 @@ void FAstochastic_gauge_fixing(ptGluon_fld& Umu){
   
   for(curr = 0; curr < act_pars.iVol; curr++){
     for(int mu = 0; mu < dim; mu++){
-      Umu.W[curr].U[mu] *= act_pars.rVol;
+      Umu.W[curr][mu] *= act_pars.rVol;
     }
   }
 
@@ -869,7 +871,7 @@ void NsptEvolve(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
     Time.tic_zm();
 #endif
 
-    zero_modes_subtraction(Umu);
+    //zero_modes_subtraction(Umu);
 
 #ifdef __TIMING__
     Time.toc_zm();
@@ -947,21 +949,21 @@ void WL2x2(ptGluon_fld& Umu) {
     for(int mu = 3; mu > 0; --mu){
       a = Umu.Z->L[site_x][5+mu];
       b = Umu.Z->L[a][5+mu];
-      tmp = Umu.W[site_x].U[mu] * Umu.W[a].U[mu];
+      tmp = Umu.W[site_x][mu] * Umu.W[a][mu];
 
       for( int nu = 0; nu < mu; ++nu){
 	d = Umu.Z->L[site_x][5+nu];
 	e = Umu.Z->L[d][5+nu];
-	tmp1 += tmp * ( Umu.W[b].U[nu] * Umu.W[ Umu.Z->L[b][5+nu] ].U[nu] * 
-			dag( Umu.W[site_x].U[nu] * Umu.W[d].U[nu] * Umu.W[e].U[mu] * 
-			     Umu.W[ Umu.Z->L[e][5+mu] ].U[mu] ));
+	tmp1 += tmp * ( Umu.W[b][nu] * Umu.W[ Umu.Z->L[b][5+nu] ][nu] * 
+			dag( Umu.W[site_x][nu] * Umu.W[d][nu] * Umu.W[e][mu] * 
+			     Umu.W[ Umu.Z->L[e][5+mu] ][mu] ));
 
       } // nu
     } // mu
   } // site
 
   for( int i1 = 1; i1 < PTORD; i1+=2){
-    loop2x2 << (tmp1.ptU[i1].Tr()).re*act_pars.rVol*D18 << "\t";
+    loop2x2 << (tmp1[i1].Tr()).re*act_pars.rVol*D18 << "\t";
   }
   loop2x2 << std::endl;
 
@@ -975,14 +977,14 @@ void WL2x2(ptGluon_fld& Umu) {
       for(int mu = 3; mu > 0; --mu){
 	a = Umu.Z->L[site_x][5+mu];
 	b = Umu.Z->L[a][5+mu];
-	tmp[tid] = Umu.W[site_x].U[mu] * Umu.W[a].U[mu];
+	tmp[tid] = Umu.W[site_x][mu] * Umu.W[a][mu];
 	
 	for( int nu = 0; nu < mu; ++nu){
 	  d = Umu.Z->L[site_x][5+nu];
 	  e = Umu.Z->L[d][5+nu];
-	  tmp1[tid] += tmp[tid] * ( Umu.W[b].U[nu] * Umu.W[ Umu.Z->L[b][5+nu] ].U[nu] * 
-				    dag( Umu.W[site_x].U[nu] * Umu.W[d].U[nu] * Umu.W[e].U[mu] * 
-					 Umu.W[ Umu.Z->L[e][5+mu] ].U[mu] ));
+	  tmp1[tid] += tmp[tid] * ( Umu.W[b][nu] * Umu.W[ Umu.Z->L[b][5+nu] ][nu] * 
+				    dag( Umu.W[site_x][nu] * Umu.W[d][nu] * Umu.W[e][mu] * 
+					 Umu.W[ Umu.Z->L[e][5+mu] ][mu] ));
 	} // nu
       } // mu
       
@@ -999,7 +1001,7 @@ void WL2x2(ptGluon_fld& Umu) {
   // std::cout << std::endl;
   for( int i1 = 1; i1 <= PTORD; i1+=2){
     // std::cout << (tmp1[0].ptU[i1].Tr()).re*act_pars.rVol*D18 << "\t";
-    loop2x2 << (tmp1[0].ptU[i1].Tr()).re*act_pars.rVol*D18 << "\t";
+    loop2x2 << (tmp1[0][i1].Tr()).re*act_pars.rVol*D18 << "\t";
   }
 
   // std::cout << std::endl;
@@ -1075,25 +1077,25 @@ void ComputeLoops(ptGluon_fld &Umu){
 	      h = Umu.Z->get(e, 1, nu);
 
 
-	      bl = Umu.W[x].U[mu]*Umu.W[a].U[mu];
-	      ml = Umu.W[h].U[mu]*Umu.W[g].U[mu];
-	      cd = Umu.W[b].U[nu]*Umu.W[c].U[nu];
-	      ld = Umu.W[x].U[nu]*Umu.W[e].U[nu];
+	      bl = Umu.W[x][mu]*Umu.W[a][mu];
+	      ml = Umu.W[h][mu]*Umu.W[g][mu];
+	      cd = Umu.W[b][nu]*Umu.W[c][nu];
+	      ld = Umu.W[x][nu]*Umu.W[e][nu];
 
 #ifdef  __PARALLEL_OMP__
 	      t_w22[thr] += bl*cd*dag(ld*ml);
 	      
-	      t_w21[thr] += ( bl*Umu.W[b].U[nu]*
-			      dag(Umu.W[x].U[nu]*Umu.W[e].U[mu]*Umu.W[d].U[mu]) +
-			      Umu.W[x].U[mu]*Umu.W[a].U[nu]*Umu.W[d].U[nu]*
-			      dag( ld*Umu.W[h].U[mu]) );	      
+	      t_w21[thr] += ( bl*Umu.W[b][nu]*
+			      dag(Umu.W[x][nu]*Umu.W[e][mu]*Umu.W[d][mu]) +
+			      Umu.W[x][mu]*Umu.W[a][nu]*Umu.W[d][nu]*
+			      dag( ld*Umu.W[h][mu]) );	      
 #else
 	      w22 += bl*cd*dag(ld*ml);
 
-	      w21 += ( bl*Umu.W[b].U[nu]*
-		       dag(Umu.W[x].U[nu]*Umu.W[e].U[mu]*Umu.W[d].U[mu]) +
-		       Umu.W[x].U[mu]*Umu.W[a].U[nu]*Umu.W[d].U[nu]*
-		       dag( ld*Umu.W[h].U[mu]) );	      
+	      w21 += ( bl*Umu.W[b][nu]*
+		       dag(Umu.W[x][nu]*Umu.W[e][mu]*Umu.W[d][mu]) +
+		       Umu.W[x][mu]*Umu.W[a][nu]*Umu.W[d][nu]*
+		       dag( ld*Umu.W[h][mu]) );	      
 #endif
 
               i = Umu.Z->get(h, 1, nu);
@@ -1109,14 +1111,14 @@ void ComputeLoops(ptGluon_fld &Umu){
               s = Umu.Z->get(q, 1, nu);
               t = Umu.Z->get(k, 1, mu);
 
-              br = Umu.W[b].U[mu]*Umu.W[m].U[mu];
-              mr = Umu.W[f].U[mu]*Umu.W[r].U[mu];
-              tr = Umu.W[k].U[mu]*Umu.W[t].U[mu];
-              tl = Umu.W[n].U[mu]*Umu.W[l].U[mu];
-              lu = Umu.W[h].U[nu]*Umu.W[i].U[nu];             
-              cu = Umu.W[f].U[nu]*Umu.W[j].U[nu];
-              ru = Umu.W[q].U[nu]*Umu.W[s].U[nu];
-              rd = Umu.W[o].U[nu]*Umu.W[p].U[nu];
+              br = Umu.W[b][mu]*Umu.W[m][mu];
+              mr = Umu.W[f][mu]*Umu.W[r][mu];
+              tr = Umu.W[k][mu]*Umu.W[t][mu];
+              tl = Umu.W[n][mu]*Umu.W[l][mu];
+              lu = Umu.W[h][nu]*Umu.W[i][nu];             
+              cu = Umu.W[f][nu]*Umu.W[j][nu];
+              ru = Umu.W[q][nu]*Umu.W[s][nu];
+              rd = Umu.W[o][nu]*Umu.W[p][nu];
               
 
 #ifdef  __PARALLEL_OMP__
@@ -1198,7 +1200,7 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 	  W += Umu.staple(i, mu, nu);
 	}
       }
-      W1 = Umu.W[link_c].U[mu]*W;
+      W1 = Umu.W[link_c][mu]*W;
       W1.Tr(app);
       for(int i1 = 0; i1 <= PTORD; i1++){
 	w[i1] += app[i1];
@@ -1238,8 +1240,8 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
  	    Ww[tid] += Umu.staple(site_x, mu, nu);
  	  }
  	}
-	// 	Ww1[tid] = Umu.W[link_c].U[mu]*Ww[tid];
- 	Ww1[tid] = Umu.W[site_x].U[mu]*Ww[tid];
+	// 	Ww1[tid] = Umu.W[link_c][mu]*Ww[tid];
+ 	Ww1[tid] = Umu.W[site_x][mu]*Ww[tid];
  	Ww1[tid].Tr(ww1[tid]);
 	
  	for(int i1 = 0; i1 <= PTORD; i1++){
@@ -1288,7 +1290,7 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 // 	  W += Umu.staple(i, mu, nu);
 // 	}
 //       }
-//       W1 = Umu.W[link_c].U[mu]*W;
+//       W1 = Umu.W[link_c][mu]*W;
 //       W1.Tr(app);
 //       for(int i1 = 0; i1 <= PTORD; i1++){
 // 	w[i1] += app[i1];
@@ -1327,8 +1329,8 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 //  	    Ww[tid] += Umu.staple(site_x, mu, nu);
 //  	  }
 //  	}
-// 	// 	Ww1[tid] = Umu.W[link_c].U[mu]*Ww[tid];
-//  	Ww1[tid] = Umu.W[site_x].U[mu]*Ww[tid];
+// 	// 	Ww1[tid] = Umu.W[link_c][mu]*Ww[tid];
+//  	Ww1[tid] = Umu.W[site_x][mu]*Ww[tid];
 //  	Ww1[tid].Tr(ww1[tid]);
 	
 //  	for(int i1 = 0; i1 <= PTORD; i1++){
