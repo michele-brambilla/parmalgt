@@ -207,10 +207,13 @@ void gauge_wilson(ptGluon_fld& Umu){
     
 	      // Aggiungo fluttuazione al primo ordine	
               Ww1[tid][0] -= act_pars.stau*SU3rand(Rand[tid]);
-	      U[link_c] = exp(Ww1[tid])*U[link_c];	 
-              std::cout << U[link_c].bgf() << std::endl;
+              //std::cout << "/////////////////////////////\n";
+	      //std::cout << U[link_c].bgf() << std::endl;
+              Ww1[tid].bgf().set_to_one();
+              U[link_c] = exp(Ww1[tid])*U[link_c];	 
+              //std::cout << U[link_c].bgf() << std::endl;
 	      // Contributo del momento nullo
-	      MMm[tid][mu] += log(U[link_c]);		
+	      //MMm[tid][mu] += log(U[link_c]);		
               
       
 	    } //end mu
@@ -505,6 +508,13 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
 	    curr = y3 + act_pars.sz[3]*(y2 + act_pars.sz[2]*(y1 + act_pars.sz[1]*y0) );
 
 	    for(int mu = 0; mu < dim; mu++){
+              // DH Feb. 1, 2012
+              // TODO: This is more a dirty hack than anything else.
+              // The problem is that the old log function silently
+              // assumed that we have U = 1 + ..., which is not true
+              // anymore. Thus, we have an extra constructor call
+              // here... This should be fixed!
+              Umu.W[curr][mu].bgf() = bgf::unit();
 	      Ww[tid] = log(Umu.W[curr][mu]);
 	      Ww[tid] -= MM[mu];
 	      Ww[tid].reH();
@@ -555,7 +565,14 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
     // Preparo le trasformazioni di gauge
     W1 = exp( act_pars.alpha*W);
     W2 = exp(-act_pars.alpha*W);
-    
+    // DH Feb. 1, 2012
+    // TODO: Another dirty hack
+    // Here, we stumble again on the troube with exp and log. Exp
+    // should only act on the fluctuation field, but the instructions
+    // above silently assume that exp(x) = 1 + x + ...
+    // This should be fixed ASAP
+    W1.bgf() = bgf::unit();
+    W2.bgf() = bgf::unit();
     // Moltiplico sul link corrente a sx e sul precedente a dx
     for(int mu = 0; mu < dim; mu++){
       Umu.W[site_c][mu] = W1*Umu.W[site_c][mu];
@@ -596,7 +613,15 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	    // Preparo le trasformazioni di gauge
 	    Ww1[tid] = exp( Ww[tid] * act_pars.alpha);
 	    Ww2[tid] = exp(Ww[tid] * -act_pars.alpha);
-	    
+            // DH Feb. 1, 2012
+            // TODO: Another dirty hack
+            // Here, we stumble again on the troube with exp and
+            // log. Exp should only act on the fluctuation field, but
+            // the instructions above silently assume that 
+            // exp(x) = 1 + x + ...
+            // This should be fixed ASAP
+	    Ww1[tid].bgf() = bgf::unit();
+            Ww2[tid].bgf() = bgf::unit();
 	    // Moltiplico sul link corrente a sx e sul precedente a dx
 	    for(int mu = 0; mu < dim; mu++){
 	      Umu.W[site_c][mu] = Ww1[tid]*Umu.W[site_c][mu];
@@ -871,7 +896,7 @@ void NsptEvolve(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
     Time.tic_zm();
 #endif
 
-    //zero_modes_subtraction(Umu);
+    zero_modes_subtraction(Umu);
 
 #ifdef __TIMING__
     Time.toc_zm();

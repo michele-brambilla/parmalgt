@@ -2,7 +2,7 @@
 #include "QCDpt.h"
 #else
 #include "newQCDpt.h"
-const int PT_ORD = 2;
+const int PT_ORD = 4;
 const int AL_ORD = allocORD;
 typedef BGptSU3<bgf::AbelianBgf, AL_ORD, PT_ORD> ptSU3;
 typedef BGptCVector<AL_ORD, PT_ORD> ptCVector;

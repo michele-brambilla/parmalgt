@@ -450,6 +450,12 @@ int QuenchedAllocate(ptGluon_fld& Umu){
   act_pars.tau_g *= -1;
 #endif
 
+  // Added by DH, Feb 1, 2012
+  // initialize the background field factory
+  // FIXME: We are brave here and assume 
+  // Lx == Ly == Lz == L
+  bgf::get_abelian_bgf(0, 0, act_pars.sz[2], act_pars.sz[3]);
+
   // Genera il campo gluone freddo o da configurazione
   // secondo il flag nspt_pars.Init. Se legge da configurazione
   // legge anche la placchetta ad file e la confronta con una
@@ -459,7 +465,21 @@ int QuenchedAllocate(ptGluon_fld& Umu){
 
     for(int i = 0; i < act_pars.iVol; i++){
       for(int mu = 0; mu < dim; mu++){
-	Umu.W[i][mu].id();
+	//Umu.W[i][mu].id();
+        // Added by DH, Feb 1, 2012
+        // FIXME: We are brave again and assume
+        // Lx == Ly == Lz == L
+        // in lattice.h, we have
+        // GETINDEX(x, y, z, t) = x * L^3 + y * L^2 + z * L + t
+        // hence, we can get the time coordinate through
+        // t = i % L
+        // now, initialize the bg field ...
+        /*/ // Abelian DOES NOT WORK, YET
+        int t = i % act_pars.sz[1];
+        Umu.W[i][mu].bgf() = bgf::get_abelian_bgf(t, mu);
+        /*/ // Trivial
+        Umu.W[i][mu].bgf() = bgf::unit();
+        //*/
       }
     }
 

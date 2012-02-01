@@ -321,4 +321,8 @@ exp( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
 // needed template specializations...
 template void BGptSpinColor<6, 2, 4>::uno_p_gmu(SpinColor&, int, int);
 template void BGptSpinColor<6, 2, 4>::uno_m_gmu(SpinColor&, int, int);
+template void BGptSpinColor<6, 4, 4>::uno_p_gmu(SpinColor&, int, int);
+template void BGptSpinColor<6, 4, 4>::uno_m_gmu(SpinColor&, int, int);
+
 template BGptSU3<bgf::AbelianBgf, 6, 2> exp<bgf::AbelianBgf, 6, 2>(const BGptSU3<bgf::AbelianBgf, 6, 2>&);
+template BGptSU3<bgf::AbelianBgf, 6, 4> exp<bgf::AbelianBgf, 6, 4>(const BGptSU3<bgf::AbelianBgf, 6, 4>&);

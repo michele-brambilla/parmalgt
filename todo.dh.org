@@ -27,5 +27,20 @@ Todo list for the Schrödinger Functional implementation
   - [X] log
 
 * Remarks etc.
-- [ ] comparing QCDpt.cc and MyMath.cc, the reH() methods seem to do
+- [X] comparing QCDpt.cc and MyMath.cc, the reH() methods seem to do
   different things!
+      The answer to that comes in two parts. reH is supposed to
+      project back to SU(3). This is however easier to do in the
+      algebra. Hence, the method A.reH() should apply to an element A
+      of the Lie algebra su(3) and
+
+      1) set A = (A + A^\dagger)/2
+      2) subtract tr(A)/3 from each diagonal element
+
+      This is, however only done correctly in QCDpt.cc!
+- If one sets in Quench.cfg the init_status flag to anything other
+  than zero and if no configuration is stored, one only gets zeros, at
+  all orders! So don't forget init_status == 0!
+
+      
+

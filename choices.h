@@ -16,7 +16,7 @@ extern int PTORD;
 #define TLSYM 1
 #define IWA 2
 #define DBW2 3
-#define GAUGE_ACTION IWA //Alternatives: WIL, TLSYM, IWA, DBW2
+#define GAUGE_ACTION WIL //Alternatives: WIL, TLSYM, IWA, DBW2
 
 #ifdef __PARALLEL_OMP__
 #define ntt  2
