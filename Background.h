@@ -39,6 +39,7 @@ namespace bgf {
     virtual void set_to_zero () = 0;
     // Trace
     virtual Cplx Tr() const = 0;
+    virtual double Norm() const  = 0;
   };
 
   /// Trivial (unit) background field.
@@ -66,7 +67,8 @@ namespace bgf {
     void set_to_one() { }
     void set_to_zero() { throw std::exception(); } // not possible ...
     TrivialBgf dag() const { return *this; }
-    Cplx Tr() const { return 3; };
+    Cplx Tr() const { return 3; }
+    double Norm() const { return 1; }
   };
 
   //////////////////////////////////////////////////////////////////////
@@ -133,6 +135,17 @@ namespace bgf {
       for (int i = 0; i < 3; ++i)
         result.whr[i] = v_[i] * v.whr[i];
       return result;
+    }
+
+    virtual double Norm() const {
+      double result = 0;
+#ifdef HAVE_CXX0X
+      for (const auto& e : v_) { result += (e*e).re; }
+#else
+      for (int i = 0; i < 3; ++i)
+        result += (v_[i]*v_[i]).re;
+#endif
+      return std::sqrt(result);
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -350,8 +363,10 @@ namespace bgf {
       return AbelianBgf(factory.get(t));
   };
   
-  inline AbelianBgf unit(const Cplx& alpha = Cplx(1.0,0.)){
-    three_vec_t alpha_v = {alpha, alpha, alpha};
+  template <class B> inline B unit(){ return B(); }
+  
+  template <> inline AbelianBgf unit<AbelianBgf>() {
+    three_vec_t alpha_v = {1, 1, 1};
     return AbelianBgf(alpha_v);
   };
   

@@ -13,7 +13,8 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 
 # test programs we want to build
 
-bin_PROGRAMS = test_Bgfield test_Helper test_SU3 test_newQCDpt
+bin_PROGRAMS = test_Bgfield test_Helper test_SU3 test_newQCDpt \
+	test_PtTypes
 
 test_Bgfield_SOURCES = test_Bgfield.cc ../MyRand.cc \
 		       ../MyMath.cc 
@@ -25,8 +26,11 @@ test_Helper_LDADD = lib/libgtest_main.la
 test_SU3_SOURCES = test_SU3.cc ../MyMath.cc ../MyRand.cc
 test_SU3_LDADD = lib/libgtest_main.la
 
-test_newQCDpt_SOURCES = test_newQCDpt.cc ../MyMath.cc \
-                        ../MyRand.cc
+test_newQCDpt_SOURCES = test_newQCDpt.cc ../MyMath.cc ../MyRand.cc \
+	../newQCDpt.cc
 test_newQCDpt_LDADD = lib/libgtest.la
+
+test_PtTypes_SOURCES = test_PtTypes.cc ../MyMath.cc ../MyRand.cc
+test_PtTypes_LDADD = lib/libgtest_main.la
 
 TESTS = ${bin_PROGRAMS}

@@ -28,6 +28,7 @@ testing/.deps/
 testing/.libs/
 testing/config.guess
 testing/test_*
+!testing/test_*.cc
 testing/config.h.in
 *.aux
 *.log
