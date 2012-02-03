@@ -208,18 +208,14 @@ TEST(BGptSU3Test, log){
   A.randomize();
   // this assumes A has unit background field
   ptsu3 B = log(A);
-  // construct Atilde
-  //bgf::AbelianBgf Vinv = A.bgf().inverse();
-  //for(int i = 0; i < ORD; ++i)
-  //  Atil[i] = Vinv.ApplyFromRight(A[i]);
   // one loop
   ASSERT_TRUE( SU3Cmp(A[0], B[0])() );
   // two loop
   SU3 e = A[1] - A[0]*A[0]*0.5;
   ASSERT_TRUE( SU3Cmp(e, B[1])() );
   // three loop
-  e = Atil[2] - (Atil[0]*Atil[1] + Atil[1]*Atil[0])*0.5 
-    + Atil[0]*Atil[0]*Atil[0]/3;
+  e = A[2] - (A[0]*A[1] + A[1]*A[0])*0.5 
+    + A[0]*A[0]*A[0]/3;
   ASSERT_TRUE( SU3Cmp(e, B[2])() );
 }
 //

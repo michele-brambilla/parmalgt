@@ -344,7 +344,7 @@ inline ptt::PtMatrix<ORD> log(const BGptSU3<B, ORD>& U){
   for (int i = 2; i <= ORD; ++i){
     sign *= -1;
     tmp = ptt::multiply(tmp, U.ptU());
-    result.add_assign( ptt::multiply(tmp, (double)i/sign) ); 
+    result.add_assign( ptt::multiply(tmp, sign/i) ); 
     // FIXME stretch_assign would be good here!
   }
   return result;
