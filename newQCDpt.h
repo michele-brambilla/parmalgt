@@ -9,8 +9,7 @@
 #include <Types.h>
 #include <Background.h>
 #include <PtTypes.hpp>
-#include <testing/Helper.h>
-
+#include <limits>
 
 // debug flag
 
@@ -38,18 +37,18 @@ class IsNotOneError : public std::exception { };
 ///  \date Fri Feb  3 12:52:30 2012
 
 
-template <bool shall_i_debug, class B> struct IsOne {
+template <bool shall_i_debug, class B> struct IsZero {
   static const bool debug_on = false;
   static void check(const B&) { } // do not debug
 };
 
 // overload for shall_i_debug == true
 
-template <class B> struct IsOne<true, B> {
+template <class B> struct IsZero<true, B> {
   static const bool debug_on = true;
   static void check(const B& V) {
     static double eps = std::numeric_limits<double>::epsilon() * 10;
-    if ( (V - bgf::unit<B>()).Norm() > eps)  throw IsNotOneError();
+    if ( V.Norm() > eps)  throw IsNotOneError();
   }
 };
 
@@ -133,7 +132,7 @@ public:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:42:49 2012
   template <class C> self_t& operator/=(const C &z) {
-    ptU_.multiply_divide(z);
+    ptU_.divide_assign(z);
     bgf_ /= z;
     return *this;
   };
@@ -253,22 +252,35 @@ public:
       ptU_[i][4] -= z;
       ptU_[i][8] -= z;
     }
-    bgf_.set_to_zero();
+    bgf_.Trless();
   }
-  self_t& reH(){
-    //for(int i = 0; i < PTORD; i++) ptU_[i].reH();
-    //bgf_.reH();
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  In the old version of the code the operation
+  ///
+  ///  0.5 [U - U^\dagger]_tr  (the _tr stands for the traceless part)
+  ///
+  ///  Was assumed to generate an object that lives int the Lie
+  ///  algebra. We enforce this here, but do a check to make sure.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Fri Feb  3 16:40:29 2012
+  pt_matrix_t reH(){
+    bgf_.reH();
+    IsZero<do_debug, B>::check(bgf_);
+    pt_matrix_t U(ptU_);
     Cplx tr;
     for(int i = 0; i < PTORD; i++){
-      ptU_[i] -= dag(ptU_[i]);
-      ptU_[i] *= .5;
-      tr = ptU_[i].Tr()/3.;
-      ptU_[i][0] -= tr;
-      ptU_[i][4] -= tr;
-      ptU_[i][8] -= tr;
+      U[i] -= dag(U[i]);
+      U[i] *= .5;
+      tr = U[i].Tr()/3.;
+      U[i][0] -= tr;
+      U[i][4] -= tr;
+      U[i][8] -= tr;
     }
-    //bgf_.set_to_zero();
-    return *this;
+    return U;
   }
 
 private:
@@ -284,22 +296,22 @@ private:
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Thu Jan 26 11:47:34 2012
 
-//template <class B, int AL_ORD, int PT_ORD>
-//inline BGptSU3<B, AL_ORD, PT_ORD> 
-//dag( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
-//  // The constructor call copies everyting
-//  BGptSU3<B, AL_ORD, PT_ORD> res(U);
-//  for (int i = 0; i < PT_ORD; ++i){
-//    // transpose
-//    std::swap(res[i][1], res[i][3]);
-//    std::swap(res[i][2], res[i][6]);
-//    std::swap(res[i][5], res[i][7]);
-//    // conjugate
-//    for (int j = 0; j < 9; ++j) res[i][j].im = -res[i][j].im;
-//  }
-//  res.bgf() = U.bgf().dag();
-//  return res;
-//};
+template <class B, int ORD>
+inline BGptSU3<B, ORD> 
+dag( const BGptSU3<B, ORD>& U ){
+  // The constructor call copies everyting
+  BGptSU3<B, ORD> res(U);
+  for (int i = 0; i < ORD; ++i){
+    // transpose
+    std::swap(res[i][1], res[i][3]);
+    std::swap(res[i][2], res[i][6]);
+    std::swap(res[i][5], res[i][7]);
+    // conjugate
+    for (int j = 0; j < 9; ++j) res[i][j].im = -res[i][j].im;
+  }
+  res.bgf() = U.bgf().dag();
+  return res;
+};
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -314,7 +326,7 @@ private:
 //exp( const BGptSU3<B, AL_ORD, PT_ORD>& );
 
 template <class B, int ORD>
-BGptSU3<B, ORD> exp(const ptt::PtMatrix<ORD>& q){
+inline BGptSU3<B, ORD> exp(const ptt::PtMatrix<ORD>& q){
   BGptSU3<B, ORD> result(bgf::unit<B>(), q);
   // result = 1 + q 
   ptt::PtMatrix<ORD> tmp(q);
@@ -338,7 +350,7 @@ BGptSU3<B, ORD> exp(const ptt::PtMatrix<ORD>& q){
 
 template <class B, int ORD>
 inline ptt::PtMatrix<ORD> log(const BGptSU3<B, ORD>& U){
-  IsOne<do_debug, B>::check(U.bgf());
+  IsZero<do_debug, B>::check(U.bgf() - bgf::unit<B>());
   ptt::PtMatrix<ORD> result(U.ptU()), tmp(U.ptU());
   double sign = 1.;
   for (int i = 2; i <= ORD; ++i){
@@ -349,31 +361,6 @@ inline ptt::PtMatrix<ORD> log(const BGptSU3<B, ORD>& U){
   }
   return result;
 };
-
-//template <class B, int AL_ORD, int PT_ORD>
-//inline BGptSU3<B, AL_ORD, PT_ORD> 
-//log( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
-//  // The constructor call copies the background field
-//  BGptSU3<B, AL_ORD, PT_ORD> result;
-//  result.bgf() = U.bgf();
-//  // The pt orders are stored here:
-//  pt_q<AL_ORD, PT_ORD> Util_m_one; // \tilde U - 1
-//  // convert to \tilde U^(i) = U^(i) V^{-1}
-//  B Vinv = U.bgf().inverse();
-//  for (int i = 0; i < PT_ORD; ++i){
-//    Util_m_one[i] = Vinv.ApplyFromRight(U[i]);
-//    result[i] = Util_m_one[i]; // now result = \tilde U - 1
-//  }
-//  pt_q<AL_ORD, PT_ORD> tmp(Util_m_one);
-//  // calculate q = log(\tilde U) up to order PT_ORD
-//  int sign = 1;
-//  for (int i = 2; i <= PT_ORD; ++i){
-//    sign *= -1;
-//    tmp *= Util_m_one; // construct Util^i
-//    result += tmp/i*sign; // sum it up!
-//  }
-//  return result;
-//};
 
 
 template <class BGF,  int ORD, int DIM>

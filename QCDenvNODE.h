@@ -2,12 +2,12 @@
 #include "QCDpt.h"
 #else
 #include "newQCDpt.h"
-const int PT_ORD = 4;
-const int AL_ORD = allocORD;
-typedef BGptSU3<bgf::AbelianBgf, AL_ORD, PT_ORD> ptSU3;
-typedef BGptCVector<AL_ORD, PT_ORD> ptCVector;
-typedef BGptGluon<bgf::AbelianBgf, AL_ORD, PT_ORD, 4> ptGluon;
-typedef BGptSpinColor<AL_ORD, PT_ORD, 4> ptSpinColor;
+const int ORD = 4;
+typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
+typedef ptt::PtMatrix<ORD> ptsu3;
+typedef BGptCVector<ORD> ptCVector;
+typedef BGptGluon<bgf::AbelianBgf, ORD, 4> ptGluon;
+typedef BGptSpinColor<ORD, 4> ptSpinColor;
 #endif
 #include "lattice.h"
 #include<iostream>

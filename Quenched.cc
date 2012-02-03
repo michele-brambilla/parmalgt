@@ -478,7 +478,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
         int t = i % act_pars.sz[1];
         Umu.W[i][mu].bgf() = bgf::get_abelian_bgf(t, mu);
         /*/ // Trivial
-        Umu.W[i][mu].bgf() = bgf::unit();
+        Umu.W[i][mu].bgf() = bgf::unit<bgf::AbelianBgf>();
         //*/
       }
     }

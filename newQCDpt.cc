@@ -319,8 +319,8 @@ void BGptSpinColor<ORD,DIM>::uno_m_gmu(SpinColor& out, int mu, int ord){
 //}; 
 //
 //// needed template specializations...
-//template void BGptSpinColor<6, 2, 4>::uno_p_gmu(SpinColor&, int, int);
-//template void BGptSpinColor<6, 2, 4>::uno_m_gmu(SpinColor&, int, int);
+template void BGptSpinColor<4, 4>::uno_p_gmu(SpinColor&, int, int);
+template void BGptSpinColor<4, 4>::uno_m_gmu(SpinColor&, int, int);
 //template void BGptSpinColor<6, 4, 4>::uno_p_gmu(SpinColor&, int, int);
 //template void BGptSpinColor<6, 4, 4>::uno_m_gmu(SpinColor&, int, int);
 //

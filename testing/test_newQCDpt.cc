@@ -204,7 +204,7 @@ TEST(BGptSU3Test, logThrows){
 
 
 TEST(BGptSU3Test, log){
-  ptSU3 A(bgf::unit<bgf::AbelianBgf>()), Atil;
+  ptSU3 A(bgf::unit<bgf::AbelianBgf>());
   A.randomize();
   // this assumes A has unit background field
   ptsu3 B = log(A);
@@ -218,22 +218,24 @@ TEST(BGptSU3Test, log){
     + A[0]*A[0]*A[0]/3;
   ASSERT_TRUE( SU3Cmp(e, B[2])() );
 }
-//
-//// Now, we want to check if log(exp(A)) = A holds...
-//TEST(BGptSU3Test, logexp){
-//  ptSU3 A(bgf::random()), B;
-//  A.randomize();
-//  // this assumes A is in the q representation ...
-//  B = log(exp(A));
-//  // tree level
-//  ASSERT_TRUE(A.bgf() == B.bgf());
-//  // higher orders
-//  // a quick and dirty estimate gives that the round-off error should
-//  // be around 100 * epsilon * n at order n ...
-//  double eps = std::numeric_limits<double>::epsilon() * 200;
-//  for (int r = 0; r < PT_ORD; ++r)
-//    ASSERT_TRUE( SU3Cmp(A[r], B[r])(eps * (r+1)) ) << "r = " << r;
-//}
+
+// Now, we want to check if log(exp(A)) = A holds...
+TEST(BGptSU3Test, logexp){
+  ptt::PtMatrix<ORD> A = ptt::get_random_pt_matrix<ORD>(), B;
+  B = log(exp<bgf::AbelianBgf,ORD>(A));
+
+  ptSU3 C(bgf::unit<bgf::AbelianBgf>()), D;
+  C.randomize();
+  D = exp<bgf::AbelianBgf,ORD>(log(C));
+  // higher orders
+  // a quick and dirty estimate gives that the round-off error should
+  // be around 100 * epsilon * n at order n ...
+  double eps = std::numeric_limits<double>::epsilon() * 100;
+  for (int r = 0; r < 6; ++r){
+    ASSERT_TRUE( SU3Cmp(A[r], B[r])(eps * (r+1)) );
+    ASSERT_TRUE( SU3Cmp(C[r], D[r])(eps * (r+1)) );
+  }
+}
 
 // we need a main function here because we have to initialize the
 // background field class...
