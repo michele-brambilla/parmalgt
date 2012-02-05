@@ -1,7 +1,8 @@
-#include <config.h>
-
 #ifndef _TYPES_H
 #define _TYPES_H
+
+#include <config.h>
+#include <MyMath.h>
 
 #ifdef HAVE_CXX0X
 #include <array>

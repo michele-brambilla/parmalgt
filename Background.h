@@ -39,6 +39,10 @@ namespace bgf {
     virtual void set_to_zero () = 0;
     // Trace
     virtual Cplx Tr() const = 0;
+    virtual double Norm() const  = 0;
+    // Make traceless
+    virtual void Trless() = 0;
+    virtual void reH() = 0;
   };
 
   /// Trivial (unit) background field.
@@ -66,7 +70,10 @@ namespace bgf {
     void set_to_one() { }
     void set_to_zero() { throw std::exception(); } // not possible ...
     TrivialBgf dag() const { return *this; }
-    Cplx Tr() const { return 3; };
+    Cplx Tr() const { return 3; }
+    double Norm() const { return 1; }
+    void Trless() {}
+    void reH() {}
   };
 
   //////////////////////////////////////////////////////////////////////
@@ -133,6 +140,17 @@ namespace bgf {
       for (int i = 0; i < 3; ++i)
         result.whr[i] = v_[i] * v.whr[i];
       return result;
+    }
+
+    virtual double Norm() const {
+      double result = 0;
+#ifdef HAVE_CXX0X
+      for (const auto& e : v_) { result += (e*e).re; }
+#else
+      for (int i = 0; i < 3; ++i)
+        result += (v_[i]*v_[i]).re;
+#endif
+      return std::sqrt(result);
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -249,12 +267,42 @@ namespace bgf {
     Cplx Tr() const {
       return std::accumulate(v_.begin(), v_.end(), Cplx(0));
     }
+
+    /// Make traceless
+    virtual void Trless() {
+      Cplx Tro3 = Tr()/3.;
+#ifdef HAVE_CXX0X
+      for ( auto& e: v_ ) e -= Tro3;
+#else
+      for (int i = 0; i < 3; ++i) v_[i] -= Tro3;
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  reH
+    ///
+    ///  This takes the traceless part of 0.5*[V - V^\dagger]
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Fri Feb  3 16:23:25 2012
+    
+    virtual void reH() {
+#ifdef HAVE_CXX0X
+      for ( auto& e: v_ ) e.re = 0;
+#else
+      for (int i = 0; i < 3; ++i) v_[i].re = 0;
+#endif
+      Trless();
+    }
+
     AbelianBgf dag() const {
       AbelianBgf result(*this);
       for (int i = 0; i < 3; ++i) result[i].im = -result[i].im;
       return result;
     }
-    void reH() { for (int i = 0; i < 3; ++i) v_[i].re = 0.; }
+
   private:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -350,8 +398,10 @@ namespace bgf {
       return AbelianBgf(factory.get(t));
   };
   
-  inline AbelianBgf unit(const Cplx& alpha = Cplx(1.0,0.)){
-    three_vec_t alpha_v = {alpha, alpha, alpha};
+  template <class B> inline B unit(){ return B(); }
+  
+  template <> inline AbelianBgf unit<AbelianBgf>() {
+    three_vec_t alpha_v = {1, 1, 1};
     return AbelianBgf(alpha_v);
   };
   

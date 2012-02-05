@@ -478,7 +478,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
         int t = i % act_pars.sz[1];
         Umu.W[i][mu].bgf() = bgf::get_abelian_bgf(t, mu);
         /*/ // Trivial
-        Umu.W[i][mu].bgf() = bgf::unit();
+        Umu.W[i][mu].bgf() = bgf::unit<bgf::AbelianBgf>();
         //*/
       }
     }
@@ -631,7 +631,7 @@ int NsptFinalize(ptGluon_fld& Umu, int t){
 
 int main(int argc, char** argv){
 
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);  // Enable fpe
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);  // Enable fpe
 
   if( initialize(argc, argv) ){ exit(1); }
 

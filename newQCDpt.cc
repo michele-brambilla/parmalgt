@@ -1,7 +1,7 @@
 #include <newQCDpt.h>
 
-template  <int AL_ORD, int PT_ORD, int DIM>
-void BGptSpinColor<AL_ORD, PT_ORD, DIM>::uno_p_gmu(SpinColor& out, int mu, int ord){
+template  <int ORD, int DIM>
+void BGptSpinColor<ORD, DIM>::uno_p_gmu(SpinColor& out, int mu, int ord){
 
   switch (mu) {
   case 0:
@@ -149,8 +149,8 @@ void BGptSpinColor<AL_ORD, PT_ORD, DIM>::uno_p_gmu(SpinColor& out, int mu, int o
 } // uno_p_gmu
 
 
-template  <int AL_ORD, int PT_ORD, int DIM>
-void BGptSpinColor<AL_ORD,PT_ORD,DIM>::uno_m_gmu(SpinColor& out, int mu, int ord){
+template  <int ORD, int DIM>
+void BGptSpinColor<ORD,DIM>::uno_m_gmu(SpinColor& out, int mu, int ord){
 
   switch (mu) {
   case 0:
@@ -295,34 +295,35 @@ void BGptSpinColor<AL_ORD,PT_ORD,DIM>::uno_m_gmu(SpinColor& out, int mu, int ord
 }// uno_m_gmu
 
 
-template <class B, int AL_ORD, int PT_ORD>
-BGptSU3<B, AL_ORD, PT_ORD> 
-exp( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
-  // Make a copy of U (since exp U = 1 + U + ...)
-  BGptSU3<B, AL_ORD, PT_ORD> result(U);
-  // The pt orders are stored here:
-  pt_q<AL_ORD, PT_ORD> q;
-  // set q = U - V
-  std::copy(result.ptU().begin(), result.ptU().end(),
-            q.ptq().begin());
-  pt_q<AL_ORD, PT_ORD> tmp(q); // store q^i here
-  // calculate \tilde U = exp{q} up to order PT_ORD
-  for (int i = 2; i <= PT_ORD; ++i){
-    tmp *= q; // construct
-    tmp /= i; // q^i / ( i! )
-    result += tmp; // sum it up!
-  }
-  // convert to U^(i) = \tilde U^(i) V 
-  for (int i = 0; i < PT_ORD; ++i)
-    result[i] = result.bgf().ApplyFromRight(result[i]);
-  return result;
-}; 
-
-// needed template specializations...
-template void BGptSpinColor<6, 2, 4>::uno_p_gmu(SpinColor&, int, int);
-template void BGptSpinColor<6, 2, 4>::uno_m_gmu(SpinColor&, int, int);
-template void BGptSpinColor<6, 4, 4>::uno_p_gmu(SpinColor&, int, int);
-template void BGptSpinColor<6, 4, 4>::uno_m_gmu(SpinColor&, int, int);
-
-template BGptSU3<bgf::AbelianBgf, 6, 2> exp<bgf::AbelianBgf, 6, 2>(const BGptSU3<bgf::AbelianBgf, 6, 2>&);
-template BGptSU3<bgf::AbelianBgf, 6, 4> exp<bgf::AbelianBgf, 6, 4>(const BGptSU3<bgf::AbelianBgf, 6, 4>&);
+//template <class B, int AL_ORD, int PT_ORD>
+//BGptSU3<B, AL_ORD, PT_ORD> 
+//exp( const BGptSU3<B, AL_ORD, PT_ORD>& U ){
+//  // Make a copy of U (since exp U = 1 + U + ...)
+//  BGptSU3<B, AL_ORD, PT_ORD> result(U);
+//  // The pt orders are stored here:
+//  pt_q<AL_ORD, PT_ORD> q;
+//  // set q = U - V
+//  std::copy(result.ptU().begin(), result.ptU().end(),
+//            q.ptq().begin());
+//  pt_q<AL_ORD, PT_ORD> tmp(q); // store q^i here
+//  // calculate \tilde U = exp{q} up to order PT_ORD
+//  for (int i = 2; i <= PT_ORD; ++i){
+//    tmp *= q; // construct
+//    tmp /= i; // q^i / ( i! )
+//    result += tmp; // sum it up!
+//  }
+//  // convert to U^(i) = \tilde U^(i) V 
+//  for (int i = 0; i < PT_ORD; ++i)
+//    result[i] = result.bgf().ApplyFromRight(result[i]);
+//  return result;
+//}; 
+//
+//// needed template specializations...
+template void BGptSpinColor<4, 4>::uno_p_gmu(SpinColor&, int, int);
+template void BGptSpinColor<4, 4>::uno_m_gmu(SpinColor&, int, int);
+//template void BGptSpinColor<6, 4, 4>::uno_p_gmu(SpinColor&, int, int);
+//template void BGptSpinColor<6, 4, 4>::uno_m_gmu(SpinColor&, int, int);
+//
+//template BGptSU3<bgf::AbelianBgf, 6, 2> exp<bgf::AbelianBgf, 6, 2>(const BGptSU3<bgf::AbelianBgf, 6, 2>&);
+//template BGptSU3<bgf::AbelianBgf, 6, 4> exp<bgf::AbelianBgf, 6, 4>(const BGptSU3<bgf::AbelianBgf, 6, 4>&);
+//template BGptSU3<bgf::AbelianBgf, 10, 8> exp<bgf::AbelianBgf, 10, 8>(const BGptSU3<bgf::AbelianBgf, 10, 8>&);
