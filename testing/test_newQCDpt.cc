@@ -196,7 +196,7 @@ TEST(BGptSU3Test, exp){
 
 TEST(BGptSU3Test, logThrows){
   ptSU3 A(bgf::random());
-  if (IsOne<do_debug, bgf::AbelianBgf>::debug_on)
+  if (IsZero<do_debug, bgf::AbelianBgf>::debug_on)
     ASSERT_THROW(log(A), IsNotOneError);
   else
     ASSERT_NO_THROW(log(A));

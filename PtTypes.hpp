@@ -5,6 +5,7 @@
 #include <MyRand.h>
 #include <MyMath.h>
 #include <Background.h>
+#include <PtAlgo.hpp>
 
 namespace ptt {
 
@@ -68,45 +69,38 @@ namespace ptt {
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Fri Feb  3 12:42:12 2012
 
-    self_t& add_assign(const self_t& other) {
-      for (int i = 0; i < N; ++i)
-        array_[i] += other[i];
+    self_t& operator+=(const self_t& other) {
+      std::for_each(begin(), end(), pta::incr(other));
       return *this;
     }
   
-    self_t add(const self_t& other) const {
+    self_t operator+(const self_t& other) const {
       self_t result(*this);
-      return result.add_assign(other);
+      return result += other;
     }
 
-    self_t& sub_assign(const self_t& other) {
-      for (int i = 0; i < N; ++i)
-        array_[i] -= other[i];
+    self_t& operator-=(const self_t& other) {
+      std::for_each(begin(), end(), pta::decr(other));
       return *this;
     }
   
-    self_t sub(const self_t& other) const {
+    self_t operator-(const self_t& other) const {
       self_t result(*this);
-      return result.sub_assign(other);
+      return result -= other;
     }
   
-    template <typename T> self_t& multiply_assign(const T& other) {
-#ifdef HAVE_CXX0X
-      for (auto& e : array_) { e *= other; }
-#else
-      for (int i = 0; i < N; ++i)
-        array_[i] *= other;
-#endif
+    template <typename T> self_t& operator*=(const T& other) {
+      std::for_each(begin(), end(), pta::mul(other));
       return *this;
     }
 
-    template <typename T> self_t& divide_assign(const T& other) {
-#ifdef HAVE_CXX0X
-      for (auto& e : array_) { e /= other; }
-#else
-      for (int i = 0; i < N; ++i)
-        array_[i] /= other;
-#endif
+    self_t& operator*=(const self_t& other) {
+      *this = *this * other;
+      return *this;
+    }
+
+    template <typename T> self_t& operator/=(const T& other) {
+      std::for_each(begin(), end(), pta::div(other));
       return *this;
     }
 
@@ -143,12 +137,12 @@ namespace ptt {
 ///  \date Fri Feb  3 12:43:47 2012
 
   template <int N, typename T> 
-  inline PtMatrix<N> multiply(const PtMatrix<N>& A, const T& alpha){
-    return PtMatrix<N>(A).multiply_assign(alpha);
+  inline PtMatrix<N> operator*(const PtMatrix<N>& A, const T& alpha){
+    return PtMatrix<N>(A) *= alpha;
   }
 
   template <int N>
-  inline PtMatrix<N> multiply(const PtMatrix<N>& A, const bgf::AbelianBgf& bg){
+  inline PtMatrix<N> operator*(const PtMatrix<N>& A, const bgf::AbelianBgf& bg){
 #ifdef HAVE_CXX0X
     PtMatrix<N> result(A);
     for (auto& e : result) { e = bg.ApplyFromRight(e); }
@@ -161,7 +155,7 @@ namespace ptt {
   }
 
   template <int N>
-  inline PtMatrix<N> multiply(const PtMatrix<N>& A, const PtMatrix<N>& B){
+  inline PtMatrix<N> operator*(const PtMatrix<N>& A, const PtMatrix<N>& B){
      PtMatrix<N> result;
      for (int i = 0; i < N - 1; ++i)
        for (int j = 0; j <= i; ++j)
@@ -170,12 +164,12 @@ namespace ptt {
   }
   
   template <int N, typename T> 
-  inline PtMatrix<N> multiply(const T& alpha, const PtMatrix<N>& A){
-    return PtMatrix<N>(A).multiply_assign(alpha);
+  inline PtMatrix<N> operator*(const T& alpha, const PtMatrix<N>& A){
+    return PtMatrix<N>(A) *= alpha;
   }
 
   template <int N>
-  inline PtMatrix<N> multiply(const bgf::AbelianBgf& bg, const PtMatrix<N>& A){
+  inline PtMatrix<N> operator*(const bgf::AbelianBgf& bg, const PtMatrix<N>& A){
 #ifdef HAVE_CXX0X
     PtMatrix<N> result(A);
     for (auto& e : result) { e = bg.ApplyFromLeft(e); }

@@ -631,7 +631,7 @@ int NsptFinalize(ptGluon_fld& Umu, int t){
 
 int main(int argc, char** argv){
 
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);  // Enable fpe
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);  // Enable fpe
 
   if( initialize(argc, argv) ){ exit(1); }
 

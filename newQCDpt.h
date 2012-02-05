@@ -117,7 +117,7 @@ public:
   ///  \date Wed Jan 11 18:41:26 2012
 
   template <class C> self_t& operator*=(const C &z) {
-    ptU_.multiply_assign(z);
+    ptU_ *= z;
     bgf_ *= z;
     return *this;
   };
@@ -132,7 +132,7 @@ public:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:42:49 2012
   template <class C> self_t& operator/=(const C &z) {
-    ptU_.divide_assign(z);
+    ptU_ /= z;
     bgf_ /= z;
     return *this;
   };
@@ -148,15 +148,35 @@ public:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:44:39 2012
   self_t& operator+=(const self_t &z) {
-    ptU_.add_assign(z.ptU_);
+    ptU_ += z.ptU_;
     bgf_ += z.bgf();
     return *this;
   };
   self_t& operator-=(const self_t &z) {
-    ptU_.sub_assign(z.ptU_);
+    ptU_ -= z.ptU_;
     bgf_ -= z.bgf();
     return *this;
   };
+  
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Addition-(Subtraction-)Assign for BGptSU3.
+  ///
+  ///  Here, we have to perform the operation order by order.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Sun Feb 5 2012
+
+  self_t& operator+=(const pt_matrix_t& q){
+    ptU_ += q;
+    return *this;
+  }
+  self_t& operator-=(const pt_matrix_t& q){
+    ptU_ -= q;
+    return *this;
+  }
+
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -173,10 +193,10 @@ public:
 
   self_t& operator*=(const self_t& A) {
     // U1*U2
-    pt_matrix_t tmp = ptt::multiply(ptU_, A.ptU_);
+    pt_matrix_t tmp = ptU_ * A.ptU_;
     // The V*U terms
-    tmp.add_assign(ptt::multiply(bgf_, A.ptU_));
-    tmp.add_assign(ptt::multiply(A.bgf_, ptU_));
+    tmp += bgf_ * A.ptU_;
+    tmp += A.bgf_ * ptU_;
     // V1*V2
     bgf_ *= A.bgf_;
     // keep in mind we assign-multiply here
@@ -331,9 +351,9 @@ inline BGptSU3<B, ORD> exp(const ptt::PtMatrix<ORD>& q){
   // result = 1 + q 
   ptt::PtMatrix<ORD> tmp(q);
   for ( int i = 2; i < ORD; ++i){
-    tmp = ptt::multiply(tmp, q);
-    tmp.divide_assign((double)i);
-    result.ptU().add_assign(tmp);
+    tmp *= q;
+    tmp /= i;
+    result.ptU() += tmp;
   }
   return result;
 }
@@ -355,8 +375,8 @@ inline ptt::PtMatrix<ORD> log(const BGptSU3<B, ORD>& U){
   double sign = 1.;
   for (int i = 2; i <= ORD; ++i){
     sign *= -1;
-    tmp = ptt::multiply(tmp, U.ptU());
-    result.add_assign( ptt::multiply(tmp, sign/i) ); 
+    tmp *= U.ptU();
+    result += tmp*(sign/i); 
     // FIXME stretch_assign would be good here!
   }
   return result;
@@ -382,21 +402,13 @@ public:
 
   template <class C>
   self_t& operator*=(const C& other){
-#ifdef HAVE_CXX0X
-    for (auto& e : U_) { e *= other; }
-#else
-    for (iterator i = begin(); i != end(); ++i) *i *= other;
-#endif
+    std::for_each(begin(), end(), pta::mul(other));
     return *this;
   }
 
   template <class C>
   self_t& operator/=(const C& other){
- #ifdef HAVE_CXX0X
-    for (auto& e : U_) { e /= other; }
-#else
-    for (iterator i = begin(); i != end(); ++i) *i /= other;
-#endif
+    std::for_each(begin(), end(), pta::div(other));
      return *this;
   }
 
@@ -433,17 +445,14 @@ public:
 
   /// Arithmetic
   self_t& operator+=(const self_t& other){
-    const_iterator j = other.begin();
-    for (iterator i = begin(); 
-         i != end(); ++i, ++j) *i += *j;
+    std::for_each(begin(), end(), pta::incr(other));
     return *this;
   }
   self_t& operator-=(const self_t& other){
-    const_iterator j = other.begin();
-    for (iterator i = begin(); 
-         i != end(); ++i, ++j) *i += *j;
+    std::for_each(begin(), end(), pta::decr(other));
     return *this;
   }
+
   self_t operator+(const self_t& other) const{
     self_t result(*this);
     return result += other;
@@ -454,22 +463,12 @@ public:
   }
   template <class C>
   self_t& operator*=(const C& alpha) {
-#ifdef HAVE_CXX0X
-    for (auto& e : v_) { e *= alpha; }
-#else
-    for(iterator i = begin(); i != end(); ++i)
-      *i *= alpha;
-#endif
+    std::for_each(begin(), end(), pta::mul(alpha));
     return *this;
   }
   template <class C>
   self_t& operator/=(const C& alpha) {
-#ifdef HAVE_CXX0X
-    for (auto& e : v_) { e /= alpha; }
-#else
-    for(iterator i = begin(); i != end(); ++i)
-      *i /= alpha;
-#endif
+    std::for_each(begin(), end(), pta::div(alpha));
     return *this;
   }
   template <class C>
@@ -529,13 +528,11 @@ public:
 
   // arithmetic with self
   self_t& operator+=(const self_t& other){
-    const_iterator j = other.begin();
-    for (iterator i = begin(); i != end(); ++i, ++j) *i += *j;
+    std::for_each(begin(), end(), pta::incr(other));
     return *this;
   }
   self_t& operator-=(const self_t& other){
-    const_iterator j = other.begin();
-    for (iterator i = begin(); i != end(); ++i, ++j) *i -= *j;
+    std::for_each(begin(), end(), pta::decr(other));
     return *this;
   }
   self_t operator+(const self_t& other) const{
@@ -547,16 +544,14 @@ public:
     return result -= other;
   }
   // scalar arithmetic
-    template <class C>
+  template <class C>
   self_t& operator*=(const C& alpha) {
-    for(iterator i = begin(); i != end(); ++i)
-      *i *= alpha;
+    std::for_each(begin(), end(), pta::mul(alpha));
     return *this;
   }
   template <class C>
   self_t& operator/=(const C& alpha) {
-    for(iterator i = begin(); i != end(); ++i)
-      *i /= alpha;
+    std::for_each(begin(), end(), pta::div(alpha));
     return *this;
   }
   template <class C>

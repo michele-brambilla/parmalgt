@@ -107,16 +107,20 @@ void gauge_wilson(ptGluon_fld& Umu){
       W1 = act_pars.c0*W1 + act_pars.c1*W2;
 #endif
       // Costringo nell'algebra
-      W1 = W1.reH();					
-      W1 *= act_pars.tau_g;
+      //W1 = W1.reH();					
+      //W1 *= act_pars.tau_g;
       
       // Aggiungo fluttuazione al primo ordine
-      W1[0] -= act_pars.stau*SU3rand(Rand[0]);
-      U[link_c] = exp(W1)*U[link_c];	
+      //W1[0] -= act_pars.stau*SU3rand(Rand[0]);
+      //U[link_c] = exp(W1)*U[link_c];	
       
       // Contributo del momento nullo
-      MM[mu] += log(U[link_c]);		
+      //MM[mu] += log(U[link_c]);		
       
+      ptsu3 tmp = W1.reH() * act_pars.tau_g;
+      tmp[0]  -= act_pars.stau*SU3rand(Rand[0]);
+      U[link_c] = exp<bgf::AbelianBgf>(W1)*U[link_c];
+      MM[mu] += log(U[link_c])
       
     } //end mu
     
@@ -219,10 +223,10 @@ void gauge_wilson(ptGluon_fld& Umu){
 	      //MMm[tid][mu] += log(U[link_c]);		
               
               ptsu3 tmp  = Ww1[tid].reH(); // take to the algebra
-              tmp.multiply_assign(act_pars.tau_g);
+              tmp *= act_pars.tau_g;
               tmp[0] -= act_pars.stau*SU3rand(Rand[tid]); // add noize
               U[link_c] = exp<bgf::AbelianBgf, ORD>(tmp)*U[link_c];
-              // TODO MMm[tid][mu] += log(U[link_c]);
+              MMm[tid][mu] += log(U[link_c]);
 	    } //end mu
 	    
 #if ntz > 1
@@ -451,7 +455,7 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 	      // Step evoluzione
 	      Ww[tid] = Ww[tid]*dag(Umu.W[site_c][mu]);
 	      //Ww[tid].reH();
-	      Umu.W[site_c][mu]= exp<bgf::AbelianBgf,ORD>(ptt::multiply(Ww[tid].reH(), act_pars.tau_f))
+	      Umu.W[site_c][mu]= exp<bgf::AbelianBgf,ORD>(Ww[tid].reH() * act_pars.tau_f)
                 *Umu.W[site_c][mu];
 	    } // mu
 	    
@@ -527,6 +531,10 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
 	      //Ww[tid] -= MM[mu];
 	      //Ww[tid].reH();
 	      //Umu.W[curr][mu]  = exp(Ww[tid]);
+              //Ww[tid].ptU() = log(Umu.W[curr][mu]);
+              //Ww[tid] -= MM[mu];
+              //Ww[tid].ptU() = Ww[tid].reH();
+              //Umu.W[curr][mu] = exp<bgf::AbelianBgf, ORD>(Ww[tid].ptU());
 	    } // mu
 
 	  } // y3
@@ -619,8 +627,8 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	    Ww[tid].Trless();
 	    
 	    // Preparo le trasformazioni di gauge
-	    //Ww1[tid] = exp( Ww[tid] * act_pars.alpha);
-	    //Ww2[tid] = exp(Ww[tid] * -act_pars.alpha);
+	    Ww1[tid] = exp<bgf::AbelianBgf, ORD>( Ww[tid].ptU() * act_pars.alpha);
+	    Ww2[tid] = exp<bgf::AbelianBgf, ORD>( Ww[tid].ptU() * -act_pars.alpha);
             // DH Feb. 1, 2012
             // TODO: Another dirty hack
             // Here, we stumble again on the troube with exp and
@@ -840,10 +848,10 @@ void NsptEvolve(ptGluon_fld& Umu){
 #endif
 
 #ifndef __FA_GAUGE_FIXING__
-    //stochastic_gauge_fixing(Umu);
+    stochastic_gauge_fixing(Umu);
 #else
     // Fourier acceleration
-    //FAstochastic_gauge_fixing(Umu);
+    FAstochastic_gauge_fixing(Umu);
 #endif
 
 #ifdef __TIMING__
@@ -916,10 +924,10 @@ void NsptEvolve(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 #endif
 
 #ifndef __FA_GAUGE_FIXING__
-    //stochastic_gauge_fixing(Umu);
+    stochastic_gauge_fixing(Umu);
 #else
     // Fourier acceleration
-    //FAstochastic_gauge_fixing(Umu);
+    FAstochastic_gauge_fixing(Umu);
 #endif
 
 #ifdef __TIMING__
