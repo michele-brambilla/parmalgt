@@ -287,9 +287,10 @@ public:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri Feb  3 16:40:29 2012
-  pt_matrix_t reH(){
-    bgf_.reH();
-    IsZero<do_debug, B>::check(bgf_);
+  pt_matrix_t reH() const {
+    B bg(bgf_);
+    bg.reH();
+    IsZero<do_debug, B>::check(bg);
     pt_matrix_t U(ptU_);
     Cplx tr;
     for(int i = 0; i < PTORD; i++){

@@ -2,7 +2,7 @@
 /* E' l'unico altroparametro da settare */
 
 #define dim 4
-#define allocORD 6
+#define allocORD 12
 extern int PTORD;
 
 

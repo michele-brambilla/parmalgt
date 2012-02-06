@@ -35,3 +35,6 @@ testing/config.h.in
 *.pdf
 makefile.local
 config.h
+result/*
+*.nor
+*.trU

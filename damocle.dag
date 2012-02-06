@@ -1,4 +1,4 @@
-SWEEP		1000 
+SWEEP		10000 
 BEAT		100
 tau_g		0.030
 alpha		-0.05
