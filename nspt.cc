@@ -56,15 +56,38 @@ extern FILE *FPkn;
 extern PRlgtTime Time;
 #endif
 
-
-
 void gauge_wilson(ptGluon_fld& Umu){
 
 #ifndef __PARALLEL_OMP__
 
   for(curr = 0; curr < act_pars.iVol; curr++){
+
+#ifdef SFBC
+      int t = curr % act_pars.sz[3]; 
+#endif
     
     for(int mu = 0; mu < dim; mu++){
+
+      // DH, Feb. 6, 2012
+      // FIXME: THIS IS JUST A ROUGH HACK!
+      // 
+      // The boundary conditions in the LNWW paper (hep-lat/9207009)
+      // are:
+      //       U_k(x) = V_k(\vec x),    @ x_0 = 0
+      //       U_k(x) = V'_k('vec x),   @ x_0 = T
+      //
+      // This means, that we can use the following hack to get us some
+      // nice SF boundary conditions. We simply assume that
+      // act_pars.sz[3] == (T+1) instead of T. Thus, we may
+      // 1) We initialize U to V(t), getting the above automatically
+      //    right
+      // 2) in the update for U_mu(x, t):
+      //        if we have t == T or (t == 0 and mu != 0)  
+      //          ==> DO NOTHING!
+#ifdef SFBC
+      if ( (!t && mu) || (t == act_pars.sz[3] - 1) ) continue;
+#endif
+
       // Preparo il link corrente
       link_c = get(&Umu, curr, mu);
       
@@ -171,9 +194,19 @@ void gauge_wilson(ptGluon_fld& Umu){
 	  for(int y3 = thr_pars[tid].xi[3]; y3 < thr_pars[tid].xf[3]; y3++){
 
 	    curr = y3 + act_pars.sz[3]*(y2 + act_pars.sz[2]*(y1 + act_pars.sz[1]*y0) );
-
-
+                                    
 	    for(int mu = 0; mu < dim; mu++){
+              // DH, Feb. 6, 2012, c.f. comment above
+
+              // SCHRÖDINGER FUNCTIONAL BOUNDARY CONDITIONS
+              // PROCEED WITH CARE!!!
+
+              // READ THE COMMENT IN THE SINGLE THREADED VERSION ABOVE!
+#ifdef SFBC
+              // y3 == t!
+              if ( (!y3 && mu) || (y3 == act_pars.sz[3] - 1) ) continue;
+              // no seriously, read the comment!!
+#endif
 	      // Preparo il link corrente
 	      link_c = get(&Umu, curr, mu);
       
@@ -639,11 +672,15 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	    // Preparo le trasformazioni di gauge
 	    Ww1[tid] = exp<bgf::AbelianBgf, ORD>( Ww[tid].reH() * act_pars.alpha);
 	    Ww2[tid] = exp<bgf::AbelianBgf, ORD>( Ww[tid].reH() * -act_pars.alpha);
-            // BEWARE that the above may throw an excpetion if exp
+            // BEWARE that the above may throw an excpetion if reH
             // does not know what to do!
 
 	    // Moltiplico sul link corrente a sx e sul precedente a dx
 	    for(int mu = 0; mu < dim; mu++){
+#ifdef SFBC // EXPERIMENTAL SF BOUNDARY STUFF
+              // y3 == t!
+              if ( (!y3 && mu) || (y3 == act_pars.sz[3] - 1) ) continue;
+#endif
 	      Umu.W[site_c][mu] = Ww1[tid]*Umu.W[site_c][mu];
 	      Umu.W[Umu.Z->L[curr][mu]][mu] = Umu.W[Umu.Z->L[curr][mu]][mu]*Ww2[tid];
 	    }

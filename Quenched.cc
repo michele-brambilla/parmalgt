@@ -470,12 +470,14 @@ int QuenchedAllocate(ptGluon_fld& Umu){
         // FIXME: We are brave again and assume
         // Lx == Ly == Lz == L
         // in lattice.h, we have
-        // GETINDEX(x, y, z, t) = x * L^3 + y * L^2 + z * L + t
+        //
+        // GETINDEX(x, y, z, t) = x * L^3 + y * L^2 + z * sizeT + t
+        // sizeT = Sz[3];
         // hence, we can get the time coordinate through
         // t = i % L
         // now, initialize the bg field ...
         /*/ // Abelian DOES NOT WORK, YET
-        int t = i % act_pars.sz[1];
+        int t = i % act_pars.sz[3];
         Umu.W[i][mu].bgf() = bgf::get_abelian_bgf(t, mu);
         /*/ // Trivial
         Umu.W[i][mu].bgf() = bgf::unit<bgf::AbelianBgf>();

@@ -156,11 +156,11 @@ namespace ptt {
 
   template <int N>
   inline PtMatrix<N> operator*(const PtMatrix<N>& A, const PtMatrix<N>& B){
-     PtMatrix<N> result;
-     for (int i = 0; i < N - 1; ++i)
-       for (int j = 0; j <= i; ++j)
-         result[i + 1] += A[j] * B[i - j];
-     return result;
+    PtMatrix<N> result;
+    for (int i = 0; i < N - 1; ++i)
+      for (int j = 0; j <= i; ++j)
+        result[i + 1] += A[j] * B[i - j];
+    return result;
   }
   
   template <int N, typename T> 
