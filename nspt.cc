@@ -679,7 +679,10 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	    for(int mu = 0; mu < dim; mu++){
 #ifdef SFBC // EXPERIMENTAL SF BOUNDARY STUFF
               // y3 == t!
-              if ( (!y3 && mu) || (y3 == act_pars.sz[3] - 1) ) continue;
+              // this way we're doing something wrong!
+              //if ( (!y3 && mu) || (y3 == act_pars.sz[3] - 1) ) continue;
+              // it works like this...
+              if ( !y3 || (y3 == act_pars.sz[3] - 1) ) continue;
 #endif
 	      Umu.W[site_c][mu] = Ww1[tid]*Umu.W[site_c][mu];
 	      Umu.W[Umu.Z->L[curr][mu]][mu] = Umu.W[Umu.Z->L[curr][mu]][mu]*Ww2[tid];
