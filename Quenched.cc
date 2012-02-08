@@ -629,8 +629,6 @@ int NsptFinalize(ptGluon_fld& Umu, int t){
   return 0;
 }
 
-
-
 int main(int argc, char** argv){
 
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);  // Enable fpe
@@ -706,11 +704,12 @@ int main(int argc, char** argv){
     t1 += nspt_pars.Beat;
 
     NsptEvolve(Umu);
-    
+
     // Legge i nuovi parametri da damocle
     if( AggiornaParametri(Umu) ){
       return 0;
     }
+
   }
 
   NsptFinalize(Umu, t1);

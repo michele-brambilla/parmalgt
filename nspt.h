@@ -1,5 +1,6 @@
 #include "input.h"
 #include "MyTime.h"
+#include <fstream>
 
 void gauge_wilson(ptGluon_fld&);
 

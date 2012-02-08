@@ -478,7 +478,14 @@ public:
   const_iterator begin(void) const {return whr;}
   iterator end(void) {return whr + 9;}
   const_iterator end(void) const {return whr + 9;}
-  
+  // DH added on Feb. 7, 2012
+  // Norm
+  double Norm(void) const {
+    double norm = 0;
+    for (int i = 0; i < 9; ++i)
+      norm += whr[i].re*whr[i].re + whr[i].im*whr[i].im;
+    return sqrt(norm);
+  }
 
   SU3 (){};
 

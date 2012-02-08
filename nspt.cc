@@ -648,9 +648,16 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	  for(int y3 = thr_pars[tid].xi[3]; y3 < thr_pars[tid].xf[3]; y3++){
 
 	    curr = y3 + act_pars.sz[3]*(y2 + act_pars.sz[2]*(y1 + act_pars.sz[1]*y0) );
-	    
+
 	    site_c = Umu.Z->L[curr][dim];
-	    
+	    // DH, Feb. 7 2012
+#ifdef SFBC // EXPERIMENTAL SF BOUNDARY STUFF
+            // if we proceed this way, we omit the gauge fixing for q_0(x)_{x_0  = 0}
+            // alltogether, c.f. the note below.
+            // However, this seems to work
+            if ( !y3 || (y3 == act_pars.sz[3] - 1) ) continue;
+#endif
+    
 	    // calcolo il DmuUmu e lo metto nell'algebra
 	    Ww[tid].zero();
 	    for(int mu = 0; mu < dim; mu++){
@@ -681,8 +688,7 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
               // y3 == t!
               // this way we're doing something wrong!
               //if ( (!y3 && mu) || (y3 == act_pars.sz[3] - 1) ) continue;
-              // it works like this...
-              if ( !y3 || (y3 == act_pars.sz[3] - 1) ) continue;
+
 #endif
 	      Umu.W[site_c][mu] = Ww1[tid]*Umu.W[site_c][mu];
 	      Umu.W[Umu.Z->L[curr][mu]][mu] = Umu.W[Umu.Z->L[curr][mu]][mu]*Ww2[tid];
@@ -834,9 +840,36 @@ void FAstochastic_gauge_fixing(ptGluon_fld& Umu){
 }
 
 
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///
+///  u0_print
+///
+///  Write the norm of the temporal component of U at the t = 0
+///  boundary to a file. This is used to check if the naive gauge
+///  fixing does something funny to this particular component.
+///
+///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+///  \date Wed Feb  8 15:01:36 2012
 
-
-
+inline void u0_print(ptGluon_fld &Umu) {
+  std::ofstream of("q0.nor", std::ios_base::app);
+  std::vector<double> nor(ORD);
+  for(int x = 0; x < act_pars.sz[0]; ++x)
+    for(int y = 0; y < act_pars.sz[1]; ++y)
+      for(int z = 0; z < act_pars.sz[2]; ++z){
+        int curr = act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
+        //long site_c = Umu.Z->L[curr][dim];
+        long link_c = get(&Umu, curr, 0);
+        for (int i = 0; i < ORD; ++i)
+          nor[i] += U[link_c][i].Norm();
+      }
+  for (int i = 0; i < ORD; ++i)
+    of << nor[i]/act_pars.sz[0]/act_pars.sz[0]/act_pars.sz[0] << " ";
+  of << std::endl;
+  of.flush();
+  of.close();
+}
 
 // Beat step di evoluzione quenched
 void NsptEvolve(ptGluon_fld& Umu){
@@ -901,13 +934,14 @@ void NsptEvolve(ptGluon_fld& Umu){
     Time.toc_gf();
     Time.reduce();
 #endif
-
+    // DH Feb. 7, 2012
+    // print the norm of U_0 at the t=0 boundary
+    //u0_print(Umu);
   }
 
 #ifdef __TIMING__
   Time.out();
 #endif
-
 }
 
 
