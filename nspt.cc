@@ -871,6 +871,33 @@ inline void u0_print(ptGluon_fld &Umu) {
   of.close();
 }
 
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///
+///  check_bgf
+///
+///  Diagnostics. This function checks if the Background field is
+///  modified and throws an exception if so. If you use it, make sure
+///  to firt check that do_debug is set to true in newQCDpt.h and try
+///  to modify the field, checking if the simulation will indeed
+///  terminate.
+///
+///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+///  \date Wed Feb  8 15:57:12 2012
+
+inline void check_bgf(ptGluon_fld &Umu) {
+  for(int i = 0; i < act_pars.iVol; i++){
+    int t = i % act_pars.sz[3];
+    for(int mu = 0; mu < dim; mu++)
+      IsZero<do_debug, bgf::AbelianBgf>::check(
+       Umu.W[i][mu].bgf() - bgf::get_abelian_bgf(t, mu));
+  }
+  // SAFETY CHECK:
+  // If you uncomment this, an exception should be thrown.
+  // Umu.W[10][1].bgf() *= 0.1;
+}
+
+
 // Beat step di evoluzione quenched
 void NsptEvolve(ptGluon_fld& Umu){
 
@@ -935,8 +962,13 @@ void NsptEvolve(ptGluon_fld& Umu){
     Time.reduce();
 #endif
     // DH Feb. 7, 2012
+#undef DO_EXTRA_PARANOID_DEBUG
+#ifdef DO_EXTRA_PARANOID_DEBUG
     // print the norm of U_0 at the t=0 boundary
-    //u0_print(Umu);
+    u0_print(Umu);
+    // check if the Peter Weisz Background does not get modified.
+    check_bgf(Umu);
+#endif
   }
 
 #ifdef __TIMING__

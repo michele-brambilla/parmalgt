@@ -476,7 +476,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
         // hence, we can get the time coordinate through
         // t = i % L
         // now, initialize the bg field ...
-        /*/ // Abelian DOES NOT WORK, YET
+        //*/ // Abelian DOES NOT WORK, YET
         int t = i % act_pars.sz[3];
         Umu.W[i][mu].bgf() = bgf::get_abelian_bgf(t, mu);
         /*/ // Trivial

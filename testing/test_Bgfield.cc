@@ -92,8 +92,8 @@ TEST_F(TrivialBgfTest, ApplyFromLeft){
 }
 
 TEST(AbelianBgf, KnownValues){
-  //  This tests the constructor
-  //     bgf::AbelianBgf::AbelianBgf(int t),
+  //  This tests the class
+  //     bgf::AbelianBgfFactory
   //  using the formula
   //    V(x0) = V(x0 = 0)* exp{ i a E x0 }
   std::srand(123); 
