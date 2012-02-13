@@ -365,7 +365,7 @@ namespace bgf {
     ///  \date Tue Sep 27 10:46:16 2011
     AbelianBgfFactory(const int &T, const int& L,
                       const double& eta = 0.0, const double& nu = 0.0) 
-      : Vt_(T){
+      : Vt_(T+1){
       if (T < 0)
         throw std::exception();
       double pi = std::atan(1.)*4.;
@@ -374,7 +374,7 @@ namespace bgf {
       double iC[3] = {-( eta - pi/3) / L,
 		      -eta * (-0.5 + nu)  / L,
 		      -( eta * (0.5 + nu) + pi/3.) / L};
-      for (int t = 0; t < T; ++t)
+      for (int t = 0; t <= T; ++t)
 	for (int k = 0; k < 3; ++k)
 	  Vt_[t][k] = exp(Cplx(0,eps[k] * t - iC[k]));
     };
@@ -392,7 +392,7 @@ namespace bgf {
                                     const double& nu = 0.0){
     static AbelianBgfFactory factory(T, L, eta, nu);
     static three_vec_t one = {1,1,1};
-    if (mu)
+    if (!mu)
       return AbelianBgf(one);
     else
       return AbelianBgf(factory.get(t));

@@ -454,7 +454,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
   // initialize the background field factory
   // FIXME: We are brave here and assume 
   // Lx == Ly == Lz == L
-  bgf::get_abelian_bgf(0, 0, act_pars.sz[2], act_pars.sz[3]);
+  bgf::get_abelian_bgf(0, 0, act_pars.sz[3] - 1, act_pars.sz[2]);
 
   // Genera il campo gluone freddo o da configurazione
   // secondo il flag nspt_pars.Init. Se legge da configurazione

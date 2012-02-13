@@ -19,7 +19,7 @@ extern int PTORD;
 #define GAUGE_ACTION WIL //Alternatives: WIL, TLSYM, IWA, DBW2
 
 #ifdef __PARALLEL_OMP__
-#define ntt  2
+#define ntt  1
 #define ntx  1
 #define nty  1
 #define ntz  1

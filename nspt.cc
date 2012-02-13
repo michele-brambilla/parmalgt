@@ -684,12 +684,6 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 
 	    // Moltiplico sul link corrente a sx e sul precedente a dx
 	    for(int mu = 0; mu < dim; mu++){
-#ifdef SFBC // EXPERIMENTAL SF BOUNDARY STUFF
-              // y3 == t!
-              // this way we're doing something wrong!
-              //if ( (!y3 && mu) || (y3 == act_pars.sz[3] - 1) ) continue;
-
-#endif
 	      Umu.W[site_c][mu] = Ww1[tid]*Umu.W[site_c][mu];
 	      Umu.W[Umu.Z->L[curr][mu]][mu] = Umu.W[Umu.Z->L[curr][mu]][mu]*Ww2[tid];
 	    }
@@ -859,7 +853,6 @@ inline void u0_print(ptGluon_fld &Umu) {
     for(int y = 0; y < act_pars.sz[1]; ++y)
       for(int z = 0; z < act_pars.sz[2]; ++z){
         int curr = act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
-        //long site_c = Umu.Z->L[curr][dim];
         long link_c = get(&Umu, curr, 0);
         for (int i = 0; i < ORD; ++i)
           nor[i] += U[link_c][i].Norm();
@@ -868,6 +861,67 @@ inline void u0_print(ptGluon_fld &Umu) {
     of << nor[i]/act_pars.sz[0]/act_pars.sz[0]/act_pars.sz[0] << " ";
   of << std::endl;
   of.flush();
+  of.close();
+}
+
+inline void E_meas(ptGluon_fld &Umu) {
+  std::ofstream of("E.nor", std::ios_base::app);
+  std::vector<double> nor(ORD*2*3);
+  SU3 C;
+  C(0,0) = Cplx(0, 1./act_pars.sz[0]);
+  C(1,1) = Cplx(0, -.5/act_pars.sz[0]);
+  C(2,2) = Cplx(0, -.5/act_pars.sz[0]);
+  for( int x = 0; x < act_pars.sz[0]; ++x)
+    for (int y = 0; y < act_pars.sz[1]; ++y)
+      for (int z = 0; z < act_pars.sz[2]; ++z){
+        int n = act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
+        for (int k = 1; k < 4; ++k){
+          //   U(n, 0) * U(n + \hat 0, k)
+          // * U^\dagger(n + \hat k, 0) * U^\dagger(n, k)
+          ptSU3 tmp = 
+            Umu.W[Umu.Z->get(n, 1, k)][0]*
+            dag(Umu.W[Umu.Z->L[n][4]][0]*
+                Umu.W[Umu.Z->get(n, 1, 0)][k])
+            *Umu.W[Umu.Z->L[n][4]][k];
+          for_each(tmp.begin(), tmp.end(), pta::mul(C));
+          //Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
+          //nor[0] += tree.re;
+          //nor[1] += tree.im;
+          for (int r = 0; r < ORD*2; r += 2){
+            for (int i = 0; i < 3; ++i){
+              nor[r*3+i] += tmp[r/2](i,i).re;
+              nor[r*3+i+1] += tmp[r/2](i,i).im;
+            //Cplx c = tmp[r/2].Tr();
+            //nor[r+3] += c.im;
+              // nor[r+2] += c.re;
+            }}
+          n = (act_pars.sz[3] - 1) + 
+            act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
+          tmp = 
+            dag(Umu.W[Umu.Z->get(n, -1, 0)][k]*
+                Umu.W[Umu.Z->get(n, 1, k, -1, 0)][0])*
+            Umu.W[Umu.Z->get(n, -1, 0)][0]
+            *Umu.W[Umu.Z->L[n][4]][k];
+          tmp *= -1;
+          for_each(tmp.begin(), tmp.end(), pta::mul(C));
+          //tree = tmp.bgf().ApplyFromLeft(C).Tr();
+          //nor[0] += tree.re;
+          //nor[1] += tree.im;
+          //for (int r = 0; r < ORD*2; r += 2){
+          //  Cplx c = tmp[r/2].Tr();
+          //  nor[r+3] += c.im;
+          //  nor[r+2] += c.re;
+          //}
+          //for (int r = 0; r < ORD*2; r += 2)
+          //  for (int i = 0; i < 3; ++i){
+          //    nor[r*3+i] += tmp[r/2](i,i).re;
+          //    nor[r*3+i+1] += tmp[r/2](i,i).im;
+          //  }
+        }
+      }
+  for (int i = 0; i < ORD*2*3; ++i)
+    of << nor[i]/act_pars.sz[0]/act_pars.sz[0]/act_pars.sz[0] << " ";
+  of << std::endl;
   of.close();
 }
 
@@ -969,6 +1023,7 @@ void NsptEvolve(ptGluon_fld& Umu){
     // check if the Peter Weisz Background does not get modified.
     check_bgf(Umu);
 #endif
+    E_meas(Umu);    
   }
 
 #ifdef __TIMING__
