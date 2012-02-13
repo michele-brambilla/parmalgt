@@ -866,7 +866,7 @@ inline void u0_print(ptGluon_fld &Umu) {
 
 inline void E_meas(ptGluon_fld &Umu) {
   std::ofstream of("E.nor", std::ios_base::app);
-  std::vector<double> nor(ORD*2*3);
+  std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
   C(0,0) = Cplx(0, 1./act_pars.sz[0]);
   C(1,1) = Cplx(0, -.5/act_pars.sz[0]);
@@ -879,22 +879,25 @@ inline void E_meas(ptGluon_fld &Umu) {
           //   U(n, 0) * U(n + \hat 0, k)
           // * U^\dagger(n + \hat k, 0) * U^\dagger(n, k)
           ptSU3 tmp = 
-            Umu.W[Umu.Z->get(n, 1, k)][0]*
-            dag(Umu.W[Umu.Z->L[n][4]][0]*
-                Umu.W[Umu.Z->get(n, 1, 0)][k])
-            *Umu.W[Umu.Z->L[n][4]][k];
+            //Umu.W[Umu.Z->get(n, 1, k)][0]*
+            //dag(Umu.W[Umu.Z->L[n][4]][0]*
+            //    Umu.W[Umu.Z->get(n, 1, 0)][k])
+            //*Umu.W[Umu.Z->L[n][4]][k];
+            Umu.W[Umu.Z->L[n][4]][k]*dag(Umu.W[Umu.Z->get(n, 1, 0)][k]);
+          //std::cout << Umu.W[Umu.Z->L[n][4]][k].bgf() << std::endl;
           for_each(tmp.begin(), tmp.end(), pta::mul(C));
-          //Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
-          //nor[0] += tree.re;
-          //nor[1] += tree.im;
+          Cplx tree = tmp.bgf().ApplyFromRight(C).Tr();
+          nor[0] += tree.re;
+          nor[1] += tree.im;
           for (int r = 0; r < ORD*2; r += 2){
             for (int i = 0; i < 3; ++i){
-              nor[r*3+i] += tmp[r/2](i,i).re;
-              nor[r*3+i+1] += tmp[r/2](i,i).im;
+              nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+              nor[r*3+2*i+3] += tmp[r/2](i,i).im;
+            }
             //Cplx c = tmp[r/2].Tr();
-            //nor[r+3] += c.im;
-              // nor[r+2] += c.re;
-            }}
+              //nor[r+1] += c.im;
+              //nor[r] += c.re;
+          }
           n = (act_pars.sz[3] - 1) + 
             act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
           tmp = 
@@ -919,8 +922,8 @@ inline void E_meas(ptGluon_fld &Umu) {
           //  }
         }
       }
-  for (int i = 0; i < ORD*2*3; ++i)
-    of << nor[i]/act_pars.sz[0]/act_pars.sz[0]/act_pars.sz[0] << " ";
+  for (int i = 0; i < ORD*2*3 + 2; ++i)
+    of << nor[i] << " ";
   of << std::endl;
   of.close();
 }
@@ -944,7 +947,7 @@ inline void check_bgf(ptGluon_fld &Umu) {
     int t = i % act_pars.sz[3];
     for(int mu = 0; mu < dim; mu++)
       IsZero<do_debug, bgf::AbelianBgf>::check(
-       Umu.W[i][mu].bgf() - bgf::get_abelian_bgf(t, mu));
+       Umu.W[Umu.Z->L[i][4]][mu].bgf() - bgf::get_abelian_bgf(t, mu));
   }
   // SAFETY CHECK:
   // If you uncomment this, an exception should be thrown.
@@ -1016,7 +1019,7 @@ void NsptEvolve(ptGluon_fld& Umu){
     Time.reduce();
 #endif
     // DH Feb. 7, 2012
-#undef DO_EXTRA_PARANOID_DEBUG
+#define DO_EXTRA_PARANOID_DEBUG
 #ifdef DO_EXTRA_PARANOID_DEBUG
     // print the norm of U_0 at the t=0 boundary
     u0_print(Umu);
