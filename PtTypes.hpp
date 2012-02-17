@@ -9,6 +9,13 @@
 
 namespace ptt {
 
+  struct True {};
+  struct False {};
+  template <typename T> struct ScalarMultiplyable { typedef False type; };
+  template <> struct ScalarMultiplyable<int> { typedef True type; };
+  template <> struct ScalarMultiplyable<double> { typedef True type; };
+  template <> struct ScalarMultiplyable<Cplx> { typedef True type; };
+
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -90,8 +97,7 @@ namespace ptt {
     }
   
     template <typename T> self_t& operator*=(const T& other) {
-      std::for_each(begin(), end(), pta::mul(other));
-      return *this;
+      return mul_assign_impl(other, typename ScalarMultiplyable<T>::type());
     }
 
     self_t& operator*=(const self_t& other) {
@@ -100,14 +106,34 @@ namespace ptt {
     }
 
     template <typename T> self_t& operator/=(const T& other) {
-      std::for_each(begin(), end(), pta::div(other));
+      return div_assign_impl(other, typename ScalarMultiplyable<T>::type());
+    }
+
+    self_t& reH() {
+      Cplx tr;
+      for(int i = 0; i < N; i++){
+        array_[i] -= dag(array_[i]);
+        array_[i] *= .5;
+        tr = array_[i].Tr()/3.;
+        array_[i][0] -= tr;
+        array_[i][4] -= tr;
+        array_[i][8] -= tr;
+      }
       return *this;
     }
 
   private:
     su3_array_t array_;
+    template <typename T> self_t& mul_assign_impl(const T& other, True){
+      std::for_each(begin(), end(), pta::mul(other));
+      return *this;
+    }
+    template <typename T> self_t& div_assign_impl(const T& other, True){
+      std::for_each(begin(), end(), pta::div(other));
+      return *this;
+    }
   };
-  
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 ///

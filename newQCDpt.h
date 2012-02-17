@@ -18,7 +18,7 @@ const bool do_debug = true;
 // is thrown by log if called with a field with a non-trivial lowest
 // order.
 
-class IsNotOneError : public std::exception { };
+class IsNotZeroError : public std::exception { };
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ template <class B> struct IsZero<true, B> {
   static const bool debug_on = true;
   static void check(const B& V) {
     static double eps = std::numeric_limits<double>::epsilon() * 10;
-    if ( V.Norm() > eps)  throw IsNotOneError();
+    if ( V.Norm() > eps)  throw IsNotZeroError();
   }
 };
 
@@ -61,6 +61,7 @@ template <class B> struct IsZero<true, B> {
 ///
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Tue Oct 11 16:23:38 2011
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -117,9 +118,7 @@ public:
   ///  \date Wed Jan 11 18:41:26 2012
 
   template <class C> self_t& operator*=(const C &z) {
-    ptU_ *= z;
-    bgf_ *= z;
-    return *this;
+    return mul_assign_impl(z, typename ptt::ScalarMultiplyable<C>::type());
   };
   
   //////////////////////////////////////////////////////////////////////
@@ -132,11 +131,8 @@ public:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:42:49 2012
   template <class C> self_t& operator/=(const C &z) {
-    ptU_ /= z;
-    bgf_ /= z;
-    return *this;
-  };
-
+    return div_assign_impl(z, typename ptt::ScalarMultiplyable<C>::type());
+  }
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -192,18 +188,11 @@ public:
   ///  \date Wed Jan 11 18:45:50 2012
 
   self_t& operator*=(const self_t& A) {
-    // U1*U2
-    pt_matrix_t tmp = ptU_ * A.ptU_;
-    // The V*U terms
-    tmp += bgf_ * A.ptU_;
-    tmp += A.bgf_ * ptU_;
-    // V1*V2
-    bgf_ *= A.bgf_;
-    // keep in mind we assign-multiply here
-    std::swap(tmp, ptU_);
+    self_t tmp(*this * A);
+    std::swap(ptU_, tmp.ptU_);
+    std::swap(bgf_, tmp.bgf_);
     return *this;
   }
-
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -221,34 +210,6 @@ public:
           ptU_[i](j, k) = Cplx(r.Rand(), r.Rand());
   };
 
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
-  ///  Mulitplication, Division, Addition, Subtraction.
-  ///
-  ///  To implement those, we reduce, reuse, recycle the
-  ///  assign-operators! Not that we don't have to care about whether
-  ///  or not we deal with a scalar, because the assign operators
-  ///  already take care of this.
-  ///
-  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
-  ///  \date Wed Jan 11 18:46:45 2012
-
-  template<class C> self_t operator*(const C& z) const {
-    self_t result(*this);
-    return result *= z;
-  };
-  template <class C> self_t operator/(const C& z) const{
-    return *this * (1./z);
-  };
-  template <class C> self_t operator+(const C& z) const{
-    self_t result(*this);
-    return result += z;
-  };
-  template <class C> self_t operator-(const C& z) const{
-    self_t result(*this);
-    return result -= z;
-  };
   void id(){
     std::fill(begin(),end(),SU3());
     bgf_.set_to_one();
@@ -259,14 +220,14 @@ public:
   }
   /// Trace
   void Tr(Cplx *tt) const {
-    for(int i = 0; i < PTORD; i++)
+    for(int i = 0; i < ORD; i++)
       tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
     tt[0] = bgf_.Tr();
   }
   /// Make traceless
   void Trless(){
     Cplx z;
-    for(int i = 0; i < PTORD; i++){
+    for(int i = 0; i < ORD; i++){
       z = D3*(ptU_[i][0] + ptU_[i][4] + ptU_[i][8]);
       ptU_[i][0] -= z;
       ptU_[i][4] -= z;
@@ -292,22 +253,79 @@ public:
     bg.reH();
     IsZero<do_debug, B>::check(bg);
     pt_matrix_t U(ptU_);
-    Cplx tr;
-    for(int i = 0; i < PTORD; i++){
-      U[i] -= dag(U[i]);
-      U[i] *= .5;
-      tr = U[i].Tr()/3.;
-      U[i][0] -= tr;
-      U[i][4] -= tr;
-      U[i][8] -= tr;
-    }
-    return U;
+    return U.reH();
   }
 
 private:
   B bgf_;
   pt_matrix_t ptU_;
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Implementations of *= and /= for scalar types
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Fri Feb 17 12:39:55 2012
+  
+  template <class C> self_t& div_assign_impl(const C &z, ptt::True) {
+    ptU_ /= z;
+    bgf_ /= z;
+    return *this;
+  }
+  template <class C> self_t& mul_assign_impl(const C& z, ptt::True){
+    ptU_ *= z;
+    bgf_ *= z;
+    return *this;
+  }
 };
+
+
+
+
+template <class B, int ORD>
+inline BGptSU3<B, ORD> 
+operator*(const BGptSU3<B, ORD>& U, const B& bg){
+  return BGptSU3<B, ORD> (U.bgf() * bg, U.ptU() * bg);
+}
+
+template <class B, int ORD>
+inline BGptSU3<B, ORD> 
+operator*(const B& bg, const BGptSU3<B, ORD>& U){
+  return BGptSU3<B, ORD> (bg * U.bgf(), bg * U.ptU());
+}
+
+template <class BG, int ORD>
+inline BGptSU3<BG, ORD> 
+operator*(const BGptSU3<BG, ORD>& A, const BGptSU3<BG, ORD>& B){
+  return BGptSU3<BG, ORD> (A.bgf() * B.bgf(),
+                          A.ptU() * B.bgf()
+                          + A.bgf() * B.ptU()
+                          + A.ptU() * B.ptU());
+}
+
+template <class C, class BG, int ORD>
+inline BGptSU3<BG, ORD> 
+operator*(const BGptSU3<BG, ORD>& A, const C& b){
+  return BGptSU3<BG, ORD> (A) *= b;
+}
+
+template <class C, class BG, int ORD>
+inline BGptSU3<BG, ORD> 
+operator*(const C& b, const BGptSU3<BG, ORD>& A ){
+  return BGptSU3<BG, ORD> (A) *= b;
+}
+
+template <class C, class BG, int ORD>
+inline BGptSU3<BG, ORD> 
+operator+(const C& b, const BGptSU3<BG, ORD>& A ){
+  return BGptSU3<BG, ORD> (A) += b;
+}
+
+template <class C, class BG, int ORD>
+inline BGptSU3<BG, ORD> 
+operator-(const C& b, const BGptSU3<BG, ORD>& A ){
+  return BGptSU3<BG, ORD> (A) -= b;
+}
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -364,7 +382,6 @@ inline BGptSU3<B, ORD> exp(const ptt::PtMatrix<ORD>& q){
 ///
 ///  Natural Logarithm  -- Using the Mercator series
 ///
-///  FIXME: THIS does not work
 ///
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Tue Jan 24 16:56:55 2012
@@ -377,6 +394,36 @@ inline ptt::PtMatrix<ORD> log(const BGptSU3<B, ORD>& U){
   for (int i = 2; i <= ORD; ++i){
     sign *= -1;
     tmp *= U.ptU();
+    result += tmp*(sign/i); 
+    // FIXME stretch_assign would be good here!
+  }
+  return result;
+};
+
+template <int ORD>
+inline ptt::PtMatrix<ORD> log(const ptt::PtMatrix<ORD>& U){
+  ptt::PtMatrix<ORD> result(U), tmp(U);
+  double sign = 1.;
+  for (int i = 2; i <= ORD; ++i){
+    sign *= -1;
+    tmp *= U;
+    result += tmp*(sign/i); 
+    // FIXME stretch_assign would be good here!
+  }
+  return result;
+};
+
+template <class B, int ORD>
+inline ptt::PtMatrix<ORD> get_q(const BGptSU3<B, ORD>& U){
+  ptt::PtMatrix<ORD> result;
+  B Vinv = U.bgf().inverse();
+  for (int i = 0; i < ORD; ++i)
+    result[i] = Vinv.ApplyFromRight(U[i]);
+  ptt::PtMatrix<ORD> tmp(result), Util(result);
+  double sign = 1.;
+  for (int i = 2; i <= ORD; ++i){
+    sign *= -1;
+    tmp *= Util;
     result += tmp*(sign/i); 
     // FIXME stretch_assign would be good here!
   }

@@ -155,7 +155,7 @@ void gauge_wilson(ptGluon_fld& Umu){
       ptsu3 tmp = W1.reH() * act_pars.tau_g; // take W1 to the algebra
       tmp[0]  -= act_pars.stau*SU3rand(Rand[0]); // add noize
       U[link_c] = exp<bgf::AbelianBgf>(W1)*U[link_c]; // back to the group
-      MM[mu] += log(U[link_c]); //
+      MM[mu] += get_q(U[link_c]); //
       
     } //end mu
     
@@ -204,7 +204,7 @@ void gauge_wilson(ptGluon_fld& Umu){
               // READ THE COMMENT IN THE SINGLE THREADED VERSION ABOVE!
 #ifdef SFBC
               // y3 == t!
-              if ( (!y3 && mu) || (y3 == act_pars.sz[3] - 1) ) continue;
+              if ( (!y3 && mu != 3) || (y3 == act_pars.sz[3] - 1) ) continue;
               // no seriously, read the comment!!
 #endif
 	      // Preparo il link corrente
@@ -254,9 +254,9 @@ void gauge_wilson(ptGluon_fld& Umu){
 
               ptsu3 tmp  = Ww1[tid].reH(); // take to the algebra
               tmp *= act_pars.tau_g; // multipy by tau_g
-              tmp[0] -= act_pars.stau*SU3rand(Rand[tid]); // add noize
+              tmp[0] -= act_pars.stau*SU3rand(Rand[tid]); // add noise
               U[link_c] = exp<bgf::AbelianBgf, ORD>(tmp)*U[link_c]; // back to SU3
-              MMm[tid][mu] += log(U[link_c]); // zero momentum contribution
+              MMm[tid][mu] += get_q(U[link_c]); // zero momentum contribution
 	    } //end mu
 	    
 #if ntz > 1
@@ -522,6 +522,7 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
     MM[i1] *= act_pars.rVol;
   }
   
+  
   // Campo nell'algebra e sottrazione dei momenti nulli
   // nota: non mi interessa l'ordine con cui lo faccio
 
@@ -529,7 +530,7 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
   for(int i = 0; i < act_pars.iVol; i++){
     for(int mu = 0; mu < dim; mu++){
       W.ptU() = log(Umu.W[i][mu]);
-      W -= MM[mu];
+      W -= get_q(MM[mu]);
       W.ptU() = W.reH();
       W.bgf().reH();
       Umu.W[i][mu]  = exp<bgf::AbelianBgf,ORD>(W.ptU());
@@ -548,6 +549,14 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
 
 	    curr = y3 + act_pars.sz[3]*(y2 + act_pars.sz[2]*(y1 + act_pars.sz[1]*y0) );
 
+
+#ifdef SFBC // EXPERIMENTAL SF BOUNDARY STUFF
+            // if we proceed this way, we omit the gauge fixing for q_0(x)_{x_0  = 0}
+            // alltogether, c.f. the note below.
+            // However, this seems to work
+            if ( !y3 || (y3 == act_pars.sz[3] - 1) ) continue;
+#endif
+
 	    for(int mu = 0; mu < dim; mu++){
               // DH Feb. 1, 2012
               // TODO: This is more a dirty hack than anything else.
@@ -562,11 +571,16 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
 	      //Umu.W[curr][mu]  = exp(Ww[tid]);
 
 
-              Ww[tid].ptU() = log(Umu.W[curr][mu]);
-              Ww[tid] -= MM[mu];
-              Ww[tid].ptU() = Ww[tid].reH();
-              Ww[tid].bgf().reH();
-              Umu.W[curr][mu] = exp<bgf::AbelianBgf, ORD>(Ww[tid].ptU());
+              //Ww[tid].ptU() = get_q(Umu.W[curr][mu]);
+              //Ww[tid] = -get_q(MM[mu]);
+              
+              //Ww[tid].bgf().reH();
+              //Umu.W[curr][mu].ptU() = exp<bgf::AbelianBgf, ORD>(Ww[tid].ptU()).ptU();
+              //for (int i = 0; i < ORD; ++i)
+              //  Umu.W[curr][mu][i] = Umu.W[curr][mu].bgf().ApplyFromRight(Umu.W[curr][mu][i]);
+              //Umu.W[curr][mu] *= exp<bgf::AbelianBgf,
+              //ORD>(MM[mu].ptU()*-1);
+              Umu.W[curr][mu] = exp<bgf::AbelianBgf, ORD>(-1*MM[mu].reH())*Umu.W[curr][mu];
 	    } // mu
 
 	  } // y3
@@ -660,9 +674,34 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
     
 	    // calcolo il DmuUmu e lo metto nell'algebra
 	    Ww[tid].zero();
-	    for(int mu = 0; mu < dim; mu++){
-	      Ww[tid] += Umu.W[site_c][mu] - Umu.W[Umu.Z->L[curr][mu]][mu];
-	    }
+            /*/
+            for(int mu = 0; mu < 4; mu++)
+              Ww[tid] += get_q(Umu.W[site_c][mu]) - get_q(Umu.W[Umu.Z->L[curr][mu]][mu]);
+            /*/
+            for(int mu = 0; mu < 4; mu++){
+              // Calculate
+              // U_mu(x) * V^\dagger_mu(x - mu) 
+              // * U_mu ^\dagger (x - mu) * V_mu(x - mu)
+              ptSU3 Udag = dag(Umu.W[Umu.Z->L[curr][mu]][mu]);
+              ptSU3 U = Umu.W[site_c][mu];
+              bgf::AbelianBgf Vdag = U.bgf().dag(), V = Udag.bgf().dag();
+              Ww[tid] += U*Vdag*Udag*V;
+            }
+            //*/
+	    //for(int mu = 0; mu < dim; mu++){
+            //  Ww[tid] += get_q(Umu.W[site_c][mu]);
+            //  ptSU3 Uref = Umu.W[Umu.Z->L[curr][mu]][mu];
+            //  ptsu3 q = get_q(Uref);
+            //  bgf::AbelianBgf V = Uref.bgf();
+            //  bgf::AbelianBgf Vinv = V.inverse();
+            //  for (int i = 0; i < ORD; ++i)
+            //    Ww[tid][i] -= Vinv.ApplyFromLeft(V.ApplyFromRight(q[i]));
+	    //}
+            //for (int i = 0; i < ORD; ++i)
+            //  Ww[tid][i] += Umu.W[site_c][3][i]
+            //    - Umu.W[site_c][3].bgf().ApplyFromLeft
+            //    ( Umu.W[Umu.Z->L[curr][3]][3].bgf().inverse().ApplyFromRight
+            //      ( Umu.W[Umu.Z->L[curr][3]][3][i]));
 
 	    // Ww[tid] = Umu.W[site_c][0] - Umu.W[Umu.Z->L[curr][0]][0];
 	    // for(int mu = 1; mu < dim; mu++){
@@ -681,12 +720,31 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	    Ww2[tid] = exp<bgf::AbelianBgf, ORD>( Ww[tid].reH() * -act_pars.alpha);
             // BEWARE that the above may throw an excpetion if reH
             // does not know what to do!
-
+            /*/
+            std::vector<std::vector<Cplx> > plaq_tmp(ORD, std::vector<Cplx>(16));
+            for (int mu = 0; mu < 4; ++mu)
+              for (int nu = 0; nu < 4; ++nu)
+                for (int i = 0; i < ORD; ++i)
+                  plaq_tmp[i][mu*4 + nu] = (Umu.W[site_c][mu]*Umu.staple(curr, mu, nu))[i].Tr();
+            /*/
 	    // Moltiplico sul link corrente a sx e sul precedente a dx
-	    for(int mu = 0; mu < dim; mu++){
+	    for(int mu = 0; mu < 4; mu++){ 
 	      Umu.W[site_c][mu] = Ww1[tid]*Umu.W[site_c][mu];
 	      Umu.W[Umu.Z->L[curr][mu]][mu] = Umu.W[Umu.Z->L[curr][mu]][mu]*Ww2[tid];
 	    }
+            /*/
+            for (int mu = 0; mu < 4; ++mu)
+              for (int nu = 0; nu < 4; ++nu)
+                for (int i = 0; i < ORD; ++i){
+                  Cplx p_new = (Umu.W[site_c][mu]*Umu.staple(curr, mu, nu))[i].Tr();
+                  Cplx p_old = plaq_tmp[i][mu*4 + nu];
+                  Cplx tmp = p_new - p_old;
+                  double eps = sqrt(tmp.re*tmp.re + tmp.im*tmp.im);
+                  if (eps > 1e-14)
+                    std::cout << i << ": " <<  eps << std::endl
+                      ;//<< "   value: " << p_old << std::endl;
+                }
+                /*/
 
 #if ntz > 1
 #pragma omp barrier
@@ -868,6 +926,7 @@ inline void E_meas(ptGluon_fld &Umu) {
   std::ofstream of("E.nor", std::ios_base::app);
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
+  const int mu_t = 3;
   C(0,0) = Cplx(0, 1./act_pars.sz[0]);
   C(1,1) = Cplx(0, -.5/act_pars.sz[0]);
   C(2,2) = Cplx(0, -.5/act_pars.sz[0]);
@@ -875,15 +934,15 @@ inline void E_meas(ptGluon_fld &Umu) {
     for (int y = 0; y < act_pars.sz[1]; ++y)
       for (int z = 0; z < act_pars.sz[2]; ++z){
         int n = act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
-        for (int k = 1; k < 4; ++k){
+        for (int k = 0; k < 3; ++k){
           //   U(n, 0) * U(n + \hat 0, k)
           // * U^\dagger(n + \hat k, 0) * U^\dagger(n, k)
           ptSU3 tmp = 
-            //Umu.W[Umu.Z->get(n, 1, k)][0]*
-            //dag(Umu.W[Umu.Z->L[n][4]][0]*
-            //    Umu.W[Umu.Z->get(n, 1, 0)][k])
-            //*Umu.W[Umu.Z->L[n][4]][k];
-            Umu.W[Umu.Z->L[n][4]][k]*dag(Umu.W[Umu.Z->get(n, 1, 0)][k]);
+            Umu.W[Umu.Z->get(n, 1, k)][mu_t]*
+            dag(Umu.W[Umu.Z->L[n][4]][mu_t]*
+                Umu.W[Umu.Z->get(n, 1, mu_t)][k])
+            *Umu.W[Umu.Z->L[n][4]][k];
+          //Umu.W[Umu.Z->L[n][4]][k]*dag(Umu.W[Umu.Z->get(n, 1, 0)][k]);
           //std::cout << Umu.W[Umu.Z->L[n][4]][k].bgf() << std::endl;
           for_each(tmp.begin(), tmp.end(), pta::mul(C));
           Cplx tree = tmp.bgf().ApplyFromRight(C).Tr();
@@ -894,32 +953,24 @@ inline void E_meas(ptGluon_fld &Umu) {
               nor[r*3+2*i+2] += tmp[r/2](i,i).re;
               nor[r*3+2*i+3] += tmp[r/2](i,i).im;
             }
-            //Cplx c = tmp[r/2].Tr();
-              //nor[r+1] += c.im;
-              //nor[r] += c.re;
           }
           n = (act_pars.sz[3] - 1) + 
             act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
           tmp = 
-            dag(Umu.W[Umu.Z->get(n, -1, 0)][k]*
-                Umu.W[Umu.Z->get(n, 1, k, -1, 0)][0])*
-            Umu.W[Umu.Z->get(n, -1, 0)][0]
+            dag(Umu.W[Umu.Z->get(n, -1, mu_t)][k]*
+                Umu.W[Umu.Z->get(n, 1, k, -1, mu_t)][mu_t])*
+            Umu.W[Umu.Z->get(n, -1, mu_t)][mu_t]
             *Umu.W[Umu.Z->L[n][4]][k];
           tmp *= -1;
           for_each(tmp.begin(), tmp.end(), pta::mul(C));
-          //tree = tmp.bgf().ApplyFromLeft(C).Tr();
-          //nor[0] += tree.re;
-          //nor[1] += tree.im;
-          //for (int r = 0; r < ORD*2; r += 2){
-          //  Cplx c = tmp[r/2].Tr();
-          //  nor[r+3] += c.im;
-          //  nor[r+2] += c.re;
-          //}
-          //for (int r = 0; r < ORD*2; r += 2)
-          //  for (int i = 0; i < 3; ++i){
-          //    nor[r*3+i] += tmp[r/2](i,i).re;
-          //    nor[r*3+i+1] += tmp[r/2](i,i).im;
-          //  }
+          tree = tmp.bgf().ApplyFromLeft(C).Tr();
+          nor[0] += tree.re;
+          nor[1] += tree.im;
+          for (int r = 0; r < ORD*2; r += 2)
+            for (int i = 0; i < 3; ++i){
+              nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+              nor[r*3+2*i+3] += tmp[r/2](i,i).im;
+            }
         }
       }
   for (int i = 0; i < ORD*2*3 + 2; ++i)
@@ -943,15 +994,24 @@ inline void E_meas(ptGluon_fld &Umu) {
 ///  \date Wed Feb  8 15:57:12 2012
 
 inline void check_bgf(ptGluon_fld &Umu) {
-  for(int i = 0; i < act_pars.iVol; i++){
+  static int j = 0;
+  j++;
+  for(int i = 0; i < act_pars.iVol; ++i){
     int t = i % act_pars.sz[3];
-    for(int mu = 0; mu < dim; mu++)
-      IsZero<do_debug, bgf::AbelianBgf>::check(
-       Umu.W[Umu.Z->L[i][4]][mu].bgf() - bgf::get_abelian_bgf(t, mu));
-  }
+    for(int mu = 0; mu < 4; ++mu){
+      //if (!(j % 20))
+      //    std::cout << "mu = " << mu << ", t = " << t << " :"
+      //    << Umu.W[Umu.Z->L[i][4]][mu].bgf() << "  vs.  "
+      //    << bgf::get_abelian_bgf(t,mu) << 
+      //    "  vs.  " << 
+      //      (Umu.W[Umu.Z->L[i][4]][mu].bgf() -bgf::get_abelian_bgf(t, mu))<< std::endl;
+      IsZero<true, bgf::AbelianBgf>::check(
+       Umu.W[Umu.Z->L[i][4]][mu].bgf() + -bgf::get_abelian_bgf(t, mu));
+    }
   // SAFETY CHECK:
   // If you uncomment this, an exception should be thrown.
   // Umu.W[10][1].bgf() *= 0.1;
+  }
 }
 
 
@@ -1019,7 +1079,7 @@ void NsptEvolve(ptGluon_fld& Umu){
     Time.reduce();
 #endif
     // DH Feb. 7, 2012
-#define DO_EXTRA_PARANOID_DEBUG
+#undef DO_EXTRA_PARANOID_DEBUG
 #ifdef DO_EXTRA_PARANOID_DEBUG
     // print the norm of U_0 at the t=0 boundary
     u0_print(Umu);

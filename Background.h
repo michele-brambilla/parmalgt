@@ -142,13 +142,13 @@ namespace bgf {
       return result;
     }
 
-    virtual double Norm() const {
+    double Norm() const {
       double result = 0;
 #ifdef HAVE_CXX0X
-      for (const auto& e : v_) { result += (e*e).re; }
+      for (const auto& e : v_) { result += e.re*e.re + e.im*e.im; }
 #else
       for (int i = 0; i < 3; ++i)
-        result += (v_[i]*v_[i]).re;
+        result += v_[i].re*v_[i].re + v_[i].im*v_[i].im;
 #endif
       return std::sqrt(result);
     }
@@ -392,7 +392,7 @@ namespace bgf {
                                     const double& nu = 0.0){
     static AbelianBgfFactory factory(T, L, eta, nu);
     static three_vec_t one = {1,1,1};
-    if (!mu)
+    if (mu == 3)
       return AbelianBgf(one);
     else
       return AbelianBgf(factory.get(t));

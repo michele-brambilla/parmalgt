@@ -478,7 +478,9 @@ int QuenchedAllocate(ptGluon_fld& Umu){
         // now, initialize the bg field ...
         //*/ // Abelian DOES NOT WORK, YET
         int t = i % act_pars.sz[3];
-        Umu.W[i][mu].bgf() = bgf::get_abelian_bgf(t, mu);
+        int index = Umu.Z->L[i][4];
+        Umu.W[index][mu].bgf() = bgf::get_abelian_bgf(t, mu);
+        //std::cout <<  Umu.W[index][mu].bgf() << std::endl;
         /*/ // Trivial
         Umu.W[i][mu].bgf() = bgf::unit<bgf::AbelianBgf>();
         //*/

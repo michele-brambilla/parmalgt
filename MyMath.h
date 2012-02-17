@@ -148,7 +148,10 @@ inline bool operator!=(double, Cplx);
 
 
 
-
+inline std::ostream& operator<<(std::ostream& os, const Cplx& c){
+  os << "(" << c.re << " + i " << c.im << ")";
+  return os;
+}
 
 
 

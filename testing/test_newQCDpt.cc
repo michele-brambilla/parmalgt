@@ -194,10 +194,57 @@ TEST(BGptSU3Test, exp){
   ASSERT_TRUE(SU3Cmp(e,B[2])(eps));
 }
 
+// Check if exp(A) * exp(-A) = 1 holds
+
+TEST(BGptSU3Test, expUnit){
+  for (int _n = 0; _n < 1000; ++_n){
+    ptt::PtMatrix<ORD> A = ptt::get_random_pt_matrix<ORD>();
+    ptSU3 B = exp<bgf::AbelianBgf, ORD>(A);
+    ptSU3 C = exp<bgf::AbelianBgf, ORD>(A * -1.);
+    ptSU3 D = B*C;
+    SU3 zero;
+    // calculate the first few terms by hand ...
+    // tree level
+    ASSERT_TRUE(D.bgf() == bgf::unit<bgf::AbelianBgf>());
+    for (int i = 0; i < 7; ++i)
+      ASSERT_TRUE( SU3Cmp( zero, D[i] )(1e-14*i) ) << i;
+  }
+}
+
+TEST(BGptSU3Test, expUnitMore){
+  for (int _n = 0; _n < 1000; ++_n){
+    ptt::PtMatrix<ORD> A = ptt::get_random_pt_matrix<ORD>();
+    ptSU3 a, b;
+    a.randomize(); a.bgf() = bgf::random();
+    b.randomize(); b.bgf() = bgf::random();
+    ptSU3 d = b;
+    ptSU3 B = exp<bgf::AbelianBgf, ORD>(A);
+    ptSU3 C = exp<bgf::AbelianBgf, ORD>(A * -1.);
+    ptSU3 D = (B)*(C*b);
+    // calculate the first few terms by hand ...
+    // tree level
+    ASSERT_TRUE(D.bgf() == d.bgf());
+    for (int i = 0; i < 7; ++i)
+      ASSERT_TRUE( SU3Cmp( d[i], D[i] )(1e-13*(i+1)) ) << i;
+  }
+}
+
+TEST(BGptSU3Test, Multiplication){
+  for (int _n = 0; _n < 1000; ++_n){
+    ptSU3 a, b, c, d, e;
+    a.randomize(); a.bgf() = bgf::random();
+    b.randomize(); b.bgf() = bgf::random();
+    c.randomize(); c.bgf() = bgf::random();
+    d = (a*b)*c; e = a*(b*c);
+    for (int i = 0; i < ORD; ++i)
+      ASSERT_TRUE( SU3Cmp( d[i], e[i] )(1e-14*(i+1)) ) << i;
+  }
+}    
+
 TEST(BGptSU3Test, logThrows){
   ptSU3 A(bgf::random());
   if (IsZero<do_debug, bgf::AbelianBgf>::debug_on)
-    ASSERT_THROW(log(A), IsNotOneError);
+    ASSERT_THROW(log(A), IsNotZeroError);
   else
     ASSERT_NO_THROW(log(A));
 }
