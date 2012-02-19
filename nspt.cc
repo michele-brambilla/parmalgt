@@ -923,29 +923,26 @@ inline void u0_print(ptGluon_fld &Umu) {
 }
 
 inline void E_meas(ptGluon_fld &Umu) {
-  std::ofstream of("E.nor", std::ios_base::app);
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
   const int mu_t = 3;
-  C(0,0) = Cplx(0, 1./act_pars.sz[0]);
-  C(1,1) = Cplx(0, -.5/act_pars.sz[0]);
-  C(2,2) = Cplx(0, -.5/act_pars.sz[0]);
+  C(0,0) = Cplx(0, -1./act_pars.sz[0]);
+  C(1,1) = Cplx(0, .5/act_pars.sz[0]);
+  C(2,2) = Cplx(0, .5/act_pars.sz[0]);
   for( int x = 0; x < act_pars.sz[0]; ++x)
     for (int y = 0; y < act_pars.sz[1]; ++y)
       for (int z = 0; z < act_pars.sz[2]; ++z){
-        int n = act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
+        int n = 1 + act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
         for (int k = 0; k < 3; ++k){
           //   U(n, 0) * U(n + \hat 0, k)
           // * U^\dagger(n + \hat k, 0) * U^\dagger(n, k)
           ptSU3 tmp = 
-            Umu.W[Umu.Z->get(n, 1, k)][mu_t]*
-            dag(Umu.W[Umu.Z->L[n][4]][mu_t]*
-                Umu.W[Umu.Z->get(n, 1, mu_t)][k])
-            *Umu.W[Umu.Z->L[n][4]][k];
-          //Umu.W[Umu.Z->L[n][4]][k]*dag(Umu.W[Umu.Z->get(n, 1, 0)][k]);
-          //std::cout << Umu.W[Umu.Z->L[n][4]][k].bgf() << std::endl;
+            Umu.W[Umu.Z->get(n, 1, k, -1, mu_t)][mu_t]*
+            dag(Umu.W[Umu.Z->L[n][4]][k])*
+            dag(Umu.W[Umu.Z->get(n, -1, mu_t)][mu_t])*
+            Umu.W[Umu.Z->get(n, -1, mu_t)][k];
           for_each(tmp.begin(), tmp.end(), pta::mul(C));
-          Cplx tree = tmp.bgf().ApplyFromRight(C).Tr();
+          Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
           nor[0] += tree.re;
           nor[1] += tree.im;
           for (int r = 0; r < ORD*2; r += 2){
@@ -954,25 +951,25 @@ inline void E_meas(ptGluon_fld &Umu) {
               nor[r*3+2*i+3] += tmp[r/2](i,i).im;
             }
           }
-          n = (act_pars.sz[3] - 1) + 
-            act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
-          tmp = 
-            dag(Umu.W[Umu.Z->get(n, -1, mu_t)][k]*
-                Umu.W[Umu.Z->get(n, 1, k, -1, mu_t)][mu_t])*
-            Umu.W[Umu.Z->get(n, -1, mu_t)][mu_t]
-            *Umu.W[Umu.Z->L[n][4]][k];
-          tmp *= -1;
-          for_each(tmp.begin(), tmp.end(), pta::mul(C));
-          tree = tmp.bgf().ApplyFromLeft(C).Tr();
-          nor[0] += tree.re;
-          nor[1] += tree.im;
-          for (int r = 0; r < ORD*2; r += 2)
-            for (int i = 0; i < 3; ++i){
-              nor[r*3+2*i+2] += tmp[r/2](i,i).re;
-              nor[r*3+2*i+3] += tmp[r/2](i,i).im;
-            }
+         n = (act_pars.sz[3] - 1) + 
+           act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
+         tmp = 
+           dag(Umu.W[Umu.Z->L[n][4]][k])*
+           dag(Umu.W[Umu.Z->get(n, -1, mu_t)][mu_t])*
+           Umu.W[Umu.Z->get(n, -1, mu_t)][k]*
+           Umu.W[Umu.Z->get(n, 1, k, -1, mu_t)][mu_t];
+         for_each(tmp.begin(), tmp.end(), pta::mul(C));
+         tree = tmp.bgf().ApplyFromLeft(C).Tr();
+         nor[0] += tree.re;
+         nor[1] += tree.im;
+         for (int r = 0; r < ORD*2; r += 2)
+           for (int i = 0; i < 3; ++i){
+             nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+             nor[r*3+2*i+3] += tmp[r/2](i,i).im;
+           }
         }
       }
+  std::ofstream of("E.nor", std::ios_base::app);
   for (int i = 0; i < ORD*2*3 + 2; ++i)
     of << nor[i] << " ";
   of << std::endl;

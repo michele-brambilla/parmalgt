@@ -130,3 +130,44 @@ TEST(AbelianBgf, KnownValues){
                         V.ApplyFromLeft(su3One))());
   }
 }
+
+// Test tree level formula for E,
+
+TEST(AbelianBgf, E){
+  const int L = 4;
+  const int T = L;
+  // initialize
+  bgf::get_abelian_bgf(0,0,L,L);
+  SU3 C;
+  C(0,0) = Cplx( 0, 1./ L);
+  C(1,1) = Cplx( 0, -.5/ L);
+  C(2,2) = Cplx( 0, -.5/ L);
+  Cplx E = 0;
+  for (int k = 0; k < 3; ++k){
+    E -= (bgf::get_abelian_bgf(0, k)*
+          bgf::get_abelian_bgf(0, 3)*
+          bgf::get_abelian_bgf(1, k).dag()*
+          bgf::get_abelian_bgf(0, 3).dag()).ApplyFromRight(C).Tr();
+    E -= (bgf::get_abelian_bgf(T, k).dag()*
+          bgf::get_abelian_bgf(T-1, 3).dag()*
+          bgf::get_abelian_bgf(T-1, k)*
+          bgf::get_abelian_bgf(T-1, 3).dag()).ApplyFromRight(C).Tr();
+  }
+  E *= L*L*L*2;
+  double pio3 = std::atan(1.)*4./3;
+  double k = 12*L*L*(std::sin(pio3/L/L) + std::sin(pio3*2/L/L));
+  EXPECT_DOUBLE_EQ( E.re, k);
+  std::cout << k << std::endl;
+  std::cout << (bgf::get_abelian_bgf(0, k)*
+                bgf::get_abelian_bgf(0, 3)*
+                bgf::get_abelian_bgf(1, k).dag()*
+                bgf::get_abelian_bgf(0, 3).dag()).
+    ApplyFromRight(C).Tr().re << std::endl;
+  std::cout << (bgf::get_abelian_bgf(T, k).dag()*
+                bgf::get_abelian_bgf(T-1, 3).dag()*
+                bgf::get_abelian_bgf(T-1, k)*
+                bgf::get_abelian_bgf(T-1, 3).dag()).
+    ApplyFromRight(C).Tr().re << std::endl;
+}
+  
+}
