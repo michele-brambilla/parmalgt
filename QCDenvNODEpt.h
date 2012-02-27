@@ -237,21 +237,14 @@ class ptSU3_fld{
 
 };
   
-
-
-
-
 inline ptSU3 ptSU3_fld::get(int *n) {
     return W[Z->get(n)];
 }
-
-
 
 inline int get(ptSU3_fld *W, int *n) {
     return (W->Z)->get(n);
 
 }
-
 
 inline int get(ptSU3_fld *W,int n,int step,int dir){
   return (W->Z)->get(n,step,dir);
@@ -260,8 +253,6 @@ inline int get(ptSU3_fld *W,int n,int step,int dir){
 inline int get(ptSU3_fld *W,int n){
   return (W->Z)->get(n);
 }
-
-
 
 // ------------- end class pt SU3_fld  --------------
 
@@ -608,7 +599,10 @@ class ptGluon_fld{
 
 class Direction {
 public:
-  explicit Direction(const int& m) : mu(m){ }
+  explicit Direction(const int& m) : mu(m) { }
+  Direction& operator++() { ++mu; return *this; }
+  bool good() const { return mu != 4; }
+  operator int() const { return mu; }
   template <typename A, typename B>
   A deref_fwd(B b) const { return b[5 + mu]; }
   template <typename A, typename B>
@@ -667,16 +661,13 @@ inline const ptSU3& ptGluon_fld::operator()
   return mu.deref_bkw<const ptSU3&, const ptGluon&>(n.deref(W));
 }
 
-  inline ptGluon ptGluon_fld::get(int *n) {
+inline ptGluon ptGluon_fld::get(int *n) {
     return W[Z->get(n)];
   }
   
-  
-  inline ptSU3 ptGluon_fld::get(int *n, int mu) {
+inline ptSU3 ptGluon_fld::get(int *n, int mu) {
     return W[Z->get(n)][mu];
   }
-  
-  
   
 inline int get(ptGluon_fld *W, int *n) {
     return W->Z->get(n);
@@ -707,9 +698,6 @@ ptSU3 ptGluon_fld::staple(int n, int mu, int nu){
 	      W[Z->get(n, 1, mu, -1, nu)][nu])*
 	  W[Z->get(n, -1, nu)][nu]);
 }
-
-
-
 
 ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
 
@@ -770,12 +758,6 @@ ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
 }
 
 
-
-
-
-
-
-
 /* void ptGluon_fld::wilson2x2(ptSU3& tmp, int n, int mu, int nu){ */
   
 /*   //  int curr = Z->L[n][4]; */
@@ -812,9 +794,6 @@ ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
 
 
 // ********* end class Gluon_fld **************
-
-
-
 
 class ptSpinColor_fld {
   

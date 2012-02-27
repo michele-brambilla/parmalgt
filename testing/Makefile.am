@@ -2,7 +2,7 @@ GTEST_DIR = ../gtest
 
 # global includes
 
-AM_CPPFLAGS = -I${GTEST_DIR}/include -I${GTEST_DIR} -I..
+AM_CPPFLAGS = -I${GTEST_DIR}/include -I${GTEST_DIR} -I.. -DSF
 
 # gtest stuff
 
@@ -14,7 +14,7 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 # test programs we want to build
 
 bin_PROGRAMS = test_Bgfield test_Helper test_SU3 test_newQCDpt \
-	test_PtTypes
+	test_PtTypes test_Point
 
 test_Bgfield_SOURCES = test_Bgfield.cc ../MyRand.cc \
 		       ../MyMath.cc 
@@ -32,5 +32,8 @@ test_newQCDpt_LDADD = lib/libgtest.la
 
 test_PtTypes_SOURCES = test_PtTypes.cc ../MyMath.cc ../MyRand.cc
 test_PtTypes_LDADD = lib/libgtest_main.la
+
+test_Point_SOURCES = test_Point.cc
+test_Point_LDADD = lib/libgtest_main.la
 
 TESTS = ${bin_PROGRAMS}

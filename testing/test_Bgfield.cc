@@ -170,4 +170,4 @@ TEST(AbelianBgf, E){
     ApplyFromRight(C).Tr().re << std::endl;
 }
   
-}
+

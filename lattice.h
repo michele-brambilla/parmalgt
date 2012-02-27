@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <vector>
 
 #define dim 4
 #define x0 1
