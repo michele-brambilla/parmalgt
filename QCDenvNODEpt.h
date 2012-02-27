@@ -8,6 +8,8 @@
 
 #include "QCDenvNODE.h"
 
+#include <Point.hpp>
+
 #ifdef __PARALLEL_OMP__
 #include <omp.h>
 #endif
@@ -257,8 +259,6 @@ inline int get(ptSU3_fld *W,int n){
 // ------------- end class pt SU3_fld  --------------
 
 
-class Point;
-class Direction;
 
 class ptGluon_fld{
  private:
@@ -591,73 +591,28 @@ class ptGluon_fld{
   inline ptSU3 staple2x1(int, int, int); //(n, mu, nu)
   //  inline void wilson2x2(ptSU3&, int, int, int); //(n, mu, nu)
 
-  ptSU3& operator()(const Point&, const Direction&); 
-  const ptSU3& operator()(const Point&, const Direction&) const;
-  Point mk_point(int t, int x, int y, int z);
+  ptSU3& operator()(const pt::Point&, const pt::Direction&); 
+  const ptSU3& operator()(const pt::Point&, const pt::Direction&) const;
+  pt::Point mk_point(int t, int x, int y, int z) const;
 
 }; // class ptGluon_fld
 
-class Direction {
-public:
-  explicit Direction(const int& m) : mu(m) { }
-  Direction& operator++() { ++mu; return *this; }
-  bool good() const { return mu != 4; }
-  operator int() const { return mu; }
-  template <typename A, typename B>
-  A deref_fwd(B b) const { return b[5 + mu]; }
-  template <typename A, typename B>
-  A deref_bkw(B b) const { return b[mu]; }
-private:
-  int mu;
-};
 
-class Point {
-public:
-  typedef std::vector<std::vector<int> >::const_iterator iter_t;
-  Point(int nn, const iter_t& i) : n(nn), L_begin(i) { }
-  Point& operator+=(const Direction& mu){
-    n = mu.deref_fwd<const int&, const std::vector<int>&>(*(L_begin + n));
-    return *this;
-  }
-  Point& operator-=(const Direction& mu){
-    n = mu.deref_bkw<const int&, const std::vector<int>&>(*(L_begin + n));
-    return *this;
-  }
-  const ptGluon& deref(ptGluon const * const f) const {
-    return f[n];
-  }
-  ptGluon& deref(ptGluon* const f) const {
-    return f[n];
-  }
-  bool operator==(const Point& other){
-    return n == other.n && L_begin == other.L_begin;
-  }
-private:
-  int n; // the site
-  iter_t L_begin; // positions
-};
-
-inline Point operator+(const Point& p, const Direction& mu){
-  return Point(p) += mu;
-}
-
-inline Point operator-(const Point& p, const Direction& mu){
-  return Point(p) -= mu;
-}
 // need to implement out of class
 // otherwise, we would get an "incomplete type" error
 
-inline ptSU3& ptGluon_fld::operator()(const Point& n, const Direction& mu) {
-  return mu.deref_bkw<ptSU3&, ptGluon&>(n.deref(W));
+inline ptSU3& ptGluon_fld::operator()(const pt::Point& n, const pt::Direction& mu) {
+  //return mu.deref_bkw(n.deref(W));
+  return mu.deref_bkw<ptSU3&, ptGluon&>(n.deref<ptGluon>(W));
 }
 
-inline Point ptGluon_fld::mk_point(int t, int x, int y, int z) {
+inline pt::Point ptGluon_fld::mk_point(int t, int x, int y, int z) const {
   int a[4] = {t,x,y,z};
-  return Point(Z->get(a), Z->L.begin());
+  return pt::Point(Z->get(a), Z->L.begin());
 }
 
 inline const ptSU3& ptGluon_fld::operator()
-  (const Point& n, const Direction& mu) const {
+  (const pt::Point& n, const pt::Direction& mu) const {
   return mu.deref_bkw<const ptSU3&, const ptGluon&>(n.deref(W));
 }
 

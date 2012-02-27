@@ -1,6 +1,8 @@
 #include <QCDenvNODEpt.h>
 #include <gtest/gtest.h>
 
+using namespace pt;
+
 int size[4] = {5,6,7,8};
 
 struct PointTest : public ::testing::Test {

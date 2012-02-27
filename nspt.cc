@@ -922,6 +922,32 @@ inline void u0_print(ptGluon_fld &Umu) {
   of.close();
 }
 
+inline void E_meas_parallel(const ptGluon_fld &U){
+  std::vector<double> nor(ORD*2*3 + 2);
+  SU3 C;
+  C(0,0) = Cplx(0, -1./act_pars.sz[0]);
+  C(1,1) = Cplx(0, .5/act_pars.sz[0]);
+  C(2,2) = Cplx(0, .5/act_pars.sz[0]);
+
+
+#pragma omp parallel num_threads(NTHR)
+  {
+    int dx = thr_pars[tid].xf[1] - thr_pars[tid].xi[1];
+    int dy = thr_pars[tid].xf[2] - thr_pars[tid].xi[2];
+    int dz = thr_pars[tid].xf[3] - thr_pars[tid].xi[3];
+    int tid = omp_get_thread_num();
+    pt::Point n = U.mk_point(0, 
+                             thr_pars[tid].xi[1], 
+                             thr_pars[tid].xi[2], 
+                             thr_pars[tid].xi[3]);
+    for (int n1_ = 0; n1_ < dx; ++n1_, n += pt::Direction::x)
+      for (int n2_ = 0; n2_ < dy; ++n2_, n += pt::Direction::y)
+        for (int n3_ = 0; n3_ < dz; ++n3_, n += pt::Direction::z)
+          ;
+      
+  }
+}
+
 inline void E_meas(ptGluon_fld &Umu) {
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
