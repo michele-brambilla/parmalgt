@@ -63,7 +63,7 @@ void gauge_wilson(ptGluon_fld& Umu){
   for(curr = 0; curr < act_pars.iVol; curr++){
 
 #ifdef SFBC
-      int t = curr % act_pars.sz[3]; 
+    int t = curr / (act_pars.sz[1]*act_pars.sz[2]*act_pars.sz[3]); 
 #endif
     
     for(int mu = 0; mu < dim; mu++){
@@ -78,14 +78,14 @@ void gauge_wilson(ptGluon_fld& Umu){
       //
       // This means, that we can use the following hack to get us some
       // nice SF boundary conditions. We simply assume that
-      // act_pars.sz[3] == (T+1) instead of T. Thus, we may
+      // act_pars.sz[0] == (T+1) instead of T. Thus, we may
       // 1) We initialize U to V(t), getting the above automatically
       //    right
       // 2) in the update for U_mu(x, t):
       //        if we have t == T or (t == 0 and mu != 0)  
       //          ==> DO NOTHING!
 #ifdef SFBC
-      if ( (!t && mu) || (t == act_pars.sz[3] - 1) ) continue;
+      if ( (!t && mu) || (t == act_pars.sz[0] - 1) ) continue;
 #endif
 
       // Preparo il link corrente
@@ -203,8 +203,8 @@ void gauge_wilson(ptGluon_fld& Umu){
 
               // READ THE COMMENT IN THE SINGLE THREADED VERSION ABOVE!
 #ifdef SFBC
-              // y3 == t!
-              if ( (!y3 && mu != 3) || (y3 == act_pars.sz[3] - 1) ) continue;
+              // y0== t!
+              if ( (!y0 && mu) || (y0 == act_pars.sz[0] - 1) ) continue;
               // no seriously, read the comment!!
 #endif
 	      // Preparo il link corrente
@@ -554,7 +554,7 @@ void zero_modes_subtraction(ptGluon_fld& Umu){
             // if we proceed this way, we omit the gauge fixing for q_0(x)_{x_0  = 0}
             // alltogether, c.f. the note below.
             // However, this seems to work
-            if ( !y3 || (y3 == act_pars.sz[3] - 1) ) continue;
+            if ( !y0 || (y0 == act_pars.sz[0] - 1) ) continue;
 #endif
 
 	    for(int mu = 0; mu < dim; mu++){
@@ -669,7 +669,7 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
             // if we proceed this way, we omit the gauge fixing for q_0(x)_{x_0  = 0}
             // alltogether, c.f. the note below.
             // However, this seems to work
-            if ( !y3 || (y3 == act_pars.sz[3] - 1) ) continue;
+            if ( !y0 || (y0 == act_pars.sz[0] - 1) ) continue;
 #endif
     
 	    // calcolo il DmuUmu e lo metto nell'algebra
@@ -922,84 +922,129 @@ inline void u0_print(ptGluon_fld &Umu) {
   of.close();
 }
 
+struct ThreadInfo {
+  ThreadInfo (const thread_params_t * const tp, const int& n) :
+    t (tp[n].xi[0]),
+    x (tp[n].xi[1]),
+    y (tp[n].xi[2]),
+    z (tp[n].xi[3]),
+    dt (tp[n].xf[0] - tp[n].xi[0]),
+    dx (tp[n].xf[1] - tp[n].xi[1]),
+    dy (tp[n].xf[2] - tp[n].xi[2]),
+    dz (tp[n].xf[3] - tp[n].xi[3]) { }
+  int t,x,y,z,dt,dx,dy,dz;
+};
+
 inline void E_meas_parallel(const ptGluon_fld &U){
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
-  C(0,0) = Cplx(0, -1./act_pars.sz[0]);
-  C(1,1) = Cplx(0, .5/act_pars.sz[0]);
-  C(2,2) = Cplx(0, .5/act_pars.sz[0]);
+  C(0,0) = Cplx(0, -1./act_pars.sz[1]);
+  C(1,1) = Cplx(0, .5/act_pars.sz[1]);
+  C(2,2) = Cplx(0, .5/act_pars.sz[1]);
 
-
+  pt::Direction t = pt::Direction::t;
 #pragma omp parallel num_threads(NTHR)
   {
-    int dx = thr_pars[tid].xf[1] - thr_pars[tid].xi[1];
-    int dy = thr_pars[tid].xf[2] - thr_pars[tid].xi[2];
-    int dz = thr_pars[tid].xf[3] - thr_pars[tid].xi[3];
-    int tid = omp_get_thread_num();
-    pt::Point n = U.mk_point(0, 
-                             thr_pars[tid].xi[1], 
-                             thr_pars[tid].xi[2], 
-                             thr_pars[tid].xi[3]);
-    for (int n1_ = 0; n1_ < dx; ++n1_, n += pt::Direction::x)
-      for (int n2_ = 0; n2_ < dy; ++n2_, n += pt::Direction::y)
-        for (int n3_ = 0; n3_ < dz; ++n3_, n += pt::Direction::z)
-          ;
-      
+    ThreadInfo ti(thr_pars, omp_get_thread_num());
+
+    pt::Point n = U.mk_point(0, ti.x, ti.y, ti.z);
+    ptSU3 tmp;
+    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
+      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
+        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
+          for (pt::Direction k(1); k.good(); ++k)
+            tmp += U(n, k) * U(n + k, t) * 
+              dag( U(n +t, k) ) * dag( U(n, t) );
+    n = U.mk_point(act_pars.sz[0] - 2, ti.x, ti.y, ti.z);
+    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
+      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
+        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
+          for (pt::Direction k(1); k.good(); ++k)
+            tmp += dag( U (n + t, k) ) * dag( U(n, t) ) *
+              U(n, k) * U(n + k, t);
+    for_each(tmp.begin(), tmp.end(), pta::mul(C));
+    Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
+#pragma omp atomic
+    nor[0] += tree.re;
+#pragma omp atomic
+    nor[1] += tree.im;
+    for (int r = 0; r < ORD*2; r += 2){
+      for (int i = 0; i < 3; ++i){
+#pragma omp atomic
+        nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+#pragma omp atomic
+        nor[r*3+2*i+3] += tmp[r/2](i,i).im;
+      }
+    }
   }
+  std::ofstream of("E.p.txt", std::ios_base::app);
+  for (int i = 0; i < ORD*2*3 + 2; ++i)
+    of << nor[i] << " ";
+  of << std::endl;
+  of.close();
 }
 
-inline void E_meas(ptGluon_fld &Umu) {
+inline void E_meas_single(ptGluon_fld &Umu) {
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
-  const int mu_t = 3;
-  C(0,0) = Cplx(0, -1./act_pars.sz[0]);
-  C(1,1) = Cplx(0, .5/act_pars.sz[0]);
-  C(2,2) = Cplx(0, .5/act_pars.sz[0]);
-  for( int x = 0; x < act_pars.sz[0]; ++x)
-    for (int y = 0; y < act_pars.sz[1]; ++y)
-      for (int z = 0; z < act_pars.sz[2]; ++z){
-        int n = 1 + act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
-        for (int k = 0; k < 3; ++k){
+  const int mu_t = 0;
+  C(0,0) = Cplx(0, -1./act_pars.sz[1]);
+  C(1,1) = Cplx(0, .5/act_pars.sz[1]);
+  C(2,2) = Cplx(0, .5/act_pars.sz[1]);
+  ptSU3 tmp;
+  for( int x = 0; x < act_pars.sz[1]; ++x)
+    for (int y = 0; y < act_pars.sz[2]; ++y)
+      for (int z = 0; z < act_pars.sz[3]; ++z){
+        //int n = 1 + act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
+        int n = z + act_pars.sz[3]*(y + act_pars.sz[2]*(x + act_pars.sz[1]*1));
+        for (int k = 1; k < 4; ++k)
           //   U(n, 0) * U(n + \hat 0, k)
           // * U^\dagger(n + \hat k, 0) * U^\dagger(n, k)
-          ptSU3 tmp = 
+          tmp += 
             Umu.W[Umu.Z->get(n, 1, k, -1, mu_t)][mu_t]*
             dag(Umu.W[Umu.Z->L[n][4]][k])*
             dag(Umu.W[Umu.Z->get(n, -1, mu_t)][mu_t])*
             Umu.W[Umu.Z->get(n, -1, mu_t)][k];
-          for_each(tmp.begin(), tmp.end(), pta::mul(C));
-          Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
-          nor[0] += tree.re;
-          nor[1] += tree.im;
-          for (int r = 0; r < ORD*2; r += 2){
-            for (int i = 0; i < 3; ++i){
-              nor[r*3+2*i+2] += tmp[r/2](i,i).re;
-              nor[r*3+2*i+3] += tmp[r/2](i,i).im;
-            }
-          }
-         n = (act_pars.sz[3] - 1) + 
-           act_pars.sz[3]*(z + act_pars.sz[2]*(y + act_pars.sz[1]*x) );
-         tmp = 
-           dag(Umu.W[Umu.Z->L[n][4]][k])*
-           dag(Umu.W[Umu.Z->get(n, -1, mu_t)][mu_t])*
-           Umu.W[Umu.Z->get(n, -1, mu_t)][k]*
-           Umu.W[Umu.Z->get(n, 1, k, -1, mu_t)][mu_t];
-         for_each(tmp.begin(), tmp.end(), pta::mul(C));
-         tree = tmp.bgf().ApplyFromLeft(C).Tr();
-         nor[0] += tree.re;
-         nor[1] += tree.im;
-         for (int r = 0; r < ORD*2; r += 2)
-           for (int i = 0; i < 3; ++i){
-             nor[r*3+2*i+2] += tmp[r/2](i,i).re;
-             nor[r*3+2*i+3] += tmp[r/2](i,i).im;
-           }
-        }
+        n = z + act_pars.sz[3]*(y + act_pars.sz[2]*(x + act_pars.sz[1]* (act_pars.sz[0] - 1)));
+        for (int k = 1; k < 4; ++k)
+          tmp += 
+            dag(Umu.W[Umu.Z->L[n][4]][k])*
+            dag(Umu.W[Umu.Z->get(n, -1, mu_t)][mu_t])*
+            Umu.W[Umu.Z->get(n, -1, mu_t)][k]*
+            Umu.W[Umu.Z->get(n, 1, k, -1, mu_t)][mu_t];
+          //for_each(tmp.begin(), tmp.end(), pta::mul(C));
+          //tree = tmp.bgf().ApplyFromLeft(C).Tr();
+          //nor[0] += tree.re;
+          //nor[1] += tree.im;
+          //for (int r = 0; r < ORD*2; r += 2)
+          // for (int i = 0; i < 3; ++i){
+          //   nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+          //   nor[r*3+2*i+3] += tmp[r/2](i,i).im;
+          // }
       }
+  for_each(tmp.begin(), tmp.end(), pta::mul(C));
+  Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
+  nor[0] += tree.re;
+  nor[1] += tree.im;
+  for (int r = 0; r < ORD*2; r += 2){
+    for (int i = 0; i < 3; ++i){
+      nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+      nor[r*3+2*i+3] += tmp[r/2](i,i).im;
+    }
+  }
   std::ofstream of("E.nor", std::ios_base::app);
   for (int i = 0; i < ORD*2*3 + 2; ++i)
     of << nor[i] << " ";
   of << std::endl;
   of.close();
+}
+
+inline void E_meas(ptGluon_fld &Umu){
+  //#ifndef __PARALLEL_OMP__
+  E_meas_single(Umu);
+  //#else
+  E_meas_parallel(Umu);
+  //#endif
 }
 
 //////////////////////////////////////////////////////////////////////

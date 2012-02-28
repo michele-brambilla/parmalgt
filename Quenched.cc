@@ -454,7 +454,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
   // initialize the background field factory
   // FIXME: We are brave here and assume 
   // Lx == Ly == Lz == L
-  bgf::get_abelian_bgf(0, 0, act_pars.sz[3] - 1, act_pars.sz[2]);
+  bgf::get_abelian_bgf(0, 0, act_pars.sz[0] - 1, act_pars.sz[1]);
 
   // Genera il campo gluone freddo o da configurazione
   // secondo il flag nspt_pars.Init. Se legge da configurazione
@@ -475,9 +475,15 @@ int QuenchedAllocate(ptGluon_fld& Umu){
         // sizeT = Sz[3];
         // hence, we can get the time coordinate through
         // t = i % L
+        // UPDATE: THIS IS WRONG!!!
+        // The GETINDEX funciton is simply misleading. In the fermion
+        // part, the component with index 0 is temporal, which is 
+        // labeled 'x' in GETINDEX
+        // Hence:
+        // t = i / L^3
         // now, initialize the bg field ...
         //*/ // Abelian DOES NOT WORK, YET
-        int t = i % act_pars.sz[3];
+        int t = i / (act_pars.sz[1] * act_pars.sz[2] * act_pars.sz[3]); //% act_pars.sz[3];
         int index = Umu.Z->L[i][4];
         Umu.W[index][mu].bgf() = bgf::get_abelian_bgf(t, mu);
         //std::cout <<  Umu.W[index][mu].bgf() << std::endl;
