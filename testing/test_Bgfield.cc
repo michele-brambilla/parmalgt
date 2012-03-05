@@ -143,30 +143,30 @@ TEST(AbelianBgf, E){
   C(1,1) = Cplx( 0, -.5/ L);
   C(2,2) = Cplx( 0, -.5/ L);
   Cplx E = 0;
-  for (int k = 0; k < 3; ++k){
+  for (int k = 1; k < 4; ++k){
     E -= (bgf::get_abelian_bgf(0, k)*
-          bgf::get_abelian_bgf(0, 3)*
+          bgf::get_abelian_bgf(0, 0)*
           bgf::get_abelian_bgf(1, k).dag()*
-          bgf::get_abelian_bgf(0, 3).dag()).ApplyFromRight(C).Tr();
+          bgf::get_abelian_bgf(0, 0).dag()).ApplyFromRight(C).Tr();
     E -= (bgf::get_abelian_bgf(T, k).dag()*
-          bgf::get_abelian_bgf(T-1, 3).dag()*
+          bgf::get_abelian_bgf(T-1, 0).dag()*
           bgf::get_abelian_bgf(T-1, k)*
-          bgf::get_abelian_bgf(T-1, 3).dag()).ApplyFromRight(C).Tr();
+          bgf::get_abelian_bgf(T-1, 0).dag()).ApplyFromRight(C).Tr();
   }
   E *= L*L*L*2;
   double pio3 = std::atan(1.)*4./3;
   double k = 12*L*L*(std::sin(pio3/L/L) + std::sin(pio3*2/L/L));
   EXPECT_DOUBLE_EQ( E.re, k);
   std::cout << k << std::endl;
-  std::cout << (bgf::get_abelian_bgf(0, k)*
-                bgf::get_abelian_bgf(0, 3)*
-                bgf::get_abelian_bgf(1, k).dag()*
-                bgf::get_abelian_bgf(0, 3).dag()).
+  std::cout << (bgf::get_abelian_bgf(0, 1)*
+                bgf::get_abelian_bgf(0, 0)*
+                bgf::get_abelian_bgf(1, 1).dag()*
+                bgf::get_abelian_bgf(0, 0).dag()).
     ApplyFromRight(C).Tr().re << std::endl;
-  std::cout << (bgf::get_abelian_bgf(T, k).dag()*
-                bgf::get_abelian_bgf(T-1, 3).dag()*
-                bgf::get_abelian_bgf(T-1, k)*
-                bgf::get_abelian_bgf(T-1, 3).dag()).
+  std::cout << (bgf::get_abelian_bgf(T, 1).dag()*
+                bgf::get_abelian_bgf(T-1, 0).dag()*
+                bgf::get_abelian_bgf(T-1, 1)*
+                bgf::get_abelian_bgf(T-1, 0).dag()).
     ApplyFromRight(C).Tr().re << std::endl;
 }
   

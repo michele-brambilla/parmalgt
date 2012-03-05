@@ -938,9 +938,9 @@ struct ThreadInfo {
 inline void E_meas_parallel(const ptGluon_fld &U){
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
-  C(0,0) = Cplx(0, -1./act_pars.sz[1]);
-  C(1,1) = Cplx(0, .5/act_pars.sz[1]);
-  C(2,2) = Cplx(0, .5/act_pars.sz[1]);
+  C(0,0) = Cplx(0, 1./act_pars.sz[1]);
+  C(1,1) = Cplx(0, -.5/act_pars.sz[1]);
+  C(2,2) = Cplx(0, -.5/act_pars.sz[1]);
 
   pt::Direction t = pt::Direction::t;
 #pragma omp parallel num_threads(NTHR)
@@ -1041,7 +1041,7 @@ inline void E_meas_single(ptGluon_fld &Umu) {
 
 inline void E_meas(ptGluon_fld &Umu){
   //#ifndef __PARALLEL_OMP__
-  E_meas_single(Umu);
+  //E_meas_single(Umu);
   //#else
   E_meas_parallel(Umu);
   //#endif

@@ -20,7 +20,7 @@ extern int PTORD;
 
 #ifdef __PARALLEL_OMP__
 #define ntt  1
-#define ntx  2
+#define ntx  1
 #define nty  1
 #define ntz  1
 #define NTHR  (ntx*nty*ntz*ntt)

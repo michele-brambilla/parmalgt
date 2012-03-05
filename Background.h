@@ -392,7 +392,7 @@ namespace bgf {
                                     const double& nu = 0.0){
     static AbelianBgfFactory factory(T, L, eta, nu);
     static three_vec_t one = {1,1,1};
-    if (mu == 3)
+    if (!mu)
       return AbelianBgf(one);
     else
       return AbelianBgf(factory.get(t));
