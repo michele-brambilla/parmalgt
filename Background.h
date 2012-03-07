@@ -314,6 +314,10 @@ namespace bgf {
     three_vec_t v_;
   };
 
+  inline AbelianBgf dag(const AbelianBgf& b){
+    return b.dag();
+  }
+
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -363,24 +367,51 @@ namespace bgf {
     ///
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Tue Sep 27 10:46:16 2011
-    AbelianBgfFactory(const int &T, const int& L,
-                      const double& eta = 0.0, const double& nu = 0.0) 
+    AbelianBgfFactory(const int &T, const int& L, const int& s = 0) 
       : Vt_(T+1){
       if (T < 0)
         throw std::exception();
+      //if (!s) {
+      //  double pi = std::atan(1.)*4.;
+      //  double gamma = 1./L/T * (eta + pi/3.);
+      //  double eps[3] = {-2.*gamma, gamma, gamma};
+      //  double iC[3] = {-( eta - pi/3) / L,
+      //                  -eta * (-0.5 + nu)  / L,
+      //                  -( eta * (0.5 + nu) + pi/3.) / L};
+      //  for (int t = 0; t <= T; ++t)
+      //    for (int k = 0; k < 3; ++k)
+      //      Vt_[t][k] = exp(Cplx(0,eps[k] * t - iC[k]));
+      //}
+      const double eta = 0;
+      const double nu = 0;
       double pi = std::atan(1.)*4.;
-      double gamma = 1./L/T * (eta + pi/3.);
-      double eps[3] = {-2.*gamma, gamma, gamma};
-      double iC[3] = {-( eta - pi/3) / L,
-		      -eta * (-0.5 + nu)  / L,
-		      -( eta * (0.5 + nu) + pi/3.) / L};
-      for (int t = 0; t <= T; ++t)
-	for (int k = 0; k < 3; ++k)
-	  Vt_[t][k] = exp(Cplx(0,eps[k] * t - iC[k]));
+      SU3 C, Cp, B;
+      C(0,0) = eta - pi/3;
+      C(1,1) = eta * (nu - 0.5);
+      C(2,2) = - eta * ( nu + 0.5 ) + pi/3;
+      Cp(0,0) = -eta - pi;
+      Cp(1,1) = eta * (nu + 0.5) + pi/3;
+      Cp(2,2) = -eta * ( nu - 0.5) + 2.*pi/3;
+      C *= Cplx(0, 1./L);
+      Cp *= Cplx(0, 1./L);
+      // Values for the diagonals of V at t = 0, T
+      for (int k = 0; k < 3; ++k){
+        Vt_[0][k] = exp( C(k,k) );
+        Vt_[T][k] = exp( Cp(k,k) );
+      }
+      Cplx i = Cplx(0,1);
+      for (int t = 1; t < T; ++t){
+        Vt_[t][0] = exp(-2. * f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
+                        * (C(0,0) + Cp(0,0)));
+        for (int k = 1; k < 3; ++k)
+          Vt_[t][k] = exp(f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
+                          * (C(k,k) + Cp(k,k)));
+      }
     };
     const three_vec_t& get(int t){ return Vt_.at(t); }
   private:
     std::vector <three_vec_t> Vt_;
+    static const double f[3][31];
   };
 
   /// Returns V_\mu(t)
@@ -388,9 +419,8 @@ namespace bgf {
                                     const int& mu,
                                     const int& T = -1,
                                     const int& L = 0,
-                                    const double& eta = 0.0,
-                                    const double& nu = 0.0){
-    static AbelianBgfFactory factory(T, L, eta, nu);
+                                    const int& s = 0){
+    static AbelianBgfFactory factory(T, L, s);
     static three_vec_t one = {1,1,1};
     if (!mu)
       return AbelianBgf(one);

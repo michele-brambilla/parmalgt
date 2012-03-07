@@ -17,7 +17,7 @@ bin_PROGRAMS = test_Bgfield test_Helper test_SU3 test_newQCDpt \
 	test_PtTypes test_Point
 
 test_Bgfield_SOURCES = test_Bgfield.cc ../MyRand.cc \
-		       ../MyMath.cc 
+		       ../MyMath.cc ../Background.cc
 test_Bgfield_LDADD = lib/libgtest_main.la
 
 test_Helper_SOURCES = test_Helper.cc ../MyRand.cc

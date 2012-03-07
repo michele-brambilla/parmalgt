@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.68])
 AC_INIT([PRlgtTests], [0.1], [])
-AM_INIT_AUTOMAKE([1.10 no-define foreign])
+AM_INIT_AUTOMAKE([1.11])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.

@@ -2,7 +2,7 @@
 #include "QCDpt.h"
 #else
 #include "newQCDpt.h"
-const int ORD = 6;
+//const int ORD = 6;
 typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
 typedef ptt::PtMatrix<ORD> ptsu3;
 typedef BGptCVector<ORD> ptCVector;
@@ -28,8 +28,8 @@ typedef struct {
 typedef struct {
     indx id;
     int mo;
-    double pt[allocORD+1];
-    int cf[allocORD+1];
+    double pt[ORD+1];
+    int cf[ORD+1];
 } eigv;
 
 

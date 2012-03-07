@@ -17,6 +17,7 @@ typedef struct{
   int Kill;
   int Save;
   int Init;
+  int s;
   char *plaqn;
   char *confn;
   char *damon;

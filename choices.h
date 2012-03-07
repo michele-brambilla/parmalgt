@@ -1,10 +1,13 @@
 /* Condizioni al contorno in lattice.h  */
 /* E' l'unico altroparametro da settare */
 
-#define dim 4
-#define allocORD 6
-extern int PTORD;
+#ifndef CHOICES_H
+#define CHOICES_H
 
+#define dim 4
+//#define allocORD 6
+//extern int PTORD;
+const int ORD = 6;
 
 #define _SQRT_BETA_EXPANSION_
 
@@ -32,5 +35,5 @@ extern int PTORD;
 
 #define __ZERO_FLAG__ 1
 
-
+#endif
 

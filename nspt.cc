@@ -32,9 +32,9 @@ extern MyRand Rand[NTHR];
 ptSU3 Ww[NTHR], Ww1[NTHR], Ww2[NTHR], Wwsym[NTHR];
 ptSU3 MMm[NTHR][dim];
 SU3 P[NTHR];
-Cplx ww[NTHR][allocORD+1], ww1[NTHR][allocORD+1], ww2[NTHR][allocORD+1];
-double normm[NTHR][allocORD+1];
-Cplx ttrU[NTHR][dim][allocORD];
+Cplx ww[NTHR][ORD+1], ww1[NTHR][ORD+1], ww2[NTHR][ORD+1];
+double normm[NTHR][ORD+1];
+Cplx ttrU[NTHR][dim][ORD];
 int tid;
 
 #endif
@@ -48,7 +48,7 @@ fftw_plan *planFA;
 fftw_plan *planGluon;
 
 #ifdef __K_MOM_ANALYSIS__
-double *knorm[allocORD];
+double *knorm[ORD];
 extern FILE *FPkn;
 #endif
 
@@ -111,7 +111,7 @@ void gauge_wilson(ptGluon_fld& Umu){
       W1.Tr(w);
       // Sommo al valore della placchetta e calcolo la norma
       w1[0] += w[0];
-      for (int i1=1; i1 <= PTORD; i1++){		
+      for (int i1=1; i1 <= ORD; i1++){		
 	w1[i1] += w[i1];
 	norm[i1-1] += ((U[link_c][i1-1]*dag(U[link_c][i1-1])).Tr()).re;
 	trU[mu][i1-1] += U[link_c][i1-1].Tr();
@@ -123,7 +123,7 @@ void gauge_wilson(ptGluon_fld& Umu){
 #if GAUGE_ACTION != WIL
       W2 = U[link_c]*W2;			
       W2.Tr(w);
-      for (int i1=0; i1 <= PTORD; i1++){		
+      for (int i1=0; i1 <= ORD; i1++){		
 	w2[i1] += w[i1];
       }
       
@@ -165,7 +165,7 @@ void gauge_wilson(ptGluon_fld& Umu){
 #else
   
   for(tid = 0;tid < NTHR; tid++) {
-    for(int ord = 0; ord < PTORD; ord++){
+    for(int ord = 0; ord < ORD; ord++){
       ww[tid][ord]  = 0;
       ww1[tid][ord] = 0;
       ww2[tid][ord] = 0;
@@ -175,9 +175,9 @@ void gauge_wilson(ptGluon_fld& Umu){
 	  ttrU[tid][mu][ord] = Cplx(0,0);
 	}
     }
-    ww[tid][PTORD]  = 0;
-    ww1[tid][PTORD] = 0;
-    ww2[tid][PTORD] = 0;
+    ww[tid][ORD]  = 0;
+    ww1[tid][ORD] = 0;
+    ww2[tid][ORD] = 0;
     
     for(int mu = 0; mu < dim; mu++){
       MMm[tid][mu].zero();
@@ -230,7 +230,7 @@ void gauge_wilson(ptGluon_fld& Umu){
 	      Ww1[tid].Tr(ww[tid]);
 	      // Sommo al valore della placchetta e calcolo la norma
 	      ww1[tid][0] += ww[tid][0];
-	      for (int i1=1; i1 <= PTORD; i1++){
+	      for (int i1=1; i1 <= ORD; i1++){
 		ww1[tid][i1] += ww[tid][i1];
 
 		normm[tid][i1-1] += ((U[link_c][i1-1]*dag(U[link_c][i1-1])).Tr()).re;
@@ -243,7 +243,7 @@ void gauge_wilson(ptGluon_fld& Umu){
 #if GAUGE_ACTION != WIL
 	      Ww2[tid] = U[link_c]*Ww2[tid];			
 	      Ww2[tid].Tr(ww[tid]);
-	      for (int i1=0; i1 <= PTORD; i1++){		
+	      for (int i1=0; i1 <= ORD; i1++){		
 		ww2[tid][i1] += ww[tid][i1];
 	      }
       
@@ -285,7 +285,7 @@ void gauge_wilson(ptGluon_fld& Umu){
   // Reduce from parallel
   for(tid = 0; tid < NTHR; tid++){
   
-    for(int ord = 0; ord < PTORD; ord++){
+    for(int ord = 0; ord < ORD; ord++){
       w1[ord] += ww1[tid][ord];
       w2[ord] += ww2[tid][ord];
       norm[ord] += normm[tid][ord];
@@ -293,8 +293,8 @@ void gauge_wilson(ptGluon_fld& Umu){
 	trU[mu][ord] += ttrU[tid][mu][ord];
       }
     }
-    w1[PTORD] += ww1[tid][PTORD];
-    w2[PTORD] += ww2[tid][PTORD];
+    w1[ORD] += ww1[tid][ORD];
+    w2[ORD] += ww2[tid][ORD];
 
     for(int mu = 0; mu < dim; mu++){
       MM[mu] += MMm[tid][mu];
@@ -304,7 +304,7 @@ void gauge_wilson(ptGluon_fld& Umu){
 #endif
 
   
-  for (int i1=0; i1 < PTORD; i1++){		
+  for (int i1=0; i1 < ORD; i1++){		
 #if GAUGE_ACTION == WIL
     plaqfile << w1[i1].re/(double)(72*act_pars.iVol) << "\t" 
 	     << w1[i1].im/(double)(72*act_pars.iVol) << std::endl;
@@ -324,13 +324,13 @@ void gauge_wilson(ptGluon_fld& Umu){
   }
 
 #if GAUGE_ACTION == WIL
-  plaqfile << w1[PTORD].re/(double)(72*act_pars.iVol) << "\t" 
-	   << w1[PTORD].im/(double)(72*act_pars.iVol) << std::endl;
+  plaqfile << w1[ORD].re/(double)(72*act_pars.iVol) << "\t" 
+	   << w1[ORD].im/(double)(72*act_pars.iVol) << std::endl;
 #else
-  plaqfile << w1[PTORD].re/(double)(72*act_pars.iVol) << "\t" 
-	   << w1[PTORD].im/(double)(72*act_pars.iVol) << "\t"
-	   << w2[PTORD].re/(double)(72*act_pars.iVol) << "\t" 
-	   << w2[PTORD].im/(double)(72*act_pars.iVol) << std::endl;
+  plaqfile << w1[ORD].re/(double)(72*act_pars.iVol) << "\t" 
+	   << w1[ORD].im/(double)(72*act_pars.iVol) << "\t"
+	   << w2[ORD].re/(double)(72*act_pars.iVol) << "\t" 
+	   << w2[ORD].im/(double)(72*act_pars.iVol) << std::endl;
 #endif
 
 } // fine evoluzione gluoni
@@ -399,7 +399,7 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 #endif
 
   memset((void*)Pmu.psi, 0, act_pars.iVol*sizeof(ptSpinColor));
-  Pmu.fillPT(PTORD-2,Umu);
+  Pmu.fillPT(ORD-2,Umu);
 
 #ifndef __PARALLEL_OMP__
   // cicla su tutti i siti
@@ -420,7 +420,7 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 	}
 
       // Calcola la forza
-      for(int ord = 0; ord < PTORD-1; ord++){
+      for(int ord = 0; ord < ORD-1; ord++){
 	for(int k = 0; k < 3; k++){
 	  for(int j = 0; j < 3; j++){
 	    
@@ -468,7 +468,7 @@ void fermion_wilson(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 		}
 	      
 	      // Calcola la forza
-	      for(int ord = 0; ord < PTORD-1; ord++){
+	      for(int ord = 0; ord < ORD-1; ord++){
 		for(int k = 0; k < 3; k++){
 		  for(int j = 0; j < 3; j++){
 		    
@@ -776,11 +776,11 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 
   fftw_execute(planGluon[0]);
   for(curr = 0; curr < act_pars.iVol; curr++){
-    for (int i1=0; i1 < allocORD; i1++){		
+    for (int i1=0; i1 < ORD; i1++){		
       knorm[i1][curr] = 0;
     }
     for(int mu = 0; mu < dim; mu++){
-      for (int i1=0; i1 < allocORD; i1++){		
+      for (int i1=0; i1 < ORD; i1++){		
 	knorm[i1][curr] += ( Umu.W[curr][mu][i1]*
 			     dag(Umu.W[curr][mu][i1]) 
 			     ).Tr().re;
@@ -796,7 +796,7 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
     }
   }
 
-  fwrite(knorm[0],sizeof(double),act_pars.iVol*allocORD ,FPkn);
+  fwrite(knorm[0],sizeof(double),act_pars.iVol*ORD ,FPkn);
 
 #endif
 
@@ -865,11 +865,11 @@ void FAstochastic_gauge_fixing(ptGluon_fld& Umu){
   fftw_execute(planGluon[0]);
 
   for(curr = 0; curr < act_pars.iVol; curr++){
-    for (int i1=0; i1 < allocORD; i1++){		
+    for (int i1=0; i1 < ORD; i1++){		
       knorm[i1][curr] = 0;
     }
     for(int mu = 0; mu < dim; mu++){
-      for (int i1=0; i1 < allocORD; i1++){		
+      for (int i1=0; i1 < ORD; i1++){		
 	knorm[i1][curr] += ( Umu.W[curr][mu][i1]*
 			     dag(Umu.W[curr][mu][i1]) 
 			     ).Tr().re;
@@ -885,7 +885,7 @@ void FAstochastic_gauge_fixing(ptGluon_fld& Umu){
     }
   }
 
-  fwrite(knorm[0],sizeof(double),act_pars.iVol*allocORD ,FPkn);
+  fwrite(knorm[0],sizeof(double),act_pars.iVol*ORD ,FPkn);
 
 #endif
   
@@ -935,49 +935,101 @@ struct ThreadInfo {
   int t,x,y,z,dt,dx,dy,dz;
 };
 
+template <class C>
+inline ptSU3 meas_on_timeslice(const ptGluon_fld& U, const int& t){
+  ptSU3 tmp;
+  #pragma omp parallel num_threads(NTHR)
+  {
+    C f;
+    ThreadInfo ti(thr_pars, omp_get_thread_num());
+    pt::Point n = U.mk_point(t, ti.x, ti.y, ti.z);
+    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
+      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
+        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
+          tmp += f(U, n);
+  }
+  return tmp;
+}
+
+// This is the plaquette at t = 0, arranged such that the derivative
+// w.r.t. eta may be inserted at the very end.
+
+struct E_lower {
+  ptSU3 operator()(const ptGluon_fld& U, const pt::Point n){
+    pt::Direction t = pt::Direction::t;
+    ptSU3 tmp;
+    for (pt::Direction k(1); k.good(); ++k)
+      tmp += U(n, k).bgf() * U(n + k, t) * 
+        dag( U(n +t, k) ) * dag( U(n, t) );
+    return tmp;
+  }
+};
+
+// This is the plaquette at t = T, arranged such that the derivative
+// w.r.t. eta may be inserted at the very end.
+
+struct E_upper {
+  ptSU3 operator()(const ptGluon_fld& U, const pt::Point n){
+    pt::Direction t = pt::Direction::t;
+    ptSU3 tmp;
+    for (pt::Direction k(1); k.good(); ++k)
+      tmp += dag( U (n + t, k).bgf() ) * dag( U(n, t) ) *
+              U(n, k) * U(n + k, t);
+    return tmp;
+  }
+};
+
 inline void E_meas_parallel(const ptGluon_fld &U){
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 C;
-  C(0,0) = Cplx(0, 1./act_pars.sz[1]);
-  C(1,1) = Cplx(0, -.5/act_pars.sz[1]);
-  C(2,2) = Cplx(0, -.5/act_pars.sz[1]);
+  C(0,0) = Cplx(0, -2./act_pars.sz[1]);
+  C(1,1) = Cplx(0, 1./act_pars.sz[1]);
+  C(2,2) = Cplx(0, 1./act_pars.sz[1]);
 
   pt::Direction t = pt::Direction::t;
-#pragma omp parallel num_threads(NTHR)
-  {
-    ThreadInfo ti(thr_pars, omp_get_thread_num());
 
-    pt::Point n = U.mk_point(0, ti.x, ti.y, ti.z);
-    ptSU3 tmp;
-    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
-      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
-        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
-          for (pt::Direction k(1); k.good(); ++k)
-            tmp += U(n, k) * U(n + k, t) * 
-              dag( U(n +t, k) ) * dag( U(n, t) );
-    n = U.mk_point(act_pars.sz[0] - 2, ti.x, ti.y, ti.z);
-    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
-      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
-        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
-          for (pt::Direction k(1); k.good(); ++k)
-            tmp += dag( U (n + t, k) ) * dag( U(n, t) ) *
-              U(n, k) * U(n + k, t);
-    for_each(tmp.begin(), tmp.end(), pta::mul(C));
-    Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
-#pragma omp atomic
-    nor[0] += tree.re;
-#pragma omp atomic
-    nor[1] += tree.im;
-    for (int r = 0; r < ORD*2; r += 2){
-      for (int i = 0; i < 3; ++i){
-#pragma omp atomic
-        nor[r*3+2*i+2] += tmp[r/2](i,i).re;
-#pragma omp atomic
-        nor[r*3+2*i+3] += tmp[r/2](i,i).im;
-      }
+  ptSU3 tmp = meas_on_timeslice<E_lower>(U, 0) +
+    meas_on_timeslice<E_upper>(U, act_pars.sz[0] - 2);
+  for_each(tmp.begin(), tmp.end(), pta::mul(C));
+  Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
+  nor[0] += tree.re;
+  nor[1] += tree.im;
+  for (int r = 0; r < ORD*2; r += 2){
+    for (int i = 0; i < 3; ++i){
+      nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+      nor[r*3+2*i+3] += tmp[r/2](i,i).im;
     }
   }
-  std::ofstream of("E.p.txt", std::ios_base::app);
+  std::ofstream of("E.txt", std::ios_base::app);
+  for (int i = 0; i < ORD*2*3 + 2; ++i)
+    of << nor[i] << " ";
+  of << std::endl;
+  of.close();
+}
+
+inline void nu_meas_parallel(const ptGluon_fld &U){
+  std::vector<double> nor(ORD*2*3 + 2);
+  SU3 C;
+  C(0,0) = Cplx(0, 0);
+  C(1,1) = Cplx(0, 2./act_pars.sz[1]);
+  C(2,2) = Cplx(0, -2./act_pars.sz[1]);
+
+  pt::Direction t = pt::Direction::t;
+
+  ptSU3 tmp = meas_on_timeslice<E_lower>(U, 0) -
+    meas_on_timeslice<E_upper>(U, act_pars.sz[0] - 2);
+
+  for_each(tmp.begin(), tmp.end(), pta::mul(C));
+  Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
+  nor[0] += tree.re;
+  nor[1] += tree.im;
+  for (int r = 0; r < ORD*2; r += 2){
+    for (int i = 0; i < 3; ++i){
+      nor[r*3+2*i+2] += tmp[r/2](i,i).re;
+      nor[r*3+2*i+3] += tmp[r/2](i,i).im;
+    }
+  }
+  std::ofstream of("nu.txt", std::ios_base::app);
   for (int i = 0; i < ORD*2*3 + 2; ++i)
     of << nor[i] << " ";
   of << std::endl;
@@ -1040,11 +1092,11 @@ inline void E_meas_single(ptGluon_fld &Umu) {
 }
 
 inline void E_meas(ptGluon_fld &Umu){
-  //#ifndef __PARALLEL_OMP__
-  //E_meas_single(Umu);
-  //#else
+#ifndef __PARALLEL_OMP__
+  E_meas_single(Umu);
+#else
   E_meas_parallel(Umu);
-  //#endif
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1097,7 +1149,7 @@ void NsptEvolve(ptGluon_fld& Umu){
     for (int i1=0; i1 < dim; i1++){
       MM[i1].zero();
     }
-    for (int i1=0; i1 <= PTORD; i1++){
+    for (int i1=0; i1 <= ORD; i1++){
       w1[i1]    = 0.0;
       norm[i1]  = 0.0;
       for (int mu=0; mu < dim; mu++){
@@ -1155,6 +1207,7 @@ void NsptEvolve(ptGluon_fld& Umu){
     check_bgf(Umu);
 #endif
     E_meas(Umu);    
+    nu_meas_parallel(Umu);
   }
 
 #ifdef __TIMING__
@@ -1180,7 +1233,7 @@ void NsptEvolve(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
     for (int i1=0; i1 < dim; i1++){
       MM[i1].zero();
     }
-    for (int i1=0; i1 <= PTORD; i1++){
+    for (int i1=0; i1 <= ORD; i1++){
       w1[i1] = 0.0;
       norm[i1]  = 0.0;
       for (int mu=0; mu < dim; mu++){
@@ -1255,8 +1308,8 @@ void NsptEvolve(ptGluon_fld& Umu, ptSpinColor_fld& Pmu, SpinColor_fld& Xi){
 // Confronta 2 placchette. Se sono uguali ritorna 0, altrimenti
 // la differenza tra le due
 int plaquette_check(Cplx* w1, Cplx* w2){
-  // return ( memcmp(w1, w2, (PTORD+1)*sizeof(Cplx)) ); 
-  for(int i1 = 0; i1 <= PTORD;i1++){
+  // return ( memcmp(w1, w2, (ORD+1)*sizeof(Cplx)) ); 
+  for(int i1 = 0; i1 <= ORD;i1++){
     if( (w1[i1]-w2[i1]).mod() > 1e-7 ) return 1;
   }
   return 0;
@@ -1298,7 +1351,7 @@ void WL2x2(ptGluon_fld& Umu) {
     } // mu
   } // site
 
-  for( int i1 = 1; i1 < PTORD; i1+=2){
+  for( int i1 = 1; i1 < ORD; i1+=2){
     loop2x2 << (tmp1[i1].Tr()).re*act_pars.rVol*D18 << "\t";
   }
   loop2x2 << std::endl;
@@ -1335,7 +1388,7 @@ void WL2x2(ptGluon_fld& Umu) {
   }
 
   // std::cout << std::endl;
-  for( int i1 = 1; i1 <= PTORD; i1+=2){
+  for( int i1 = 1; i1 <= ORD; i1+=2){
     // std::cout << (tmp1[0].ptU[i1].Tr()).re*act_pars.rVol*D18 << "\t";
     loop2x2 << (tmp1[0][i1].Tr()).re*act_pars.rVol*D18 << "\t";
   }
@@ -1352,10 +1405,10 @@ void WL2x2(ptGluon_fld& Umu) {
 
 #ifdef __MANY_LOOP__
 
-Cplx l21[allocORD+1];
-Cplx l22[allocORD+1];
-Cplx l42[allocORD+1];
-Cplx l44[allocORD+1];
+Cplx l21[ORD+1];
+Cplx l22[ORD+1];
+Cplx l42[ORD+1];
+Cplx l44[ORD+1];
 
 
 void ComputeLoops(ptGluon_fld &Umu){
@@ -1492,22 +1545,22 @@ void ComputeLoops(ptGluon_fld &Umu){
 
   const double loopNorm = 1./(3*2*3*(Umu.Z->Size));
   // loop1x2 << "Plaquette 1x2" << endl;
-  for(int i1 = 0; i1 <= PTORD; i1+=2){  
+  for(int i1 = 0; i1 <= ORD; i1+=2){  
     loop2x2 << l21[i1].re*.5*loopNorm << "\t";
   }					
   
   // loop2x2 << "Plaquette 2x2" << endl;
-  for(int i1 = 0; i1 <= PTORD; i1+=2){  
+  for(int i1 = 0; i1 <= ORD; i1+=2){  
     loop2x2 << l22[i1].re*loopNorm << "\t";
   }					
   
   // loop2x2 << "Plaquette 2x4" << endl;
-  for(int i1 = 0; i1 <= PTORD; i1+=2){  
+  for(int i1 = 0; i1 <= ORD; i1+=2){  
     loop2x2 << l42[i1].re*.5*loopNorm << "\t";
   }					
   
   // cout << "Plaquette 4x4" << endl;
-  for(int i1 = 0; i1 <= PTORD; i1+=2){  
+  for(int i1 = 0; i1 <= ORD; i1+=2){  
     loop2x2 << l44[i1].re*loopNorm << "\t";
   }					
   loop2x2 << std::endl;
@@ -1520,11 +1573,11 @@ void ComputeLoops(ptGluon_fld &Umu){
 // Misura a configurazione congelata la placchetta
 void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 #ifndef __PARALLEL_OMP__
-  for(int i1 = 0; i1 < PTORD+1; i1++){
+  for(int i1 = 0; i1 < ORD+1; i1++){
     w[i1] = 0.0;
   }					
   
-  Cplx* app = new Cplx[PTORD+1];
+  Cplx* app = new Cplx[ORD+1];
   
   for(int i = 0; i < act_pars.iVol;i++){
     W1.zero();				
@@ -1538,13 +1591,13 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
       }
       W1 = Umu.W[link_c][mu]*W;
       W1.Tr(app);
-      for(int i1 = 0; i1 <= PTORD; i1++){
+      for(int i1 = 0; i1 <= ORD; i1++){
 	w[i1] += app[i1];
       }
     }	
   }
      
-  for(int i1 = 0; i1 <= PTORD; i1++){
+  for(int i1 = 0; i1 <= ORD; i1++){
     w[i1] /= (act_pars.iVol*36);
   }					
 
@@ -1555,11 +1608,11 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 #else
 
   for(int nt = 0; nt < NTHR; nt++){
-    for(int i1 = 0; i1 < PTORD+1; i1++){
+    for(int i1 = 0; i1 < ORD+1; i1++){
       ww[nt][i1] = 0.0;
     }				
   }
-  //  Cplx* app = new Cplx[PTORD+1];
+  //  Cplx* app = new Cplx[ORD+1];
   
 #pragma omp parallel private(tid,link_c) num_threads(NTHR)
   {
@@ -1580,7 +1633,7 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
  	Ww1[tid] = Umu.W[site_x][mu]*Ww[tid];
  	Ww1[tid].Tr(ww1[tid]);
 	
- 	for(int i1 = 0; i1 <= PTORD; i1++){
+ 	for(int i1 = 0; i1 <= ORD; i1++){
  	  ww[tid][i1] += ww1[tid][i1];
  	}
 	
@@ -1592,7 +1645,7 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
   } // end parallel
 #pragma omp barrier
 
-  for(int i1 = 0; i1 <= PTORD; i1++){
+  for(int i1 = 0; i1 <= ORD; i1++){
     w[i1] = 0;
     for(int nt = 0; nt < NTHR; nt++){
       //      std::cout << ww[nt][i1].re << "\t";
@@ -1610,11 +1663,11 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 // // Misura a configurazione congelata la placchetta
 // void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 // #ifndef __PARALLEL_OMP__
-//   for(int i1 = 0; i1 < PTORD+1; i1++){
+//   for(int i1 = 0; i1 < ORD+1; i1++){
 //     w[i1] = 0.0;
 //   }					
   
-//   Cplx* app = new Cplx[PTORD+1];
+//   Cplx* app = new Cplx[ORD+1];
   
 //   for(int i = 0; i < act_pars.iVol;i++){
 //     W1.zero();				
@@ -1628,13 +1681,13 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 //       }
 //       W1 = Umu.W[link_c][mu]*W;
 //       W1.Tr(app);
-//       for(int i1 = 0; i1 <= PTORD; i1++){
+//       for(int i1 = 0; i1 <= ORD; i1++){
 // 	w[i1] += app[i1];
 //       }
 //     }	
 //   }
      
-//   for(int i1 = 0; i1 <= PTORD; i1++){
+//   for(int i1 = 0; i1 <= ORD; i1++){
 //     w[i1] /= (act_pars.iVol*72);
 //   }					
 
@@ -1645,11 +1698,11 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 // #else
 
 //   for(int nt = 0; nt < NTHR; nt++){
-//     for(int i1 = 0; i1 < PTORD+1; i1++){
+//     for(int i1 = 0; i1 < ORD+1; i1++){
 //       ww[nt][i1] = 0.0;
 //     }				
 //   }
-//   //  Cplx* app = new Cplx[PTORD+1];
+//   //  Cplx* app = new Cplx[ORD+1];
   
 // #pragma omp parallel private(tid,link_c) num_threads(NTHR)
 //   {
@@ -1669,7 +1722,7 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 //  	Ww1[tid] = Umu.W[site_x][mu]*Ww[tid];
 //  	Ww1[tid].Tr(ww1[tid]);
 	
-//  	for(int i1 = 0; i1 <= PTORD; i1++){
+//  	for(int i1 = 0; i1 <= ORD; i1++){
 //  	  ww[tid][i1] += ww1[tid][i1];
 //  	}
 	
@@ -1681,7 +1734,7 @@ void plaquette_measure(ptGluon_fld& Umu, act_params_t& act_pars){
 //   } // end parallel
 // #pragma omp barrier
 
-//   for(int i1 = 0; i1 <= PTORD; i1++){
+//   for(int i1 = 0; i1 <= ORD; i1++){
 //     w[i1] = 0;
 //     for(int nt = 0; nt < NTHR; nt++){
 //       //      std::cout << ww[nt][i1].re << "\t";

@@ -107,18 +107,17 @@ TEST(AbelianBgf, KnownValues){
   // do 1000 checks
   for (int _n = 0; _n < 1000; ++_n){
     // random T, L (< 100), eta, nu
-    int L = std::rand() % 100 + 10;
-    int T = std::rand() % 100 + 10;
-    double eta = r.Rand();
-    double nu = r.Rand();
+    int L = abs((std::rand() * 2)) % 60 + 4;
+    int T = L;
+    //int T = std::rand() % 100 + 10;
     // initialize the background field
-    bgf::AbelianBgfFactory factory(T, L, eta, nu);
+    bgf::AbelianBgfFactory factory(T, L);
     // random x0
     int x0 = r.Rand()*T;
     // now calculate 
     //       exp (i E t) = dV
     //           = exp ( - i gamma * x0 * diag(2,-1,-1) )
-    double gamma = 1./L/T * (eta + pio3);
+    double gamma = 1./L/T * pio3;
     SU3 su3dV;
     su3dV.whr[0] = exp(Cplx(0, -2.*gamma*x0));
     su3dV.whr[4] = exp(Cplx(0, gamma*x0));
@@ -134,10 +133,10 @@ TEST(AbelianBgf, KnownValues){
 // Test tree level formula for E,
 
 TEST(AbelianBgf, E){
-  const int L = 4;
-  const int T = L;
+  int L = 8;
+  int T = 8;
   // initialize
-  bgf::get_abelian_bgf(0,0,L,L);
+  bgf::get_abelian_bgf(0,0,T,L,0);
   SU3 C;
   C(0,0) = Cplx( 0, 1./ L);
   C(1,1) = Cplx( 0, -.5/ L);
@@ -157,17 +156,38 @@ TEST(AbelianBgf, E){
   double pio3 = std::atan(1.)*4./3;
   double k = 12*L*L*(std::sin(pio3/L/L) + std::sin(pio3*2/L/L));
   EXPECT_DOUBLE_EQ( E.re, k);
-  std::cout << k << std::endl;
-  std::cout << (bgf::get_abelian_bgf(0, 1)*
-                bgf::get_abelian_bgf(0, 0)*
-                bgf::get_abelian_bgf(1, 1).dag()*
-                bgf::get_abelian_bgf(0, 0).dag()).
-    ApplyFromRight(C).Tr().re << std::endl;
-  std::cout << (bgf::get_abelian_bgf(T, 1).dag()*
-                bgf::get_abelian_bgf(T-1, 0).dag()*
-                bgf::get_abelian_bgf(T-1, 1)*
-                bgf::get_abelian_bgf(T-1, 0).dag()).
-    ApplyFromRight(C).Tr().re << std::endl;
+
+
+  L = 8;
+  int s = -1;
+  T = L - s;
+  double ct = 2 / (2 + s);
+  C(0,0) = Cplx( 0, 1./ L);
+  C(1,1) = Cplx( 0, -.5/ L);
+  C(2,2) = Cplx( 0, -.5/ L);
+  bgf::AbelianBgfFactory factory(T, L, s);
+  E = 0;
+  E -= (bgf::AbelianBgf(factory.get(0))*
+        bgf::AbelianBgf(factory.get(1)).dag()).ApplyFromRight(C).Tr();
+  E -= (bgf::AbelianBgf(factory.get(T)).dag()*
+        bgf::AbelianBgf(factory.get(T-1))).ApplyFromRight(C).Tr();
+  E *= L*L*L*2*3*ct;
+  EXPECT_DOUBLE_EQ( E.re, 37.6945384607827);
+  
+  s = 1;
+  T = L - s;
+  ct = 2. / (2 + s);
+  C(0,0) = Cplx( 0, 1./ L);
+  C(1,1) = Cplx( 0, -.5/ L);
+  C(2,2) = Cplx( 0, -.5/ L);
+  factory = bgf::AbelianBgfFactory(T, L, s);
+  E = 0;
+  E -= (bgf::AbelianBgf(factory.get(0))*
+        bgf::AbelianBgf(factory.get(1)).dag()).ApplyFromRight(C).Tr();
+  E -= (bgf::AbelianBgf(factory.get(T)).dag()*
+        bgf::AbelianBgf(factory.get(T-1))).ApplyFromRight(C).Tr();
+  E *= L*L*L*2*3*ct;
+  ASSERT_DOUBLE_EQ( E.re, 37.69169953984173);
 }
   
 

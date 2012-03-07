@@ -98,7 +98,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 
 
@@ -134,7 +134,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 	      }
 	    }
@@ -168,7 +168,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 	      }
 	    }
@@ -201,7 +201,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 	      }
 	    }
@@ -308,7 +308,7 @@ class ptGluon_fld{
     FILE *filept;	
     if( (filept = fopen(filename, "w")) == NULL)  return 1;
     fwrite(W,sizeof(ptGluon), Z->Size, filept);
-    fwrite(placchetta, sizeof(Cplx), PTORD+1 , filept);
+    fwrite(placchetta, sizeof(Cplx), ORD+1 , filept);
     
     fclose(filept);
     return 0;
@@ -325,7 +325,7 @@ class ptGluon_fld{
       }
 
     fread(W,sizeof(ptGluon), Z->Size,filept); 
-    fread(placchetta, sizeof(Cplx), PTORD+1 , filept);
+    fread(placchetta, sizeof(Cplx), ORD+1 , filept);
 
     fclose(filept);
     return 0;
@@ -343,10 +343,10 @@ class ptGluon_fld{
     fseek(filept, offset, SEEK_SET);
     fread(W,sizeof(ptGluon), Z->Size,filept); 
 
-    offset = -(PTORD+1)*sizeof(Cplx);
+    offset = -(ORD+1)*sizeof(Cplx);
     fseek(filept, offset, SEEK_END);
     
-    fread(placchetta, sizeof(Cplx), PTORD+1 , filept);
+    fread(placchetta, sizeof(Cplx), ORD+1 , filept);
 
     fclose(filept);
     return 0;
@@ -384,7 +384,7 @@ class ptGluon_fld{
 		xx[1] = j + YY[0]*4;
 		xx[0] = i;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 
 
@@ -424,7 +424,7 @@ class ptGluon_fld{
 /* 		xx[1] = j + YY[1]*4; */
 /* 		xx[0] = i+8; */
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 	      }
 	    }
@@ -462,7 +462,7 @@ class ptGluon_fld{
 /* 		xx[1] = j + YY[1]*4; */
 /* 		xx[0] = i+16; */
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 	      }
 	    }
@@ -499,7 +499,7 @@ class ptGluon_fld{
 /* 		xx[1] = j + YY[1]*4; */
 /* 		xx[0] = i+24; */
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 	      }
 	    }
@@ -836,7 +836,7 @@ public:
       printf("i = %d\n",i);
       for(int mu = 0; mu < dim; mu++){
 	printf("\tmu = %d\n",mu);
-	for(int ord = 0; ord < PTORD+1; ord++){
+	for(int ord = 0; ord < ORD+1; ord++){
 	  printf("\t\tord = %d\n",ord);
 	  psi[i][mu][ord].prout();
 	  printf("\n");
@@ -865,7 +865,7 @@ public:
 
 
   void fout(std::ofstream& file) {
-    for(int ord = 0; ord < PTORD+1; ord++){
+    for(int ord = 0; ord < ORD+1; ord++){
       file << "ord = " << ord << endl << endl;
       for (int i = 0; i < Z->Size; i++)
 	for (int mu = 0; mu < dim; mu++)
