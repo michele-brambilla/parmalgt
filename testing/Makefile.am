@@ -27,7 +27,7 @@ test_SU3_SOURCES = test_SU3.cc ../MyMath.cc ../MyRand.cc
 test_SU3_LDADD = lib/libgtest_main.la
 
 test_newQCDpt_SOURCES = test_newQCDpt.cc ../MyMath.cc ../MyRand.cc \
-	../newQCDpt.cc
+	../newQCDpt.cc ../Background.cc
 test_newQCDpt_LDADD = lib/libgtest.la
 
 test_PtTypes_SOURCES = test_PtTypes.cc ../MyMath.cc ../MyRand.cc

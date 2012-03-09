@@ -183,6 +183,11 @@ namespace ptt {
   template <int N>
   inline PtMatrix<N> operator*(const PtMatrix<N>& A, const PtMatrix<N>& B){
     PtMatrix<N> result;
+    //for (int r = 0; r < ORD; ++r){
+    //  result[r] = A[r];
+    //  for (int s = 1; s < r+1; ++s)
+    //    result[r] += A[s-1] * B[r-s];
+    //}
     for (int i = 0; i < N - 1; ++i)
       for (int j = 0; j <= i; ++j)
         result[i + 1] += A[j] * B[i - j];

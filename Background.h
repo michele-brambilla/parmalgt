@@ -382,6 +382,17 @@ namespace bgf {
       //    for (int k = 0; k < 3; ++k)
       //      Vt_[t][k] = exp(Cplx(0,eps[k] * t - iC[k]));
       //}
+      // tree level c_t
+      if (T + s != L)
+        std::cout 
+          << "WARNING!\nYou gave strange values for T,L, and s!\n"
+          << "T = " << T << "\nL = " << L << "\ns = " << s
+          << "\nYou should have T + s = L!\n"
+          << "You're entering a world of pain!\n"
+          << "This is my last warning.\n";
+          
+      double ct = 2. / (2 + s);
+      // eta and nu remain zero since we only plugged in f for these values!
       const double eta = 0;
       const double nu = 0;
       double pi = std::atan(1.)*4.;
@@ -396,8 +407,8 @@ namespace bgf {
       Cp *= Cplx(0, 1./L);
       // Values for the diagonals of V at t = 0, T
       for (int k = 0; k < 3; ++k){
-        Vt_[0][k] = exp( C(k,k) );
-        Vt_[T][k] = exp( Cp(k,k) );
+        Vt_[0][k] = exp( C(k,k) ) * ct;
+        Vt_[T][k] = exp( Cp(k,k) ) * ct;
       }
       Cplx i = Cplx(0,1);
       for (int t = 1; t < T; ++t){
@@ -432,6 +443,13 @@ namespace bgf {
   
   template <> inline AbelianBgf unit<AbelianBgf>() {
     three_vec_t alpha_v = {1, 1, 1};
+    return AbelianBgf(alpha_v);
+  };
+
+  template <class B> inline B zero(){ return B(); }
+  
+  template <> inline AbelianBgf zero<AbelianBgf>() {
+    three_vec_t alpha_v = {0, 0, 0};
     return AbelianBgf(alpha_v);
   };
   

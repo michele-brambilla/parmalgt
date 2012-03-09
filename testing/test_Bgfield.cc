@@ -161,7 +161,6 @@ TEST(AbelianBgf, E){
   L = 8;
   int s = -1;
   T = L - s;
-  double ct = 2 / (2 + s);
   C(0,0) = Cplx( 0, 1./ L);
   C(1,1) = Cplx( 0, -.5/ L);
   C(2,2) = Cplx( 0, -.5/ L);
@@ -171,12 +170,11 @@ TEST(AbelianBgf, E){
         bgf::AbelianBgf(factory.get(1)).dag()).ApplyFromRight(C).Tr();
   E -= (bgf::AbelianBgf(factory.get(T)).dag()*
         bgf::AbelianBgf(factory.get(T-1))).ApplyFromRight(C).Tr();
-  E *= L*L*L*2*3*ct;
+  E *= L*L*L*2*3;
   EXPECT_DOUBLE_EQ( E.re, 37.6945384607827);
   
   s = 1;
   T = L - s;
-  ct = 2. / (2 + s);
   C(0,0) = Cplx( 0, 1./ L);
   C(1,1) = Cplx( 0, -.5/ L);
   C(2,2) = Cplx( 0, -.5/ L);
@@ -186,7 +184,7 @@ TEST(AbelianBgf, E){
         bgf::AbelianBgf(factory.get(1)).dag()).ApplyFromRight(C).Tr();
   E -= (bgf::AbelianBgf(factory.get(T)).dag()*
         bgf::AbelianBgf(factory.get(T-1))).ApplyFromRight(C).Tr();
-  E *= L*L*L*2*3*ct;
+  E *= L*L*L*2*3;
   ASSERT_DOUBLE_EQ( E.re, 37.69169953984173);
 }
   

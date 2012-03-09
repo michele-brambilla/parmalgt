@@ -4,13 +4,13 @@
 #include "Helper.h"
 #include <cstdlib> // for rand
 
-const int ORD = 10;
+const int MYORD = 10;
 
-typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
-typedef ptt::PtMatrix<ORD> ptsu3;
-typedef BGptCVector<ORD> ptCVector;
-typedef BGptGluon<bgf::AbelianBgf, ORD, 4> ptGluon;
-typedef BGptSpinColor<ORD, 4> ptSpinColor;
+typedef BGptSU3<bgf::AbelianBgf, MYORD> ptSU3;
+typedef ptt::PtMatrix<MYORD> ptsu3;
+typedef BGptCVector<MYORD> ptCVector;
+typedef BGptGluon<bgf::AbelianBgf, MYORD, 4> ptGluon;
+typedef BGptSpinColor<MYORD, 4> ptSpinColor;
 
 MyRand r(23797);
 
@@ -46,7 +46,7 @@ TEST_F(AbelianBgfTest, SimpleMultiply){
   // to be extra safe, check multiplication from left and right
   ptSU3 ACopy = One*MyPtSU3A;
   ptSU3 BCopy = MyPtSU3B*One;
-  for (int i = 0; i < ORD; ++i){
+  for (int i = 0; i < MYORD; ++i){
     ASSERT_TRUE( SU3Cmp(ACopy[i], MyPtSU3A[i])() );
     //ASSERT_TRUE( SU3Cmp(BCopy[i], MyPtSU3B[i])() );
   }
@@ -76,7 +76,7 @@ TEST(AbelianBgf, Multiply){
 TEST_F(AbelianBgfTest, Add){
   ptSU3 A_times_2 = MyPtSU3A*2.;
   ptSU3 A_plus_A = MyPtSU3A + MyPtSU3A;
-  for (int i = 0; i < ORD; ++i)
+  for (int i = 0; i < MYORD; ++i)
     ASSERT_TRUE( SU3Cmp(A_times_2[i], A_plus_A[i])() );
   ASSERT_TRUE( A_times_2.bgf() ==  A_plus_A.bgf() );
 }
@@ -89,7 +89,7 @@ TEST_F(AbelianBgfTest, ScalarMultiply){
   Cplx beta(r.Rand(), r.Rand());
   ptSU3 beta_B = MyPtSU3B;
   beta_B *= beta;
-  for (int i = 0; i < ORD; ++i){
+  for (int i = 0; i < MYORD; ++i){
     SU3 a = MyPtSU3A[i];
     SU3 b = MyPtSU3B[i];
     // multipy 'by hand'
@@ -157,7 +157,7 @@ TEST(BGptSpinColor, ProductWithGluon){
   }
   chi = psi*U; // <-- check this
   for (int i = 0; i < 4; ++i)
-    for (int j = 0; j <= ORD; ++j)
+    for (int j = 0; j <= MYORD; ++j)
       if (i && j == 5)
         ASSERT_TRUE(chi[i][j] == OneV*Cplx(i));
       else if (i && j == 5 + i + 1)
@@ -170,7 +170,7 @@ TEST(BGptSpinColor, ProductWithGluon){
 //  ptSU3 A(bgf::random()), B;
 //  A.randomize();
 //  B = dag(A);
-//  for (int r = 0; r < ORD; ++r)
+//  for (int r = 0; r < MYORD; ++r)
 //    for (int i = 0; i < 3; ++i)
 //      for (int j = 0; j < 3; ++j){
 //        ASSERT_DOUBLE_EQ( B[r](i,j).re, A[r](j,i).re );
@@ -178,8 +178,8 @@ TEST(BGptSpinColor, ProductWithGluon){
 //}
 
 TEST(BGptSU3Test, exp){
-  ptt::PtMatrix<ORD> A = ptt::get_random_pt_matrix<ORD>();
-  ptSU3 B = exp<bgf::AbelianBgf, ORD>(A);
+  ptt::PtMatrix<MYORD> A = ptt::get_random_pt_matrix<MYORD>();
+  ptSU3 B = exp<bgf::AbelianBgf, MYORD>(A);
   // calculate the first few terms by hand ...
   // tree level
   ASSERT_TRUE(B.bgf() == bgf::unit<bgf::AbelianBgf>());
@@ -198,9 +198,9 @@ TEST(BGptSU3Test, exp){
 
 TEST(BGptSU3Test, expUnit){
   for (int _n = 0; _n < 1000; ++_n){
-    ptt::PtMatrix<ORD> A = ptt::get_random_pt_matrix<ORD>();
-    ptSU3 B = exp<bgf::AbelianBgf, ORD>(A);
-    ptSU3 C = exp<bgf::AbelianBgf, ORD>(A * -1.);
+    ptt::PtMatrix<MYORD> A = ptt::get_random_pt_matrix<MYORD>();
+    ptSU3 B = exp<bgf::AbelianBgf, MYORD>(A);
+    ptSU3 C = exp<bgf::AbelianBgf, MYORD>(A * -1.);
     ptSU3 D = B*C;
     SU3 zero;
     // calculate the first few terms by hand ...
@@ -211,15 +211,25 @@ TEST(BGptSU3Test, expUnit){
   }
 }
 
+TEST(BGptSU3Test, inverse){
+  ptSU3 Z;
+  Z.ptU() = ptt::get_random_pt_matrix<MYORD>();
+  ptSU3 W = inverse(Z);
+  ptSU3 unit = Z*W;
+  ASSERT_TRUE( unit.bgf() == bgf::unit<bgf::AbelianBgf>() );
+  for (int i = 0; i < MYORD; ++i)
+    ASSERT_TRUE( SU3Cmp( unit[i], SU3() )(1e-13) ) << i;
+}
+
 TEST(BGptSU3Test, expUnitMore){
   for (int _n = 0; _n < 1000; ++_n){
-    ptt::PtMatrix<ORD> A = ptt::get_random_pt_matrix<ORD>();
+    ptt::PtMatrix<MYORD> A = ptt::get_random_pt_matrix<MYORD>();
     ptSU3 a, b;
     a.randomize(); a.bgf() = bgf::random();
     b.randomize(); b.bgf() = bgf::random();
     ptSU3 d = b;
-    ptSU3 B = exp<bgf::AbelianBgf, ORD>(A);
-    ptSU3 C = exp<bgf::AbelianBgf, ORD>(A * -1.);
+    ptSU3 B = exp<bgf::AbelianBgf, MYORD>(A);
+    ptSU3 C = exp<bgf::AbelianBgf, MYORD>(A * -1.);
     ptSU3 D = (B)*(C*b);
     // calculate the first few terms by hand ...
     // tree level
@@ -236,7 +246,7 @@ TEST(BGptSU3Test, Multiplication){
     b.randomize(); b.bgf() = bgf::random();
     c.randomize(); c.bgf() = bgf::random();
     d = (a*b)*c; e = a*(b*c);
-    for (int i = 0; i < ORD; ++i)
+    for (int i = 0; i < MYORD; ++i)
       ASSERT_TRUE( SU3Cmp( d[i], e[i] )(1e-14*(i+1)) ) << i;
   }
 }    
@@ -268,12 +278,12 @@ TEST(BGptSU3Test, log){
 
 // Now, we want to check if log(exp(A)) = A holds...
 TEST(BGptSU3Test, logexp){
-  ptt::PtMatrix<ORD> A = ptt::get_random_pt_matrix<ORD>(), B;
-  B = log(exp<bgf::AbelianBgf,ORD>(A));
+  ptt::PtMatrix<MYORD> A = ptt::get_random_pt_matrix<MYORD>(), B;
+  B = log(exp<bgf::AbelianBgf,MYORD>(A));
 
   ptSU3 C(bgf::unit<bgf::AbelianBgf>()), D;
   C.randomize();
-  D = exp<bgf::AbelianBgf,ORD>(log(C));
+  D = exp<bgf::AbelianBgf,MYORD>(log(C));
   // higher orders
   // a quick and dirty estimate gives that the round-off error should
   // be around 100 * epsilon * n at order n ...
@@ -288,7 +298,7 @@ TEST(BGptSU3Test, logexp){
 // background field class...
 
 int main(int argc, char **argv) {
-  bgf::get_abelian_bgf(0,0,T, L, eta, nu);
+  bgf::get_abelian_bgf(0,0,T, L);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

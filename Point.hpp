@@ -9,7 +9,7 @@ namespace pt {
   public:
     explicit Direction(const int& m) : mu(m) { }
     Direction& operator++() { ++mu; return *this; }
-    bool good() const { return mu != 4; }
+    bool good() const { return mu < 4; }
     operator int() const { return mu; }
     template <typename A, typename B>
     A deref_fwd(B b) const { return b[5 + mu]; }
@@ -22,7 +22,12 @@ namespace pt {
   private:
     int mu;
   };
-  
+
+  inline Direction operator+(const Direction& d, const int& i){
+    Direction result(i + d);
+    return result;
+  };
+
   class Point {
   public:
     typedef std::vector<std::vector<int> >::const_iterator iter_t;

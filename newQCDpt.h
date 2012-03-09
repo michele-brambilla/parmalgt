@@ -48,7 +48,10 @@ template <class B> struct IsZero<true, B> {
   static const bool debug_on = true;
   static void check(const B& V) {
     static double eps = std::numeric_limits<double>::epsilon() * 10;
-    if ( V.Norm() > eps)  throw IsNotZeroError();
+    if ( V.Norm() > eps)  {
+      std::cout << "->> " << V << std::endl;
+      throw IsNotZeroError();
+    }
   }
 };
 
@@ -309,6 +312,13 @@ operator*(const BGptSU3<BG, ORD>& A, const C& b){
   return BGptSU3<BG, ORD> (A) *= b;
 }
 
+
+template <class C, class BG, int ORD>
+inline BGptSU3<BG, ORD> 
+operator/(const BGptSU3<BG, ORD>& A, const C& b){
+  return BGptSU3<BG, ORD> (A) /= b;
+}
+
 template <class C, class BG, int ORD>
 inline BGptSU3<BG, ORD> 
 operator*(const C& b, const BGptSU3<BG, ORD>& A ){
@@ -351,6 +361,24 @@ dag( const BGptSU3<B, ORD>& U ){
   res.bgf() = U.bgf().dag();
   return res;
 };
+
+/// Inversion via perturbative series
+
+template <class B, int ORD>
+inline BGptSU3<B, ORD>
+inverse( const BGptSU3<B, ORD>& W ){
+  // assert that the series defined by W starts with one
+  //IsZero<do_debug, B>::check(W.bgf() - bgf::unit<B>());
+  BGptSU3<B, ORD> Z;
+
+  for ( int r = 0; r < ORD; ++r){
+    Z[r] = -W[r];
+    for ( int s = 1; s < r+1; ++s)
+      Z[r] -= Z[s-1] * W[r-s];
+  }
+
+  return Z;
+}
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

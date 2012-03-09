@@ -1,5 +1,6 @@
 #include "nspt.h"
 #include "GammaStuff.h"
+#include <iomanip>
 
 ptSU3 W, W1, W2, Wsym;
 ptSU3 *MM = new ptSU3[dim];
@@ -251,7 +252,6 @@ void gauge_wilson(ptGluon_fld& Umu){
 #endif
               
               // DH Feb. 6, 2012
-
               ptsu3 tmp  = Ww1[tid].reH(); // take to the algebra
               tmp *= act_pars.tau_g; // multipy by tau_g
               tmp[0] -= act_pars.stau*SU3rand(Rand[tid]); // add noise
@@ -683,9 +683,44 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
               // U_mu(x) * V^\dagger_mu(x - mu) 
               // * U_mu ^\dagger (x - mu) * V_mu(x - mu)
               ptSU3 Udag = dag(Umu.W[Umu.Z->L[curr][mu]][mu]);
-              ptSU3 U = Umu.W[site_c][mu];
+              ptSU3 &U = Umu.W[site_c][mu];
               bgf::AbelianBgf Vdag = U.bgf().dag(), V = Udag.bgf().dag();
               Ww[tid] += U*Vdag*Udag*V;
+              //Ww[tid].bgf() = bgf::AbelianBgf();
+              //ptSU3 one = Ww[tid]*inverse(Ww[tid]);
+              //
+              //std::cout << "xxxxxxxxxxxxxxxxxxx" << one.bgf() <<
+              //std::endl;
+              //for (int s = 0; s < ORD; ++s)
+              //  std::cout << one[s].Norm() << std::endl;
+              //
+              //for (int nu = 0; nu < 4; ++nu){
+              /*/
+
+                std::vector<std::vector<Cplx> > plaq_tmp(ORD, std::vector<Cplx>(16));
+                for (int mu2 = 0; mu2 < 4; ++mu2)
+                  for (int nu2 = 0; nu2 < 4; ++nu2)
+                    for (int i = 0; i < ORD; ++i)
+                      plaq_tmp[i][mu2*4 + nu2] =
+	    (Umu.W[site_c][mu2]*Umu.staple(curr, mu2, nu2))[i].Tr();
+            /*/
+              // Umu.W[site_c][nu] = Ww[tid]*Umu.W[site_c][nu];
+              // Umu.W[Umu.Z->L[curr][nu]][nu] =
+              //   Umu.W[Umu.Z->L[curr][nu]][nu] * dag(Ww[tid]);
+                /*/
+                for (int mu2 = 0; mu2 < 4; ++mu2)
+                  for (int nu2 = 0; nu2 < 4; ++nu2)
+                    for (int i = 0; i < ORD; ++i){
+                      Cplx p_new = (Umu.W[site_c][mu2]*Umu.staple(curr, mu2, nu2))[i].Tr();
+                      Cplx p_old = plaq_tmp[i][mu2*4 + nu2];
+                      Cplx tmp = p_new - p_old;
+                      double eps = sqrt(tmp.re*tmp.re + tmp.im*tmp.im);
+                      if (eps > 1e-14)
+                        std::cout << i << ": " <<  eps << std::endl
+                          ;//<< "   value: " << p_old << std::endl;
+                    }
+                    /*/
+                //}
             }
             //*/
 	    //for(int mu = 0; mu < dim; mu++){
@@ -718,6 +753,12 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
 	    // Preparo le trasformazioni di gauge
 	    Ww1[tid] = exp<bgf::AbelianBgf, ORD>( Ww[tid].reH() * act_pars.alpha);
 	    Ww2[tid] = exp<bgf::AbelianBgf, ORD>( Ww[tid].reH() * -act_pars.alpha);
+            //Ww[tid] *= .25;
+            //Ww[tid].bgf() = bgf::AbelianBgf();
+            //std::cout << Ww[tid].bgf() - bgf::unit<bgf::AbelianBgf>() << std::endl;
+            //Ww1[tid] = Ww[tid];// * alpha;
+            //Ww1[tid].bgf() = bgf::AbelianBgf();
+            //Ww2[tid] = inverse(Ww[tid]);// * alpha;
             // BEWARE that the above may throw an excpetion if reH
             // does not know what to do!
             /*/
@@ -936,76 +977,129 @@ struct ThreadInfo {
 };
 
 template <class C>
-inline ptSU3 meas_on_timeslice(const ptGluon_fld& U, const int& t){
-  ptSU3 tmp;
+inline void meas_on_timeslice(const ptGluon_fld& U, const int& t, C& f){
   #pragma omp parallel num_threads(NTHR)
   {
-    C f;
     ThreadInfo ti(thr_pars, omp_get_thread_num());
     pt::Point n = U.mk_point(t, ti.x, ti.y, ti.z);
     for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
       for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
         for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
-          tmp += f(U, n);
+          f(U, n);
   }
-  return tmp;
 }
 
 // This is the plaquette at t = 0, arranged such that the derivative
 // w.r.t. eta may be inserted at the very end.
 
-struct E_lower {
-  ptSU3 operator()(const ptGluon_fld& U, const pt::Point n){
+struct P_lower {
+  ptSU3 val;
+  P_lower () : val(bgf::zero<bgf::AbelianBgf>()) { }
+  void operator()(const ptGluon_fld& U, const pt::Point n){
     pt::Direction t = pt::Direction::t;
-    ptSU3 tmp;
     for (pt::Direction k(1); k.good(); ++k)
-      tmp += U(n, k).bgf() * U(n + k, t) * 
+      val += U(n, k).bgf() * U(n + k, t) * 
         dag( U(n +t, k) ) * dag( U(n, t) );
-    return tmp;
   }
 };
 
 // This is the plaquette at t = T, arranged such that the derivative
 // w.r.t. eta may be inserted at the very end.
 
-struct E_upper {
-  ptSU3 operator()(const ptGluon_fld& U, const pt::Point n){
+struct P_upper {
+  ptSU3 val;
+  P_upper () : val(bgf::zero<bgf::AbelianBgf>()) { }
+  void operator()(const ptGluon_fld& U, const pt::Point n){
     pt::Direction t = pt::Direction::t;
     ptSU3 tmp;
     for (pt::Direction k(1); k.good(); ++k)
-      tmp += dag( U (n + t, k).bgf() ) * dag( U(n, t) ) *
+      val += dag( U (n + t, k).bgf() ) * dag( U(n, t) ) *
               U(n, k) * U(n + k, t);
-    return tmp;
   }
 };
 
-inline void E_meas_parallel(const ptGluon_fld &U){
-  std::vector<double> nor(ORD*2*3 + 2);
-  SU3 C;
-  C(0,0) = Cplx(0, -2./act_pars.sz[1]);
-  C(1,1) = Cplx(0, 1./act_pars.sz[1]);
-  C(2,2) = Cplx(0, 1./act_pars.sz[1]);
-
-  pt::Direction t = pt::Direction::t;
-
-  ptSU3 tmp = meas_on_timeslice<E_lower>(U, 0) +
-    meas_on_timeslice<E_upper>(U, act_pars.sz[0] - 2);
-  for_each(tmp.begin(), tmp.end(), pta::mul(C));
-  Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
-  nor[0] += tree.re;
-  nor[1] += tree.im;
-  for (int r = 0; r < ORD*2; r += 2){
-    for (int i = 0; i < 3; ++i){
-      nor[r*3+2*i+2] += tmp[r/2](i,i).re;
-      nor[r*3+2*i+3] += tmp[r/2](i,i).im;
-    }
+struct P_spatial {
+  ptSU3 val;
+  P_spatial () : val(bgf::zero<bgf::AbelianBgf>()) { }
+  void operator()(const ptGluon_fld& U, const pt::Point n){
+    for (pt::Direction k(1); k.good(); ++k)
+      for (pt::Direction l(k + 1); l.good(); ++l)
+        val += U(n,k) * U(n + k, l)
+          * dag( U(n + l, k) ) * dag( U(n, l) );
   }
-  std::ofstream of("E.txt", std::ios_base::app);
-  for (int i = 0; i < ORD*2*3 + 2; ++i)
-    of << nor[i] << " ";
-  of << std::endl;
+};
+
+inline void to_bin_file(std::ofstream& of, const Cplx& c){
+  of.write(reinterpret_cast<const char*>(&c.re), sizeof(double));
+  of.write(reinterpret_cast<const char*>(&c.im), sizeof(double));
+}
+
+inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fname){
+  std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+  to_bin_file(of, tree);
+  for (int i = 0; i < ORD; ++i)
+    to_bin_file(of, U[i].Tr());
   of.close();
 }
+
+inline void measure(const ptGluon_fld &U){
+  std::vector<double> nor(ORD*2*3 + 2);
+  SU3 dC; // derivative of C w.r.t. eta
+  dC(0,0) = Cplx(0, -2./act_pars.sz[1]);
+  dC(1,1) = Cplx(0, 1./act_pars.sz[1]);
+  dC(2,2) = Cplx(0, 1./act_pars.sz[1]);
+  SU3 d_dC; // derivative of C w.r.t. eta and nu
+  d_dC(0,0) = Cplx(0, 0);
+  d_dC(1,1) = Cplx(0, 2./act_pars.sz[1]);
+  d_dC(2,2) = Cplx(0, -2./act_pars.sz[1]);
+
+  // shorthand for T, L, V3
+  int T = act_pars.sz[0] - 1;
+  int L = act_pars.sz[1];
+  int V3 = L*L*L;
+
+  P_lower Pl; // Plaquettes U_{0,k} at t = 0
+  P_upper Pu; // Plaquettes U_{0,k} at t = T - 1
+  meas_on_timeslice(U, 0, Pl);
+  meas_on_timeslice(U, T - 1, Pu);
+  P_upper Pm; // Plaquettes U_{0,k} at t = 1, ..., T - 2
+  for (int t = 1; t < T - 1; ++t)
+    meas_on_timeslice(U, t, Pm);
+
+  P_spatial Ps; // Spatial plaq. at t = 1, ..., T-1
+  for (int t = 1; t < T; ++t)
+    meas_on_timeslice(U, t, Ps);
+
+  // Evaluate Gamma'
+  ptSU3 tmp = Pl.val + Pu.val;
+  for_each(tmp.begin(), tmp.end(), pta::mul(dC));
+  Cplx tree = tmp.bgf().ApplyFromLeft(dC).Tr();
+  write_file(tmp, tree, "Gp.bindat");
+
+  // Evaluate v
+  tmp = Pl.val + Pu.val;
+  for_each(tmp.begin(), tmp.end(), pta::mul(d_dC));
+  tree = tmp.bgf().ApplyFromLeft(d_dC).Tr();
+  write_file(tmp, tree, "v.bindat");
+
+  // Evaluate bd_plaq (nomenclature as in MILC code)
+  tmp = (Pl.val + Pu.val) / 6 / V3;
+  tree = tmp.bgf().Tr();
+  write_file(tmp, tree, "bd_plaq.bindat");
+
+  // Evaluate st_plaq
+  tmp = (Pl.val + Pu.val + Pm.val) / 3 / V3 / T;
+  tree = tmp.bgf().Tr();
+  write_file(tmp, tree, "st_plaq.bindat");
+
+  // Eval. ss_plaq
+  tmp = Ps.val / 3 / V3 / (T-1);
+  tree = tmp.bgf().Tr();
+  write_file(tmp, tree, "ss_plaq.bindat");
+}
+
+
+
 
 inline void nu_meas_parallel(const ptGluon_fld &U){
   std::vector<double> nor(ORD*2*3 + 2);
@@ -1014,10 +1108,12 @@ inline void nu_meas_parallel(const ptGluon_fld &U){
   C(1,1) = Cplx(0, 2./act_pars.sz[1]);
   C(2,2) = Cplx(0, -2./act_pars.sz[1]);
 
-  pt::Direction t = pt::Direction::t;
 
-  ptSU3 tmp = meas_on_timeslice<E_lower>(U, 0) -
-    meas_on_timeslice<E_upper>(U, act_pars.sz[0] - 2);
+  P_lower El;
+  P_upper Eu;
+  meas_on_timeslice(U, 0, El);
+  meas_on_timeslice(U, act_pars.sz[0] - 2, Eu);
+  ptSU3 tmp = El.val + Eu.val;
 
   for_each(tmp.begin(), tmp.end(), pta::mul(C));
   Cplx tree = tmp.bgf().ApplyFromLeft(C).Tr();
@@ -1091,13 +1187,13 @@ inline void E_meas_single(ptGluon_fld &Umu) {
   of.close();
 }
 
-inline void E_meas(ptGluon_fld &Umu){
-#ifndef __PARALLEL_OMP__
-  E_meas_single(Umu);
-#else
-  E_meas_parallel(Umu);
-#endif
-}
+//inline void E_meas(ptGluon_fld &Umu){
+//#ifndef __PARALLEL_OMP__
+//  E_meas_single(Umu);
+//#else
+//  E_meas_parallel(Umu);
+//#endif
+//}
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -1117,7 +1213,7 @@ inline void check_bgf(ptGluon_fld &Umu) {
   static int j = 0;
   j++;
   for(int i = 0; i < act_pars.iVol; ++i){
-    int t = i % act_pars.sz[3];
+    int t = i / (act_pars.sz[1]*act_pars.sz[2]*act_pars.sz[3]); 
     for(int mu = 0; mu < 4; ++mu){
       //if (!(j % 20))
       //    std::cout << "mu = " << mu << ", t = " << t << " :"
@@ -1130,7 +1226,9 @@ inline void check_bgf(ptGluon_fld &Umu) {
     }
   // SAFETY CHECK:
   // If you uncomment this, an exception should be thrown.
-  // Umu.W[10][1].bgf() *= 0.1;
+#ifdef DO_UBER_PARANOID_CHECK
+   Umu.W[10][1].bgf() *= 1.00001;
+#endif
   }
 }
 
@@ -1199,16 +1297,15 @@ void NsptEvolve(ptGluon_fld& Umu){
     Time.reduce();
 #endif
     // DH Feb. 7, 2012
-#undef DO_EXTRA_PARANOID_DEBUG
 #ifdef DO_EXTRA_PARANOID_DEBUG
     // print the norm of U_0 at the t=0 boundary
-    u0_print(Umu);
+    //u0_print(Umu);
     // check if the Peter Weisz Background does not get modified.
     check_bgf(Umu);
 #endif
-    E_meas(Umu);    
-    nu_meas_parallel(Umu);
   }
+  // measure the couplings and various plaquettes
+  measure(Umu);
 
 #ifdef __TIMING__
   Time.out();
