@@ -977,6 +977,7 @@ struct ThreadInfo {
 };
 
 template <class C>
+// new function (Dublin 2012)
 inline void meas_on_timeslice(const ptGluon_fld& U, const int& t, C& f){
   #pragma omp parallel num_threads(NTHR)
   {
