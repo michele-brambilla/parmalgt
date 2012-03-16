@@ -978,19 +978,6 @@ struct ThreadInfo {
 };
 
 template <class C>
-inline void apply_on_timeslice(ptGluon_fld& U, const int& t, C& f){
-  #pragma omp parallel num_threads(NTHR)
-  {
-    ThreadInfo ti(thr_pars, omp_get_thread_num());
-    pt::Point n = U.mk_point(0, ti.x, ti.y, ti.z);
-    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
-      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
-        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
-          f(U, n);
-  }
-}
-
-template <class C>
 inline void meas_on_timeslice(const ptGluon_fld& U, const int& t, C& f){
   #pragma omp parallel num_threads(NTHR)
   {
