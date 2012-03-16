@@ -674,6 +674,7 @@ void stochastic_gauge_fixing(ptGluon_fld& Umu){
     
 	    // calcolo il DmuUmu e lo metto nell'algebra
 	    Ww[tid].zero();
+            
             /*/
             for(int mu = 0; mu < 4; mu++)
               Ww[tid] += get_q(Umu.W[site_c][mu]) - get_q(Umu.W[Umu.Z->L[curr][mu]][mu]);
@@ -977,6 +978,19 @@ struct ThreadInfo {
 };
 
 template <class C>
+inline void apply_on_timeslice(ptGluon_fld& U, const int& t, C& f){
+  #pragma omp parallel num_threads(NTHR)
+  {
+    ThreadInfo ti(thr_pars, omp_get_thread_num());
+    pt::Point n = U.mk_point(0, ti.x, ti.y, ti.z);
+    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
+      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
+        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
+          f(U, n);
+  }
+}
+
+template <class C>
 inline void meas_on_timeslice(const ptGluon_fld& U, const int& t, C& f){
   #pragma omp parallel num_threads(NTHR)
   {
@@ -988,6 +1002,8 @@ inline void meas_on_timeslice(const ptGluon_fld& U, const int& t, C& f){
           f(U, n);
   }
 }
+
+
 
 // This is the plaquette at t = 0, arranged such that the derivative
 // w.r.t. eta may be inserted at the very end.
@@ -1099,7 +1115,44 @@ inline void measure(const ptGluon_fld &U){
 }
 
 
+struct LocalGaugeFixing {
+  static const double alpha = .05;
+  void operator()(ptGluon_fld& U, const pt::Point& n) const {
+    // non-exp version
+    /*/
+    // construct product
+   
+    ptSU3 W;
+    for (pt::Direction mu(0); mu.good(); ++mu){
+      W *= U(n, mu) * dag(U (n, mu).bgf()) *
+        dag( U(n - mu, mu) ) * U(n - mu, mu).bgf();
+    }
+    double atmp = alpha;
+    for (int i = 0; i < ORD; ++i){
+      W[i] *= atmp;
+      atmp *= alpha;
+    }
+    ptSU3 Winv = inverse(W);
+    for (pt::Direction mu(0); mu.good(); ++mu){
+      U(n, mu) = Winv * U(n,mu);
+      U(n - mu, mu) *= W;
+    }
+    /*/ // exp version
+    ptSU3 W;
+    for (pt::Direction mu(0); mu.good(); ++mu){
+      W *= U(n, mu) * dag(U (n, mu).bgf()) *
+        dag( U(n - mu, mu) ) * U(n - mu, mu).bgf();
+    }
+    //*/
+  }
+};
 
+inline void my_gaugefixing(ptGluon_fld &U){
+  int T = act_pars.sz[0] - 1;
+  LocalGaugeFixing g;
+  for (int t = 1; t < T; ++t)
+    apply_on_timeslice(U, t, g);
+}
 
 inline void nu_meas_parallel(const ptGluon_fld &U){
   std::vector<double> nor(ORD*2*3 + 2);
@@ -1286,7 +1339,8 @@ void NsptEvolve(ptGluon_fld& Umu){
 #endif
 
 #ifndef __FA_GAUGE_FIXING__
-    stochastic_gauge_fixing(Umu);
+    //stochastic_gauge_fixing(Umu);
+    my_gaugefixing(Umu);
 #else
     // Fourier acceleration
     FAstochastic_gauge_fixing(Umu);
