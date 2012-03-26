@@ -1,7 +1,6 @@
 #ifndef _MY_QCD_H_
 #define _MY_QCD_H_
 
-#include "MyQCD.h"
 #include <algorithm>
 #include <numeric>
 #include <MyRand.h>
@@ -87,6 +86,46 @@ public:
   typedef typename pt_matrix_t::const_iterator const_iterator;
   // 3x3 matrix type
   typedef typename pt_matrix_t::SU3_t SU3_t;
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Number of doubles needed to store the object.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Sun Mar 25 14:52:42 2012
+  static const int storage_size = 
+    B::storage_size + pt_matrix_t::storage_size;
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Write everything to a double vector.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Sun Mar 25 14:52:57 2012
+
+  std::vector<double>::iterator &
+    buffer(std::vector<double>::iterator & i){
+    bgf_.buffer(i);
+    ptU_.buffer(i);
+    return i;
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Read from buffer
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Mon Mar 26 16:44:30 2012
+
+  std::vector<double>::const_iterator &
+  unbuffer(std::vector<double>::const_iterator & i){
+    bgf_.unbuffer(i);
+    ptU_.unbuffer(i);
+    return i;
+  }
 
   explicit BGptSU3(const B& bgf) : bgf_(bgf) { }
   BGptSU3(const B& bgf, const pt_matrix_t& ptU) : 
@@ -207,6 +246,7 @@ public:
 
   void randomize() {
     static MyRand r(1235431);
+    bgf_ = bgf::random();
     for (int i = 0; i < ORD; ++i)
       for (int j = 0; j < 3; ++j)
         for (int k = 0; k < 3; ++k)
@@ -467,6 +507,10 @@ public:
   typedef BGptGluon self_t;
   typedef typename array_t::iterator iterator;
   typedef typename array_t::const_iterator const_iterator;
+
+  static const int storage_size = DIM*pt_su3_t::storage_size + BGF::storage_size;
+
+  
   // access
   pt_su3_t& operator[](const int& i){ return U_[i]; }
   const pt_su3_t& operator[](const int& i) const { return U_[i]; }
@@ -475,6 +519,11 @@ public:
   const_iterator begin() const {return U_.begin();}
   iterator end(){return U_.end();}
   const_iterator end() const {return U_.end();}
+
+  void randomize() {
+    for (iterator i = begin(); i != end(); ++i)
+      i->randomize();
+  }
 
   template <class C>
   self_t& operator*=(const C& other){
@@ -653,8 +702,8 @@ public:
       *psi_mu = *this_mu* *U_mu;
     return result;
   }
-  void uno_p_gmu(SpinColor&, int, int);
-  void uno_m_gmu(SpinColor&, int, int);
+  //void uno_p_gmu(SpinColor&, int, int);
+  //void uno_m_gmu(SpinColor&, int, int);
 
 private:
   vec_t psi_;

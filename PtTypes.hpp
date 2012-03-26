@@ -38,6 +38,8 @@ namespace ptt {
     typedef typename su3_array_t::iterator iterator;
     typedef typename su3_array_t::const_iterator const_iterator;
 
+
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
@@ -63,7 +65,56 @@ namespace ptt {
     const_iterator end() const { return array_.end(); }
     iterator begin() { return array_.begin(); }
     iterator end() { return array_.end(); }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Number of doubles requred to store the PtMatrix in a double
+    ///  buffer (needed for MPI).
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:46:27 2012
+
+    static const int storage_size = N*9*2;
+
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Buffering.
+    ///
+    ///  Write the contents to a vector of doubles.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:47:32 2012
+    
+    std::vector<double>::iterator &
+    buffer(std::vector<double>::iterator & i){
+      for (const_iterator n = begin(); n!= end(); ++n)
+        for (int j = 0; j < 9; ++j){
+          *i = (*n)[j].re; ++i;
+          *i = (*n)[j].im; ++i;
+        }
+      return i;
+    }
   
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Read from buffer.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Mar 26 16:45:23 2012
+
+    std::vector<double>::const_iterator &
+    unbuffer(std::vector<double>::const_iterator & i){
+      for (iterator n = begin(); n!= end(); ++n)
+        for (int j = 0; j < 9; ++j){
+          (*n)[j].re = *i; ++i;
+          (*n)[j].im = *i; ++i;
+        }
+      return i;
+    }    
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////

@@ -14,7 +14,7 @@ struct PointTest : public ::testing::Test {
 };
 
 TEST_F(PointTest, Chase){
-  std::vector<int> y(3);
+  std::vector<int> y(4);
   for (y[0] = 1; y[0] < size[0]-1; ++y[0])
     for (y[1] = 1; y[1] < size[1]-1; ++y[1])
       for (y[2] = 1; y[2] < size[2]-1; ++y[2])
