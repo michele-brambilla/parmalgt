@@ -16,5 +16,6 @@ ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
 .PHONY: docs
 
 docs:
+	mkdir -p ./docs/doxygen
 	doxygen Doxyfile
 
