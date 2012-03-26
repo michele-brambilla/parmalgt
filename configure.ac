@@ -25,6 +25,11 @@ AC_CHECK_LIB([fftw3], [main])
 # Checks for header files.
 AC_CHECK_HEADERS([fenv.h inttypes.h limits.h stdlib.h string.h sys/time.h unistd.h])
 
+AC_ARG_WITH([gtest-srcdir], [AS_HELP_STRING([--with-gtest-srcdir=DIR],
+ [Path to Googletest.])], [], [])
+
+AC_SUBST([gtest_srcdir],["$with_gtest_srcdir"])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_INLINE
@@ -34,9 +39,9 @@ AC_TYPE_UINT32_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([bzero clock_gettime gettimeofday memset pow sqrt])
+AC_CONFIG_MACRO_DIR([m4])
 
-
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile testing/Makefile Doxyfile])
 # AC_CONFIG_FILES([SU2/makefile
 #                  dSFMT/Makefile
 #                  makefile

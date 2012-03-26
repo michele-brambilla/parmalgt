@@ -990,7 +990,18 @@ inline void meas_on_timeslice(const ptGluon_fld& U, const int& t, C& f){
   }
 }
 
-
+template <class C>
+inline void apply_on_timeslice(ptGluon_fld& U, const int& t, C& f){
+  #pragma omp parallel num_threads(NTHR)
+  {
+    ThreadInfo ti(thr_pars, omp_get_thread_num());
+    pt::Point n = U.mk_point(t, ti.x, ti.y, ti.z);
+    for (int n1_ = 0; n1_ < ti.dx; ++n1_, n += pt::Direction::x)
+      for (int n2_ = 0; n2_ < ti.dy; ++n2_, n += pt::Direction::y)
+        for (int n3_ = 0; n3_ < ti.dz; ++n3_, n += pt::Direction::z)
+          f(U, n);
+  }
+}
 
 // This is the plaquette at t = 0, arranged such that the derivative
 // w.r.t. eta may be inserted at the very end.
@@ -1102,17 +1113,30 @@ inline void measure(const ptGluon_fld &U){
 }
 
 
-struct LocalGaugeFixing {
+struct LocalGaugeFixing1 {
   static const double alpha = .05;
   void operator()(ptGluon_fld& U, const pt::Point& n) const {
-    // non-exp version
-    /*/
-    // construct product
-   
-    ptSU3 W;
+    ptSU3 omega;
     for (pt::Direction mu(0); mu.good(); ++mu){
-      W *= U(n, mu) * dag(U (n, mu).bgf()) *
-        dag( U(n - mu, mu) ) * U(n - mu, mu).bgf();
+      omega += (U(n, mu) * dag(U (n, mu).bgf()) *
+            dag( U(n - mu, mu) ) * U(n - mu, mu).bgf());
+    }
+    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
+    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
+    for (pt::Direction mu(0); mu.good(); ++mu){
+      U(n, mu) = Omega * U(n, mu);
+      U(n - mu, mu) *= OmegaDag;
+    }
+  }
+};
+
+struct LocalGaugeFixing2 {
+  static const double alpha = 0.05;
+  void operator()(ptGluon_fld& U, const pt::Point& n) const {
+    ptSU3 omega (bgf::unit<bgf::AbelianBgf>());
+    for (pt::Direction mu(0); mu.good(); ++mu){
+      omega *= (U(n, mu) * dag(U (n, mu).bgf()) *
+                dag( U(n + mu, mu) ) * U(n + mu, mu).bgf());
     }
     double atmp = alpha;
     for (int i = 0; i < ORD; ++i){
@@ -1121,24 +1145,55 @@ struct LocalGaugeFixing {
     }
     ptSU3 Winv = inverse(W);
     for (pt::Direction mu(0); mu.good(); ++mu){
-      U(n, mu) = Winv * U(n,mu);
-      U(n - mu, mu) *= W;
-    }
-    /*/ // exp version
-    ptSU3 W;
+      U(n, mu) = W * U(n,mu);
+      U(n - mu, mu) *= Winv;
+    }  
+  }
+};
+
+struct LocalGaugeFixing3 {
+  static const double alpha = .05;
+  void operator()(ptGluon_fld& U, const pt::Point& n) const {
+ // exp version
+    ptSU3 omega;
+    for (pt::Direction mu(0); mu.good(); ++mu)
+      omega += U(n, mu) - U(n - mu, mu);
+
+    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
+    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
+
     for (pt::Direction mu(0); mu.good(); ++mu){
-      W *= U(n, mu) * dag(U (n, mu).bgf()) *
-        dag( U(n - mu, mu) ) * U(n - mu, mu).bgf();
+      U(n, mu) = Omega * U(n, mu);
+      U(n - mu, mu) *= OmegaDag;
     }
-    //*/
+  }
+};
+
+struct LocalReUnit {
+  void operator()(ptGluon_fld& U, const pt::Point& n) const {
+    for (pt::Direction mu(0); mu.good(); ++mu){
+      ptsu3 W = get_q(U(n,mu)).reH();
+      bgf::AbelianBgf &V = U(n,mu).bgf();
+      U(n, mu).ptU() = exp<bgf::AbelianBgf>(W).ptU();
+      for (int i = 0; i < ORD; ++i)
+        U(n, mu)[i] = V.ApplyFromLeft(U(n,mu)[i]);
+    }
   }
 };
 
 inline void my_gaugefixing(ptGluon_fld &U){
+  static int count = 0;
   int T = act_pars.sz[0] - 1;
-  LocalGaugeFixing g;
+  LocalGaugeFixing2 g;
   for (int t = 1; t < T; ++t)
-    apply_on_timeslice(U, t, g);
+   apply_on_timeslice(U, t, g);
+  /*/
+  if (++count % 1 == 0){
+    LocalReUnit u;
+    for (int t = 1; t < T; ++t)
+      apply_on_timeslice(U, t, u);
+  }
+  //*/
 }
 
 inline void nu_meas_parallel(const ptGluon_fld &U){

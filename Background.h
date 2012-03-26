@@ -303,6 +303,51 @@ namespace bgf {
       return result;
     }
 
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Number of doubles needed to store the object.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:50:37 2012
+
+    static const int storage_size = 6;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Buffer to a vector of doubles.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:50:53 2012
+
+    std::vector<double>::iterator &
+    buffer(std::vector<double>::iterator & i){
+      for (const_iterator n = begin(); n!= end(); ++n){
+        *i = n->re; ++i;
+        *i = n->im; ++i;
+      }
+      return i;
+    }
+  
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Read from a buffer
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Mar 26 16:43:22 2012
+
+    std::vector<double>::const_iterator &
+    unbuffer(std::vector<double>::const_iterator & i){
+      for (iterator n = begin(); n!= end(); ++n){
+        n->re = *i; ++i;
+        n->im = *i; ++i;
+      }
+      return i;
+    }
+
+
   private:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
