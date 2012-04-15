@@ -93,9 +93,29 @@ namespace fields {
     pt::Point<DIM> mk_point(const typename geometry::Geometry<DIM>::raw_pt_t& n){
       g.mk_point(n);
     }
-    geometry::SliceIterator<DIM> mk_slice_iterator 
+    geometry::SliceIterator<DIM, 0> mk_slice_iterator 
     (const pt::Direction<DIM> mu, const int& xi){
-      return g.mk_slice_iterator(mu, xi);
+      return g.template mk_slice_iterator<0>(mu, xi);
+    }
+    geometry::SliceIterator<DIM, 2> mk_bulk_slice_iterator
+    (const pt::Direction<DIM> mu, const int& xi){
+      return g.mk_slice_iterator<2>(mu, xi, 1);
+    }
+    template <class M>
+    void measure_on_slice(M& f, 
+                          const pt::Direction<DIM>& d,
+                          const int& xi){
+      geometry::SliceIterator<DIM, 1> iter =
+        g.template mk_slice_iterator<1>(d, xi, 0);
+      while (iter.is_good()) f(*this, iter.yield());
+    }
+    template <class M>
+    void measure_on_slice_with_bnd(M& f, 
+                          const pt::Direction<DIM>& d,
+                          const int& xi){
+      geometry::SliceIterator<DIM, 0> iter =
+        g.template mk_slice_iterator<0>(d, xi, 0);
+      while (iter.is_good()) f(*this, iter.yield());
     }
     MPI_Request test_send_fwd_z(){
       write_slice_to_buffer(pt::Direction<DIM>(3), 4,
@@ -129,22 +149,24 @@ namespace fields {
     void write_slice_to_buffer(const pt::Direction<DIM>& mu, const int &xi,
                                std::vector<double>& buff){
       std::vector<double>::iterator i = buff.begin();
-      geometry::SliceIterator<DIM> iter = g.mk_slice_iterator(mu, xi);
+      geometry::SliceIterator<DIM, 0> iter = 
+        g.template mk_slice_iterator<0>(mu, xi);
       while (iter.is_good()){
         pt::Point<DIM> n = iter.yield();
         for (pt::Direction<DIM> nu; nu.is_good(); ++nu){
-          rep[n][mu].buffer(i);
+          this->operator()(n, nu).buffer(i);
         }
       }
     }
     void read_slice_from_buffer(const pt::Direction<DIM>& mu, const int &xi,
                                 std::vector<double>& buff){
       std::vector<double>::const_iterator i = buff.begin();
-      geometry::SliceIterator<DIM> iter = g.mk_slice_iterator(mu, xi);
+      geometry::SliceIterator<DIM, 0> iter = 
+        g.template mk_slice_iterator<0>(mu, xi);
       while (iter.is_good()){
         pt::Point<DIM> n = iter.yield();
         for (pt::Direction<DIM> nu; nu.is_good(); ++nu){
-          rep[n][mu].unbuffer(i);
+          this->operator()(n, nu).unbuffer(i);
         }
       }
     }

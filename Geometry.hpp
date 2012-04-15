@@ -17,7 +17,7 @@ namespace geometry {
     }    
   }
 
-  template<int DIM> class SliceIterator;
+  template<int DIM, int SKIP> class SliceIterator;
 
   
   //////////////////////////////////////////////////////////////////////
@@ -67,15 +67,37 @@ namespace geometry {
     /// Generate an iterator over a given slice.
     /// The SliceIterator returned will ierate all lattice points
     /// \f$n\f$, keeping \f$n_\mu = x_i\f$ fixed.
+    /// For all other directions, the iteration range is
+    /// \f[ 0 \leq x_\nu < L_\nu, \quad \nu = 0,\ldots, DIM - 1, \quad  \nu \neq \mu\f]
+    ///
     ///
     /// \param mu Called \f$\mu\f$ above.
     /// \param xi Called \f$n_i\f$ above.
-    SliceIterator<DIM> mk_slice_iterator (const pt::Direction<DIM> mu,
+    template <int N>
+    SliceIterator<DIM, N> mk_slice_iterator (const pt::Direction<DIM> mu,
+                                             const int& xi,
+                                             const int& x_start = 0){
+      raw_pt_t n;
+      std::fill(n.begin(), n.end(), x_start);
+      n[mu] = xi;
+      return SliceIterator<DIM, N>(mk_point(n), mu, extents);
+    }
+    /// Generate an iterator over a given slice, omitting the boundaries.
+    /// The SliceIterator returned will ierate all lattice points
+    /// \f$n\f$, keeping \f$n_\mu = x_i\f$ fixed.
+    /// For all other directions, the iteration range is
+    /// \f[ 1 \leq x_\nu < L_\nu - 1, \quad \nu = 0,\ldots, DIM - 1, \quad  \nu \neq \mu\f]
+    ///
+    ///
+    /// \param mu Called \f$\mu\f$ above.
+    /// \param xi Called \f$n_i\f$ above.
+    template <int N>
+    SliceIterator<DIM, 2> mk_vol_iterator (const pt::Direction<DIM> mu,
                                           const int& xi){
       raw_pt_t n;
-      std::fill(n.begin(), n.end(), 0);
+      std::fill(n.begin(), n.end(), 1);
       n[mu] = xi;
-      return SliceIterator<DIM>(mk_point(n), mu, extents);
+      
     }
     pt::Point<DIM> mk_point(const raw_pt_t &n) const {
       return pt::Point<DIM>(mk_label(n), neighbors.begin());
@@ -154,7 +176,7 @@ namespace geometry {
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Mon Mar 26 12:58:50 2012
 
-  template<int DIM>
+  template<int DIM, int SKIP>
   class SliceIterator {
   public:
     /// Constructor.
@@ -180,10 +202,12 @@ namespace geometry {
       do {
         x_current += pt::Direction<DIM>(mu);
         counters[mu]++;
-        if (counters[mu] == extents[mu]){
+        if (counters[mu] == extents[mu] - SKIP){
           counters[mu] = 0;
           // this uses periodicity !!
           x_current += pt::Direction<DIM>(mu);
+          for (int n = 0; n < SKIP; ++n)
+            x_current += pt::Direction<DIM>(mu);
           if (++mu == mu_exclude) ++mu;
         }
         else break;

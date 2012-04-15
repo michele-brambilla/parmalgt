@@ -743,6 +743,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_dataDATA
 .PHONY: docs
 
 docs:
+	mkdir -p ./docs/doxygen
 	doxygen Doxyfile
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -13,6 +13,21 @@ typedef fields::LocalGluonField<bgf::AbelianBgf, ORD, DIM> localGF_t;
 typedef localGF_t::neighbors_t nt;
 typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
 
+// helper function to measure the trace of the field
+
+struct MeasTrace {
+  std::vector<double> traces;
+  MeasTrace() : traces(ORD + 1, 0) { }
+  void operator()(fields::LocalGluonField<bgf::AbelianBgf, ORD, DIM>& U,
+                  const pt::Point<DIM>& n){
+    for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
+      traces[0] += U(n,mu).bgf().Tr().re;
+      for (int i = 0; i < ORD; ++i) 
+        traces[i+1] += U(n,mu)[i].Tr().re;
+    }
+  }
+};
+
 // helper function to conveniently initialize the
 // array of neighbors in four dimensions
 
@@ -59,39 +74,19 @@ int main(int argc, char *argv[]) {
   if (rank == 0){
     U.randomize();
     U.test_send_fwd_z();
-    // make an iterator for the z-direction, keep z = 4 fixed
-    geometry::SliceIterator<DIM> iter = 
-      U.mk_slice_iterator(pt::Direction<DIM>(3), 4);
-    std::vector<double> traces(ORD + 1, 0);
-    while(iter.is_good()){
-      pt::Point<DIM> n = iter.yield();
-      for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
-        traces[0] = U(n,mu).bgf().Tr().re;
-        for (int i = 0; i < ORD; ++i) 
-          traces[i+1] = U(n,mu)[i].Tr().re;
-      }
-    }
     std::cout << "real parts traces sent:\n";
+    MeasTrace m;
+    U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
     for (int i = 0; i <= ORD; ++i)
-      std::cout << i << "\t" << traces[i] << std::endl;
+      std::cout << i << "\t" << m.traces[i] << std::endl;
   }
   else {
     U.test_rec_bkw_z();
-    // make an iterator for the z-direction, keep z = 0 fixed
-    geometry::SliceIterator<DIM> iter = 
-      U.mk_slice_iterator(pt::Direction<DIM>(3), 0);
-    std::vector<double> traces(ORD + 1, 0);
-    while(iter.is_good()){
-      pt::Point<DIM> n = iter.yield();
-      for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
-        traces[0] = U(n,mu).bgf().Tr().re;
-        for (int i = 0; i < ORD; ++i) 
-          traces[i+1] = U(n,mu)[i].Tr().re;
-      }
-    }
     std::cout << "real parts of traces received:\n";
+    MeasTrace m;
+    U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
     for (int i = 0; i <= ORD; ++i)
-      std::cout << i << "\t" << traces[i] << std::endl;
+      std::cout << i << "\t" << m.traces[i] << std::endl;
   }
   
   MPI_Finalize();

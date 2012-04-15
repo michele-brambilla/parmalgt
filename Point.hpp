@@ -41,10 +41,6 @@ namespace pt {
     int mu;
   };
 
-//  template <int DIM, typename A, typename B>
-//  inline A deref_fwd(const Direction<DIM>& mu, B b){
-//    return mu.deref_fwd<A.B>(b);
-//  }
 
   template <int DIM>
   inline Direction<DIM> operator+(const Direction<DIM>& d, const int& i){
@@ -75,16 +71,19 @@ namespace pt {
       return *this;
     }
     operator int() const {return n;}
-    //template <typename T>
-    //const T& deref(T const * const f) const {
-    //  return f[n];
-    //}
-    //template <typename T>
-    //T& deref(T* const f) const {
-    //  return f[n];
-    //}
+    template <typename T>
+    const T& deref(T const * const f) const {
+      return f[n];
+    }
+    template <typename T>
+    T& deref(T* const f) const {
+      return f[n];
+    }
     template <typename T>
     T& deref(std::vector<T>& v) const { return v[n];  }
+    template <typename T>
+    const T& deref(const std::vector<T>& v) const { return v[n];  }
+
     bool operator==(const Point& other){
       return n == other.n && L_begin == other.L_begin;
     }
