@@ -8,9 +8,12 @@ noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
 
 dist_data_DATA = damocle.dag Quench.cfg run.sh
 
-bin_PROGRAMS = ParQuenched
+bin_PROGRAMS = ParQuenched LocalQuench
 
 ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
+  newQCDpt.cc Point.cc Background.cc
+
+LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
 
 .PHONY: docs

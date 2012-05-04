@@ -106,7 +106,7 @@ public:
   ///  \date Sun Mar 25 14:52:57 2012
 
   std::vector<double>::iterator &
-    buffer(std::vector<double>::iterator & i){
+    buffer(std::vector<double>::iterator & i) const {
     bgf_.buffer(i);
     ptU_.buffer(i);
     return i;
@@ -148,6 +148,21 @@ public:
   const_iterator end() const { return ptU_.end(); }
   iterator begin() { return ptU_.begin(); }
   iterator end() { return ptU_.end(); }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Norm
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Tue Apr 24 16:09:19 2012
+
+  std::vector<double> Norm() const {
+    std::vector<double> result(ORD + 1, bgf_.Norm());
+    for (int i = 0; i < ORD; ++i)
+      result[i+1] = ptU_[i].Norm();
+    return result;
+  }
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -266,6 +281,13 @@ public:
     for(int i = 0; i < ORD; i++)
       tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
     tt[0] = bgf_.Tr();
+  }
+  std::vector<Cplx> trace() const {
+    std::vector<Cplx> tt(ORD+1);
+    for(int i = 0; i < ORD; i++)
+      tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
+    tt[0] = bgf_.Tr();
+    return tt;
   }
   /// Make traceless
   void Trless(){
@@ -509,8 +531,7 @@ public:
   typedef typename array_t::const_iterator const_iterator;
 
   static const int storage_size = DIM*pt_su3_t::storage_size + BGF::storage_size;
-
-  
+ 
   // access
   pt_su3_t& operator[](const int& i){ return U_[i]; }
   const pt_su3_t& operator[](const int& i) const { return U_[i]; }
@@ -519,6 +540,35 @@ public:
   const_iterator begin() const {return U_.begin();}
   iterator end(){return U_.end();}
   const_iterator end() const {return U_.end();}
+
+  // norm
+  std::vector<double> Norm() const {
+    std::vector<double> norm(ORD + 1); 
+    for (const_iterator i = begin(), e = end(); i != e; ++i){
+      for (int j = 0; j <= ORD; ++j)
+        norm[j] += i->Norm()[j] * i->Norm()[j];
+    }
+    for (int j = 0; j <= ORD; ++j)
+      norm[j] = sqrt(norm[j]);
+    return norm;
+  }
+
+
+  // buffer
+  std::vector<double>::iterator&
+  buffer (  std::vector<double>::iterator& j ) const {
+    for (const_iterator i = begin(); i != end(); ++i)
+      i->buffer(j);
+    return j;
+  }
+  // unbuffer
+  std::vector<double>::const_iterator&
+  unbuffer (  std::vector<double>::const_iterator& j ) {
+    for (iterator i = begin(); i != end(); ++i)
+      i->unbuffer(j);
+    return j;
+  }
+
 
   void randomize() {
     for (iterator i = begin(); i != end(); ++i)
@@ -563,6 +613,21 @@ public:
   iterator end() { return v_.end(); }
   const_iterator begin() const { return v_.begin(); }
   const_iterator end() const { return v_.end(); }
+
+  // buffer
+  std::vector<double>::iterator&
+  buffer (  std::vector<double>::iterator& j ) const {
+    for (const_iterator i = begin(); i != end(); ++i)
+      i->buffer(j);
+    return j;
+  }
+  // unbuffer
+  std::vector<double>::const_iterator&
+  unbuffer (  std::vector<double>::const_iterator& j ) {
+    for (iterator i = begin(); i != end(); ++i)
+      i->unbuffer(j);
+    return j;
+  }
 
   /// Access operators
   CVector& operator[](const int& i){ return v_[i]; }

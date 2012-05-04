@@ -9,21 +9,23 @@
 const int DIM = 4;
 const int ORD = 6;
 
-typedef fields::LocalGluonField<bgf::AbelianBgf, ORD, DIM> localGF_t;
-typedef localGF_t::neighbors_t nt;
 typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
+typedef BGptGluon<bgf::AbelianBgf, ORD, DIM> ptGluon;
+typedef fields::LocalField<ptGluon, DIM> GluonField;
+typedef GluonField::neighbors_t nt;
+
 
 // helper function to measure the trace of the field
 
 struct MeasTrace {
   std::vector<double> traces;
   MeasTrace() : traces(ORD + 1, 0) { }
-  void operator()(fields::LocalGluonField<bgf::AbelianBgf, ORD, DIM>& U,
+  void operator()(GluonField& U,
                   const pt::Point<DIM>& n){
     for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
-      traces[0] += U(n,mu).bgf().Tr().re;
+      traces[0] += U[n][mu].bgf().Tr().re;
       for (int i = 0; i < ORD; ++i) 
-        traces[i+1] += U(n,mu)[i].Tr().re;
+        traces[i+1] += U[n][mu][i].Tr().re;
     }
   }
 };
@@ -70,7 +72,7 @@ int main(int argc, char *argv[]) {
   int zup = (rank == numprocs - 1) ? 0 : rank + 1;
   int zdown = (!rank) ? numprocs - 1 : rank - 1;
   nt n = neighbors(0,0,0,0,0,0, zup, zdown);
-  fields::LocalGluonField<bgf::AbelianBgf, 6, DIM> U(e, 1, rank, n);  
+  GluonField U(e, 1, rank, n);  
   if (rank == 0){
     U.randomize();
     U.test_send_fwd_z();

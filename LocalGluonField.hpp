@@ -45,15 +45,14 @@ namespace fields {
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Mon Mar 26 14:44:03 2012
 
-  template <class BGF, int ORD, int DIM>
-  class LocalGluonField {
+  template <class F, int DIM>
+  class LocalField {
   public:
-    typedef  BGptSU3<BGF, ORD> ptSU3_t;
-    typedef  BGptGluon<BGF, ORD, DIM> data_t;
+    typedef F data_t;
     typedef std::vector< data_t > rep_t;
 
     typedef typename array_t<std::pair<int,int>, DIM>::Type neighbors_t;
-    LocalGluonField (const typename
+    LocalField (const typename
                      geometry::Geometry<DIM>::extents_t& e,
                      const int& number_of_threads,
                      const int& mpi_process_id,
@@ -75,20 +74,17 @@ namespace fields {
 
       }
     }
-
+    
     void randomize() {
       for (typename rep_t::iterator U = rep.begin(); U != rep.end(); ++U)
         U->randomize();
     }
     
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    ptSU3& operator()(const pt::Point<DIM> &n, const pt::Direction<DIM> &mu){
-      return mu.template deref_bkw<ptSU3_t&, data_t&>
-        (n.template deref<data_t>(rep));
+    data_t& operator[](const pt::Point<DIM> &n){
+      return n.template deref<data_t>(rep);
     }
-    const ptSU3& operator()(const pt::Point<DIM> &n, const pt::Direction<DIM> &mu) const {
-      return mu.template deref_bkw<const ptSU3_t&, const data_t&>
-        (n.template deref<const data_t>(rep));
+    const data_t& operator[](const pt::Point<DIM> &n) const {
+      return n.template deref<const data_t>(rep);
     }
     pt::Point<DIM> mk_point(const typename geometry::Geometry<DIM>::raw_pt_t& n){
       g.mk_point(n);
@@ -116,6 +112,19 @@ namespace fields {
       geometry::SliceIterator<DIM, 0> iter =
         g.template mk_slice_iterator<0>(d, xi, 0);
       while (iter.is_good()) f(*this, iter.yield());
+    }
+    template <class M>
+    void apply_on_slice_with_bnd(M& f, 
+                          const pt::Direction<DIM>& d,
+                          const int& xi){
+      geometry::SliceIterator<DIM, 0> iter =
+        g.template mk_slice_iterator<0>(d, xi, 0);
+      while (iter.is_good()) f(*this, iter.yield());
+    }
+    template <class M>
+    void apply_everywhere(M& f){
+      for(pt::Point<DIM> n = g.begin(), e = g.end(); n != e; ++n)
+        f(*this, n);
     }
     MPI_Request test_send_fwd_z(){
       write_slice_to_buffer(pt::Direction<DIM>(3), 4,
@@ -151,24 +160,14 @@ namespace fields {
       std::vector<double>::iterator i = buff.begin();
       geometry::SliceIterator<DIM, 0> iter = 
         g.template mk_slice_iterator<0>(mu, xi);
-      while (iter.is_good()){
-        pt::Point<DIM> n = iter.yield();
-        for (pt::Direction<DIM> nu; nu.is_good(); ++nu){
-          this->operator()(n, nu).buffer(i);
-        }
-      }
+      while (iter.is_good()) rep[iter.yield()].buffer(i);
     }
     void read_slice_from_buffer(const pt::Direction<DIM>& mu, const int &xi,
                                 std::vector<double>& buff){
       std::vector<double>::const_iterator i = buff.begin();
       geometry::SliceIterator<DIM, 0> iter = 
         g.template mk_slice_iterator<0>(mu, xi);
-      while (iter.is_good()){
-        pt::Point<DIM> n = iter.yield();
-        for (pt::Direction<DIM> nu; nu.is_good(); ++nu){
-          this->operator()(n, nu).unbuffer(i);
-        }
-      }
+      while (iter.is_good()) rep[iter.yield()].unbuffer(i);
     }
   };
 }

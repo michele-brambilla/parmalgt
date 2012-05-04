@@ -322,7 +322,7 @@ namespace bgf {
     ///  \date Sun Mar 25 14:50:53 2012
 
     std::vector<double>::iterator &
-    buffer(std::vector<double>::iterator & i){
+    buffer(std::vector<double>::iterator & i) const {
       for (const_iterator n = begin(); n!= end(); ++n){
         *i = n->re; ++i;
         *i = n->im; ++i;

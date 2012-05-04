@@ -89,7 +89,7 @@ namespace ptt {
     ///  \date Sun Mar 25 14:47:32 2012
     
     std::vector<double>::iterator &
-    buffer(std::vector<double>::iterator & i){
+    buffer(std::vector<double>::iterator & i) const {
       for (const_iterator n = begin(); n!= end(); ++n)
         for (int j = 0; j < 9; ++j){
           *i = (*n)[j].re; ++i;
@@ -184,6 +184,19 @@ namespace ptt {
       return *this;
     }
   };
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///
+///  reH call, keeping the matrix constant
+///
+///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+///  \date Tue Apr 24 15:10:50 2012
+
+  template <int N> PtMatrix<N> reH(const PtMatrix<N> &A){
+    PtMatrix<N> result(A);
+    return result.reH();
+  }
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

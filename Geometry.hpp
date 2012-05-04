@@ -128,12 +128,10 @@ namespace geometry {
     /// Label (integer value) belonging to a give point
     int mk_label(const raw_pt_t &n) const {
       int vol = 1, label = 0;
-      int L;
       for (int i = 0; i < DIM; ++i){
         label += ((n[i] + extents[i]) % extents[i]) * vol;
         vol *= extents[i];
       }
-
       return label;
     }
     /// helper function to recursively fill neighbors

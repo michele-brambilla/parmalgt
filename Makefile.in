@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = ParQuenched$(EXEEXT)
+bin_PROGRAMS = ParQuenched$(EXEEXT) LocalQuench$(EXEEXT)
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(dist_data_DATA) \
 	$(noinst_HEADERS) $(srcdir)/Doxyfile.in $(srcdir)/Makefile.am \
@@ -59,6 +59,11 @@ CONFIG_CLEAN_FILES = Doxyfile
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(datadir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_LocalQuench_OBJECTS = LocalQuench.$(OBJEXT) MyMath.$(OBJEXT) \
+	MyRand.$(OBJEXT) newQCDpt.$(OBJEXT) Point.$(OBJEXT) \
+	Background.$(OBJEXT)
+LocalQuench_OBJECTS = $(am_LocalQuench_OBJECTS)
+LocalQuench_LDADD = $(LDADD)
 am_ParQuenched_OBJECTS = ParQuenched.$(OBJEXT) MyMath.$(OBJEXT) \
 	MyRand.$(OBJEXT) newQCDpt.$(OBJEXT) Point.$(OBJEXT) \
 	Background.$(OBJEXT)
@@ -77,8 +82,8 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(ParQuenched_SOURCES)
-DIST_SOURCES = $(ParQuenched_SOURCES)
+SOURCES = $(LocalQuench_SOURCES) $(ParQuenched_SOURCES)
+DIST_SOURCES = $(LocalQuench_SOURCES) $(ParQuenched_SOURCES)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -247,6 +252,9 @@ dist_data_DATA = damocle.dag Quench.cfg run.sh
 ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
 
+LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
+  newQCDpt.cc Point.cc Background.cc
+
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -348,6 +356,9 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+LocalQuench$(EXEEXT): $(LocalQuench_OBJECTS) $(LocalQuench_DEPENDENCIES) 
+	@rm -f LocalQuench$(EXEEXT)
+	$(CXXLINK) $(LocalQuench_OBJECTS) $(LocalQuench_LDADD) $(LIBS)
 ParQuenched$(EXEEXT): $(ParQuenched_OBJECTS) $(ParQuenched_DEPENDENCIES) 
 	@rm -f ParQuenched$(EXEEXT)
 	$(CXXLINK) $(ParQuenched_OBJECTS) $(ParQuenched_LDADD) $(LIBS)
@@ -359,6 +370,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Background.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalQuench.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MyMath.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MyRand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParQuenched.Po@am__quote@
