@@ -4,13 +4,14 @@
 #include <algorithm>
 #include <newQCDpt.h>
 #include <iostream>
+#include <fstream>
 
 const int DIM = 4;
 const int ORD = 6;
 const int L = 4;
 const int T = 4;
 const int s = 0;
-const int NRUN = 1000;
+const int NRUN = 100000;
 const double alpha = .05;
 const double taug = -.01;
 const double stau = .1;
@@ -95,12 +96,10 @@ struct LocalGaugeUpdate {
   static MyRand Rand;
   Direction mu;
   ptsu3 M; // zero momentum contribution
-  int count;
 
-  explicit LocalGaugeUpdate(const Direction& nu) : mu(nu), count(0) { }
+  explicit LocalGaugeUpdate(const Direction& nu) : mu(nu) { }
 
   void operator()(GluonField& U, const Point& n) {
-    ++count;
     ptSU3 W;
     W.zero();
     for(Direction nu; nu.is_good(); ++nu)
@@ -138,6 +137,116 @@ struct ZeroModeSubtraction {
 
 MyRand LocalGaugeUpdate::Rand;
 
+struct P_lower {
+  ptSU3 val;
+  P_lower () : val(bgf::zero<bgf::AbelianBgf>()) { }
+  void operator()(GluonField& U, const Point& n){
+    Direction t(0);
+    for (Direction k(1); k.is_good(); ++k)
+      val += U[n][k].bgf() * U[n + k][t] * 
+        dag( U[n +t][k] ) * dag( U[n][t] );
+  }
+};
+
+
+// This is the plaquette at t = T, arranged such that the derivative
+// w.r.t. eta may be inserted at the very end.
+
+struct P_upper {
+  ptSU3 val;
+  P_upper () : val(bgf::zero<bgf::AbelianBgf>()) { }
+  void operator()(GluonField& U, const Point& n){
+    Direction t(0);
+    ptSU3 tmp;
+    for (Direction k(1); k.is_good(); ++k)
+      val += dag( U [n + t][k].bgf() ) * dag( U[n][t] ) *
+              U[n][k] * U[n + k][t];
+  }
+};
+
+struct P_spatial {
+  ptSU3 val;
+  P_spatial () : val(bgf::zero<bgf::AbelianBgf>()) { }
+  void operator()(GluonField& U, const Point& n){
+    for (Direction k(1); k.is_good(); ++k)
+      for (Direction l(k + 1); l.is_good(); ++l)
+        val += U[n][k] * U[n + k][l]
+          * dag( U[n + l][k] ) * dag( U[n][l] );
+  }
+};
+
+inline void to_bin_file(std::ofstream& of, const Cplx& c){
+  of.write(reinterpret_cast<const char*>(&c.re), sizeof(double));
+  of.write(reinterpret_cast<const char*>(&c.im), sizeof(double));
+}
+
+inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fname){
+  std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+  to_bin_file(of, tree);
+  for (int i = 0; i < ORD; ++i)
+    to_bin_file(of, U[i].Tr());
+  of.close();
+}
+
+void measure(GluonField &U){
+  std::vector<double> nor(ORD*2*3 + 2);
+  SU3 dC; // derivative of C w.r.t. eta
+  dC(0,0) = Cplx(0, -2./L);
+  dC(1,1) = Cplx(0, 1./L);
+  dC(2,2) = Cplx(0, 1./L);
+  SU3 d_dC; // derivative of C w.r.t. eta and nu
+  d_dC(0,0) = Cplx(0, 0);
+  d_dC(1,1) = Cplx(0, 2./L);
+  d_dC(2,2) = Cplx(0, -2./L);
+
+  // shorthand for V3
+  int V3 = L*L*L;
+
+  P_lower Pl; // Plaquettes U_{0,k} at t = 0
+  P_upper Pu; // Plaquettes U_{0,k} at t = T - 1
+  U.apply_on_slice_with_bnd(Pl, Direction(0), 0);
+  U.apply_on_slice_with_bnd(Pu, Direction(0), T-1);
+  //meas_on_timeslice(U, 0, Pl);
+  //meas_on_timeslice(U, T - 1, Pu);
+  P_upper Pm; // Plaquettes U_{0,k} at t = 1, ..., T - 2
+  for (int t = 1; t < T - 1; ++t)
+    U.apply_on_slice_with_bnd(Pm, Direction(0), t);
+    //meas_on_timeslice(U, t, Pm);
+
+  P_spatial Ps; // Spatial plaq. at t = 1, ..., T-1
+  for (int t = 1; t < T; ++t)
+    U.apply_on_slice_with_bnd(Ps, Direction(0), t);
+    //meas_on_timeslice(U, t, Ps);
+
+  // Evaluate Gamma'
+  ptSU3 tmp = Pl.val + Pu.val;
+  std::for_each(tmp.begin(), tmp.end(), pta::mul(dC));
+  Cplx tree = tmp.bgf().ApplyFromLeft(dC).Tr();
+  write_file(tmp, tree, "Gp.bindat");
+
+  // Evaluate v
+  tmp = Pl.val + Pu.val;
+  std::for_each(tmp.begin(), tmp.end(), pta::mul(d_dC));
+  tree = tmp.bgf().ApplyFromLeft(d_dC).Tr();
+  write_file(tmp, tree, "v.bindat");
+
+  // Evaluate bd_plaq (nomenclature as in MILC code)
+  tmp = (Pl.val + Pu.val) / 6 / V3;
+  tree = tmp.bgf().Tr();
+  write_file(tmp, tree, "bd_plaq.bindat");
+
+  // Evaluate st_plaq
+  tmp = (Pl.val + Pu.val + Pm.val) / 3 / V3 / T;
+  tree = tmp.bgf().Tr();
+  write_file(tmp, tree, "st_plaq.bindat");
+
+  // Eval. ss_plaq
+  tmp = Ps.val / 3 / V3 / (T-1);
+  tree = tmp.bgf().Tr();
+  write_file(tmp, tree, "ss_plaq.bindat");
+}
+
+
 int main(int argc, char *argv[]) {
   LocalGaugeUpdate::Rand.init(12312);
   // generate an array for to store the lattice extents
@@ -157,11 +266,13 @@ int main(int argc, char *argv[]) {
   }
   for (int i_ = 0; i_ < NRUN; ++i_){
     if (! (i_ % 30) ) {
+      std::cout << i_;
       MeasureNorm m(ORD + 1);
       U.apply_everywhere(m);
       for (int i = 0 ; i < m.norm.size(); ++i)
-        std::cout << m.norm[i] << " ";
+        std::cout << " " << m.norm[i];
       std::cout << "\n";
+      measure(U);
     }
     ////////////////////////////////////////////////////////
     //
@@ -181,10 +292,9 @@ int main(int argc, char *argv[]) {
     //
     //  zero mode subtraction
     std::vector<ZeroModeSubtraction> z;
-    double vinv_eff = 1.; // effective inverse volume
-    for (Direction mu; mu.is_good(); ++mu) vinv_eff /= gu[mu].count;
+    double vinv = 1./L/L/L/L; // inverse volume
     for (Direction mu; mu.is_good(); ++mu)
-      z.push_back(ZeroModeSubtraction(mu, gu[mu].M*vinv_eff));
+      z.push_back(ZeroModeSubtraction(mu, gu[mu].M*vinv));
     //// for x_0 = 0 update the temporal direction only (as above)
     U.apply_on_slice_with_bnd(z[0], Direction(0), 0);
     // for x_0 != 0 update all directions (as above)
