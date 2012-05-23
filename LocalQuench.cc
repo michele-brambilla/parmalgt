@@ -11,7 +11,8 @@ const int ORD = 6;
 const int L = 4;
 const int T = 4;
 const int s = 0;
-const int NRUN = 100000;
+const int NRUN = 200;
+const int MEAS_FREQ = 20;
 const double alpha = .05;
 const double taug = -.01;
 const double stau = .1;
@@ -22,6 +23,7 @@ typedef ptt::PtMatrix<ORD> ptsu3;
 typedef BGptGluon<bgf::AbelianBgf, ORD, DIM> ptGluon;
 typedef pt::Point<DIM> Point;
 typedef pt::Direction<DIM> Direction;
+
 typedef fields::LocalField<ptGluon, DIM> GluonField;
 typedef GluonField::neighbors_t nt;
 
@@ -265,7 +267,7 @@ int main(int argc, char *argv[]) {
     U.apply_on_slice_with_bnd(f, Direction(0), t);
   }
   for (int i_ = 0; i_ < NRUN; ++i_){
-    if (! (i_ % 30) ) {
+    if (! (i_ % MEAS_FREQ) ) {
       std::cout << i_;
       MeasureNorm m(ORD + 1);
       U.apply_everywhere(m);
@@ -281,11 +283,13 @@ int main(int argc, char *argv[]) {
     for (Direction mu; mu.is_good(); ++mu)
       gu.push_back(LocalGaugeUpdate(mu));
     // for x_0 = 0 update the temporal direction only
-    U.apply_on_slice_with_bnd(gu[0], Direction(0), 0);
+    //U.apply_on_slice_with_bnd(gu[0], Direction(0), 0);
+    U.apply_on_timeslice(gu[0], 0);
     // for x_0 != 0 update all directions
     for (int t = 1; t < T; ++t){
       for (Direction mu; mu.is_good(); ++mu){
-        U.apply_on_slice_with_bnd(gu[mu], Direction(0), t);
+        U.apply_on_timeslice(gu[mu], t);
+        //U.apply_on_slice_with_bnd(gu[mu], Direction(0), t);
       }
     }
     ////////////////////////////////////////////////////////
@@ -296,17 +300,20 @@ int main(int argc, char *argv[]) {
     for (Direction mu; mu.is_good(); ++mu)
       z.push_back(ZeroModeSubtraction(mu, gu[mu].M*vinv));
     //// for x_0 = 0 update the temporal direction only (as above)
-    U.apply_on_slice_with_bnd(z[0], Direction(0), 0);
+    //U.apply_on_slice_with_bnd(z[0], Direction(0), 0);
+    U.apply_on_timeslice(z[0], 0);
     // for x_0 != 0 update all directions (as above)
     for (int t = 1; t < T; ++t)
       for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_slice_with_bnd(z[mu], Direction(0), t);
+        U.apply_on_timeslice(z[mu], t);
+        //U.apply_on_slice_with_bnd(z[mu], Direction(0), t);
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
     LocalGaugeFixing<GF_MODE> gf;
     for (int t = 1; t < T; ++t)
-      U.apply_on_slice_with_bnd(gf, Direction(0), t);
+      U.apply_on_timeslice(gf, t);
+      //U.apply_on_slice_with_bnd(gf, Direction(0), t);
     
   }
   return 0;

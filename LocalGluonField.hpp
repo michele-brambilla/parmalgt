@@ -7,7 +7,11 @@
 #include <Point.hpp>
 #include <Types.h>
 #include <iostream>
+#include <vector>
+#include <omp.h>
+#ifdef MPI
 #include <mpi.h>
+#endif
 #include <algorithm>
 
 
@@ -122,10 +126,30 @@ namespace fields {
       while (iter.is_good()) f(*this, iter.yield());
     }
     template <class M>
+    void apply_on_timeslice(M& f, const int& t){
+      // first, use 'red' points
+      geometry::SliceIterator<DIM, 0> iter =
+        g.template mk_slice_iterator<0>(pt::Direction<DIM>(0), t, 0);
+     
+      int size = g.bnd_vol(0), sizeh = size/2, i = 0;
+      std::vector<pt::Point<DIM> > points(size, g.begin());
+
+      while (iter.is_good()){
+        points[i] = iter.yield();
+        points[sizeh + i] = iter.yield();
+        ++i;
+      }
+#pragma omp parallel for default(none) shared(f, t, size, points) \
+  schedule(static, 1)
+      for (int i = 0; i < size; ++i)
+        f(*this, points[i]);
+    }
+    template <class M>
     void apply_everywhere(M& f){
       for(pt::Point<DIM> n = g.begin(), e = g.end(); n != e; ++n)
         f(*this, n);
     }
+#ifdef MPI
     MPI_Request test_send_fwd_z(){
       write_slice_to_buffer(pt::Direction<DIM>(3), 4,
                             send_buffer[3].second);
@@ -144,6 +168,7 @@ namespace fields {
       read_slice_from_buffer(pt::Direction<DIM>(3), 0,
                              rec_buffer[3].first);
     }
+#endif
   private:
     geometry::Geometry<DIM> g;
     rep_t rep;

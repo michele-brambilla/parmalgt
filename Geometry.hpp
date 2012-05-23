@@ -82,6 +82,7 @@ namespace geometry {
       n[mu] = xi;
       return SliceIterator<DIM, N>(mk_point(n), mu, extents);
     }
+    
     /// Generate an iterator over a given slice, omitting the boundaries.
     /// The SliceIterator returned will ierate all lattice points
     /// \f$n\f$, keeping \f$n_\mu = x_i\f$ fixed.
@@ -185,7 +186,8 @@ namespace geometry {
     /// \param e Extents of the underlying Geometry.
     SliceIterator (const pt::Point<DIM> &x, 
                    const pt::Direction<DIM> mu,
-                   const typename Geometry<DIM>::extents_t& e) :
+                   const typename Geometry<DIM>::extents_t& e,
+                   const int& stepsize = 1) :
       x_current(x), mu_exclude(mu), extents(e), counters(), 
       good_flag(true) { }
 
@@ -198,8 +200,8 @@ namespace geometry {
       pt::Point<DIM> result = x_current;
       int mu = 0 == mu_exclude ? 1 : 0;
       do {
-        x_current += pt::Direction<DIM>(mu);
-        counters[mu]++;
+          x_current += pt::Direction<DIM>(mu);
+          counters[mu]++;
         if (counters[mu] == extents[mu] - SKIP){
           counters[mu] = 0;
           // this uses periodicity !!
@@ -223,6 +225,7 @@ namespace geometry {
     typename Geometry<DIM>::extents_t extents;
     typename array_t<int, DIM>::Type counters;
     bool good_flag;
+    int step;
   };
 }
 
