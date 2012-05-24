@@ -5,6 +5,15 @@
 #include <PtTypes.hpp>
 #include <newQCDpt.h>
 
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///
+///  Kernels.
+///
+///  Kernels can be measurements or updates for lattice fields.
+///
+///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+///  \date Thu May 24 17:55:49 2012
 namespace kernels {
   
   // here for now, should move to parameters
@@ -12,7 +21,18 @@ namespace kernels {
   const double stau = 0.1;
   const double alpha = .05;
 
-  // singleton Rand
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel for the gauge update.
+  ///
+  ///  \tparam BGF Background field to use.
+  ///  \tparam ORD Perturbative order.
+  ///  \tparam DIN Number of space-time dimensions.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:47:43 2012
 
   template <class BGF, int ORD,int DIM>
   struct GaugeUpdateKernel {
@@ -52,6 +72,23 @@ namespace kernels {
       M += get_q(U[n][mu]); // zero momentum contribution
     }
   };
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel for gauge fixing.
+  ///
+  ///  Note I implemented three different methods of which only the
+  ///  third one seems to work fine at the moment.
+  ///
+  ///  \tparam N   Gauge fixing mode. WARNING: Only mode 3 works!
+  ///  \tparam BGF Background field to use.
+  ///  \tparam ORD Perturbative order.
+  ///  \tparam DIN Number of space-time dimensions.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:49:09 2012
+  ///
 
   template <int N, class BGF, int ORD,int DIM>
   class GaugeFixingKernel {
@@ -115,6 +152,18 @@ private:
 };
 
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel taking care of zero mode subtraction.
+  ///
+  ///  \tparam BGF Background field to use.
+  ///  \tparam ORD Perturbative order.
+  ///  \tparam DIN Number of space-time dimensions.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:50:47 2012
+
   template <class BGF, int ORD,int DIM>
   struct ZeroModeSubtractionKernel
   {
@@ -126,6 +175,17 @@ private:
     typedef fields::LocalField<ptGluon, DIM> GluonField;
   Direction mu;
   ptSU3 M; // zero momentum contribution
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Constructor
+    ///
+    ///
+    ///  \param nu Direction in which the functor will subtract the
+    ///  zero modes.
+    ///  \param N The sum over the zero modes to be subtracted.
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Thu May 24 17:51:17 2012
   ZeroModeSubtractionKernel(const Direction& nu, const ptsu3& N) :
     mu(nu), M(exp<bgf::AbelianBgf, ORD>(-1*reH(N))) { }
   void operator()(GluonField& U, const Point& n) {
@@ -134,6 +194,13 @@ private:
 };
   
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel to set the background field to the usual Abelian one.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:52:27 2012
   template <class BGF, int ORD,int DIM>
   struct SetBgfKernel {
     typedef BGptSU3<BGF, ORD> ptSU3;
@@ -151,7 +218,14 @@ private:
     }
   };
 
-
+  
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel to measure the norm.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:52:56 2012
   template <class BGF, int ORD,int DIM>
   struct MeasureNormKernel {
     typedef BGptSU3<BGF, ORD> ptSU3;
@@ -169,6 +243,17 @@ private:
     }
   };
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel to measure the temporal Plaquette.
+  ///
+  ///  This measures the temporal plaquette at t = 0, arranged such
+  ///   that the derivative w.r.t. eta may be inserted at the very
+  ///   end.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:53:07 2012
   template <class BGF, int ORD,int DIM>
   struct PlaqLowerKernel {
 
@@ -189,9 +274,16 @@ private:
 };
 
 
-// This is the plaquette at t = T, arranged such that the derivative
-// w.r.t. eta may be inserted at the very end.
-
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel to measure the temporal Plaquette.
+  ///
+  ///  This measures the plaquette at t = T, arranged such that the
+  ///   derivative w.r.t. eta may be inserted at the very end.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:53:07 2012
   template <class BGF, int ORD,int DIM>
   struct PlaqUpperKernel {
 
@@ -213,6 +305,14 @@ private:
   }
 };
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Kernel to measure the spatial Plaquette.
+  ///
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Thu May 24 17:53:07 2012
   template <class BGF, int ORD,int DIM>
   struct PlaqSpatialKernel {
 
