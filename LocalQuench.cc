@@ -3,19 +3,20 @@
 #include <Geometry.hpp>
 #include <algorithm>
 #include <newQCDpt.h>
+#include <map>
 #include <iostream>
 #include <fstream>
 
 const int DIM = 4;
 const int ORD = 6;
-const int L = 4;
-const int T = 4;
+const int L = 6;
+const int T = 6;
 const int s = 0;
-const int NRUN = 200;
-const int MEAS_FREQ = 20;
+const int NRUN = 100;
+const int MEAS_FREQ = 10;
 const double alpha = .05;
 const double taug = -.01;
-const double stau = .1;
+const double stau = 0.1;
 const int GF_MODE = 3;
 
 typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
@@ -94,7 +95,8 @@ private:
 
 
 struct LocalGaugeUpdate {
-
+  // for testing, c.f. below
+  //static std::vector<MyRand> rands;
   static MyRand Rand;
   Direction mu;
   ptsu3 M; // zero momentum contribution
@@ -113,10 +115,17 @@ struct LocalGaugeUpdate {
     // DH Feb. 6, 2012
     ptsu3 tmp  = W.reH() * taug; // take to the algebra
     tmp[0] -= stau*SU3rand(Rand); // add noise
+    // use this to check if the multithreaded version gives 
+    // identical results to the single threaded one
+    // tmp[0] -= stau*SU3rand(rands.at(n));
     U[n][mu] = exp<bgf::AbelianBgf, ORD>(tmp)*U[n][mu]; // back to SU3
+#pragma omp critical // TODO maybe one can use a reduce or so here
     M += get_q(U[n][mu]); // zero momentum contribution
   }
 };
+
+// testing c.f. above
+// std::vector<MyRand> LocalGaugeUpdate::rands;
 
 struct MeasureNorm {
   std::vector<double> norm;
@@ -249,7 +258,36 @@ void measure(GluonField &U){
 }
 
 
+struct Timer {
+  double t, tmp;
+  static double t_tot;
+  Timer () : t(0.0) { };
+  void start() { tmp = omp_get_wtime(); };
+  void stop() { 
+    double elapsed = omp_get_wtime() - tmp; 
+    t += elapsed;
+    t_tot += elapsed;};
+};
+
+
+// formated cout for the timings
+void pretty_print(const std::string& s, const double& d){
+  std::cout.width(25); 
+  std::cout << s; 
+  std::cout.width(0);
+  std::cout << ": " << d << "s" << std::endl;
+};
+
+double Timer::t_tot = 0.0;
+
 int main(int argc, char *argv[]) {
+  // timing stuff
+  typedef std::map<std::string, Timer> tmap;
+  tmap timings;
+  // these are for testing of the multithreaded version
+  //  LocalGaugeUpdate::rands.resize(L*L*L*(T+1));
+  //for (int i = 0; i < L*L*L*(T+1); ++i)
+  //   LocalGaugeUpdate::rands[i].init(i);
   LocalGaugeUpdate::Rand.init(12312);
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
@@ -264,7 +302,8 @@ int main(int argc, char *argv[]) {
   // initialzie the background field of U
   for (int t = 0; t <= T; ++t){
     SetBgf f(t);
-    U.apply_on_slice_with_bnd(f, Direction(0), t);
+    //U.apply_on_slice_with_bnd(f, Direction(0), t);
+    U.apply_on_timeslice(f, t);
   }
   for (int i_ = 0; i_ < NRUN; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
@@ -284,6 +323,7 @@ int main(int argc, char *argv[]) {
       gu.push_back(LocalGaugeUpdate(mu));
     // for x_0 = 0 update the temporal direction only
     //U.apply_on_slice_with_bnd(gu[0], Direction(0), 0);
+    timings["Gauge Update"].start();
     U.apply_on_timeslice(gu[0], 0);
     // for x_0 != 0 update all directions
     for (int t = 1; t < T; ++t){
@@ -292,6 +332,7 @@ int main(int argc, char *argv[]) {
         //U.apply_on_slice_with_bnd(gu[mu], Direction(0), t);
       }
     }
+    timings["Gauge Update"].stop();
     ////////////////////////////////////////////////////////
     //
     //  zero mode subtraction
@@ -301,20 +342,29 @@ int main(int argc, char *argv[]) {
       z.push_back(ZeroModeSubtraction(mu, gu[mu].M*vinv));
     //// for x_0 = 0 update the temporal direction only (as above)
     //U.apply_on_slice_with_bnd(z[0], Direction(0), 0);
+    timings["Zero Mode Subtraction"].start();
     U.apply_on_timeslice(z[0], 0);
     // for x_0 != 0 update all directions (as above)
     for (int t = 1; t < T; ++t)
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(z[mu], t);
-        //U.apply_on_slice_with_bnd(z[mu], Direction(0), t);
+    timings["Zero Mode Subtraction"].stop();
+
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
     LocalGaugeFixing<GF_MODE> gf;
+    timings["Gauge Fixing"].start();
     for (int t = 1; t < T; ++t)
       U.apply_on_timeslice(gf, t);
       //U.apply_on_slice_with_bnd(gf, Direction(0), t);
-    
+    timings["Gauge Fixing"].stop();
   }
+  std::cout << "Timings:\n";
+  for (tmap::const_iterator i = timings.begin(); i != timings.end();
+       ++i){
+    pretty_print(i->first, i->second.t);
+  }
+  pretty_print("TOTAL", Timer::t_tot);
   return 0;
 }

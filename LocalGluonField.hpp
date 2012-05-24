@@ -139,9 +139,11 @@ namespace fields {
         points[sizeh + i] = iter.yield();
         ++i;
       }
-#pragma omp parallel for default(none) shared(f, t, size, points) \
-  schedule(static, 1)
-      for (int i = 0; i < size; ++i)
+#pragma omp parallel for default(none) shared(f, t, size, points, sizeh)
+      for (int i = 0; i < sizeh; ++i)
+        f(*this, points[i]);
+#pragma omp parallel for default(none) shared(f, t, size, points, sizeh)
+      for (int i = sizeh; i < size; ++i)
         f(*this, points[i]);
     }
     template <class M>
