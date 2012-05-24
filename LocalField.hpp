@@ -1,5 +1,5 @@
-#ifndef LOCAL_GLUON_FIELD_HPP
-#define LOCAL_GLUON_FIELD_HPP
+#ifndef LOCAL_FIELD_HPP
+#define LOCAL_FIELD_HPP
 
 #include <vector>
 #include <newQCDpt.h>

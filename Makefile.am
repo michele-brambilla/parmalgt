@@ -16,7 +16,6 @@ bin_PROGRAMS = LocalQuench
 
 LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
-LocalQuench_LDFLAGS = -static
 
 .PHONY: docs
 

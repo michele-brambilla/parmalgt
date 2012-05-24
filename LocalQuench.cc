@@ -1,4 +1,4 @@
-#include <LocalGluonField.hpp>
+#include <LocalField.hpp>
 #include <Background.h>
 #include <Geometry.hpp>
 #include <algorithm>
@@ -6,6 +6,7 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#include <Kernels.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -19,12 +20,10 @@ const int T = 6;
 const int s = 0;
 const int NRUN = 50;
 const int MEAS_FREQ = 10;
-const double alpha = .05;
-const double taug = -.01;
-const double stau = 0.1;
 const int GF_MODE = 3;
 
-typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
+typedef bgf::AbelianBgf Bgf_t;
+typedef BGptSU3<Bgf_t, ORD> ptSU3;
 typedef ptt::PtMatrix<ORD> ptsu3;
 typedef BGptGluon<bgf::AbelianBgf, ORD, DIM> ptGluon;
 typedef pt::Point<DIM> Point;
@@ -33,164 +32,32 @@ typedef pt::Direction<DIM> Direction;
 typedef fields::LocalField<ptGluon, DIM> GluonField;
 typedef GluonField::neighbors_t nt;
 
-struct SetBgf {
 
-  explicit SetBgf(const int& t_in) : t(t_in) { }
-  int t;
-  void operator()(GluonField& U, const Point& n) const {
-    for (Direction mu; mu.is_good(); ++mu)
-      U[n][mu].bgf() =  bgf::get_abelian_bgf(t, mu);
-  }
-};
-
-template <int N>
-class LocalGaugeFixing {
-public:
-  void operator()(GluonField& U, const Point& n) const { 
-    do_it(U, n, mode_selektor<N>());
-  }
-private:
-  template <int M> struct mode_selektor { };
-  void do_it(GluonField& U, const Point& n, 
-             const mode_selektor<1>&) const {
-    // exp version
-    ptSU3 omega;
-    for (Direction mu; mu.is_good(); ++mu)
-      omega += U[n][mu] - U[n - mu][mu];
-    
-    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
-    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
-    
-    for (Direction mu; mu.is_good(); ++mu){
-      U[n][mu] = Omega * U[n][mu];
-      U[n - mu][mu] *= OmegaDag;
-    }
-  }
-  void do_it(GluonField& U, const Point& n,
-             const mode_selektor<2>&) const {
-    ptSU3 omega;
-    for (Direction mu; mu.is_good(); ++mu){
-      omega += (U[n][mu] * dag(U[n][mu].bgf()) *
-            dag( U[n - mu][mu] ) * U[n - mu][mu].bgf());
-    }
-    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
-    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
-    for (Direction mu; mu.is_good(); ++mu){
-      U[n][mu] = Omega * U[n][mu];
-      U[n - mu][mu] *= OmegaDag;
-    }
-  }
-  void do_it(GluonField& U, const Point& n,
-             const mode_selektor<3>&) const {
-    ptSU3 omega;
-    omega.zero();
-    for (Direction mu; mu.is_good(); ++mu){
-      ptSU3 Udag = dag(U[n - mu][mu]);
-      bgf::AbelianBgf Vdag = U[n][mu].bgf().dag(), V = Udag.bgf().dag();
-      omega += U[n][mu]*Vdag*Udag*V;
-    }
-    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
-    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
-    for (Direction mu; mu.is_good(); ++mu){
-      U[n][mu] = Omega * U[n][mu];
-      U[n - mu][mu] *= OmegaDag;
-    }
-  }
-};
+//
+// Make aliases for the Kernels ...
+//
 
 
-struct LocalGaugeUpdate {
-  // for testing, c.f. below
-  //static std::vector<MyRand> rands;
-  static MyRand Rand;
-  Direction mu;
-  ptsu3 M; // zero momentum contribution
+// ... for the gauge update/fixing ...
+typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM> GaugeUpdateKernel;
+// TODO: get rid of this somehow ...
+template <class C, int N, int M> MyRand kernels::GaugeUpdateKernel<C, N, M>::Rand;
+typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
+typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
 
-  explicit LocalGaugeUpdate(const Direction& nu) : mu(nu) { }
-
-  void operator()(GluonField& U, const Point& n) {
-    ptSU3 W;
-    W.zero();
-    for(Direction nu; nu.is_good(); ++nu)
-      if(nu != mu)
-        W += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
-          + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
-    // Close the staple
-    W = U[n][mu] * W;
-    // DH Feb. 6, 2012
-    ptsu3 tmp  = W.reH() * taug; // take to the algebra
-    tmp[0] -= stau*SU3rand(Rand); // add noise
-    // use this to check if the multithreaded version gives 
-    // identical results to the single threaded one
-    // tmp[0] -= stau*SU3rand(rands.at(n));
-    U[n][mu] = exp<bgf::AbelianBgf, ORD>(tmp)*U[n][mu]; // back to SU3
-#pragma omp critical // TODO maybe one can use a reduce or so here
-    M += get_q(U[n][mu]); // zero momentum contribution
-  }
-};
-
-// testing c.f. above
-// std::vector<MyRand> LocalGaugeUpdate::rands;
-
-struct MeasureNorm {
-  std::vector<double> norm;
-  explicit MeasureNorm(const int& order) : norm(order, 0.0) { }
-  void operator()(GluonField& U, const Point& n) {
-    for (int i = 0; i < norm.size(); ++i)
-      norm[i] += U[n].Norm()[i];
-  }
-};
-
-struct ZeroModeSubtraction {
-  Direction mu;
-  ptSU3 M; // zero momentum contribution
-  ZeroModeSubtraction(const Direction& nu, const ptsu3& N) :
-    mu(nu), M(exp<bgf::AbelianBgf, ORD>(-1*reH(N))) { }
-  void operator()(GluonField& U, const Point& n) {
-    U[n][mu] = M * U[n][mu];
-  }
-};
-
-MyRand LocalGaugeUpdate::Rand;
-
-struct P_lower {
-  ptSU3 val;
-  P_lower () : val(bgf::zero<bgf::AbelianBgf>()) { }
-  void operator()(GluonField& U, const Point& n){
-    Direction t(0);
-    for (Direction k(1); k.is_good(); ++k)
-      val += U[n][k].bgf() * U[n + k][t] * 
-        dag( U[n +t][k] ) * dag( U[n][t] );
-  }
-};
+// ... to set the background field ...
+typedef kernels::SetBgfKernel<Bgf_t, ORD, DIM> SetBgfKernel;
 
 
-// This is the plaquette at t = T, arranged such that the derivative
-// w.r.t. eta may be inserted at the very end.
+// ... and for the measurements.
+typedef kernels::PlaqLowerKernel<Bgf_t, ORD, DIM> PlaqLowerKernel;
+typedef kernels::PlaqUpperKernel<Bgf_t, ORD, DIM> PlaqUpperKernel;
+typedef kernels::PlaqSpatialKernel<Bgf_t, ORD, DIM> PlaqSpatialKernel;
+typedef kernels::MeasureNormKernel<Bgf_t, ORD, DIM> MeasureNormKernel;
 
-struct P_upper {
-  ptSU3 val;
-  P_upper () : val(bgf::zero<bgf::AbelianBgf>()) { }
-  void operator()(GluonField& U, const Point& n){
-    Direction t(0);
-    ptSU3 tmp;
-    for (Direction k(1); k.is_good(); ++k)
-      val += dag( U [n + t][k].bgf() ) * dag( U[n][t] ) *
-              U[n][k] * U[n + k][t];
-  }
-};
 
-struct P_spatial {
-  ptSU3 val;
-  P_spatial () : val(bgf::zero<bgf::AbelianBgf>()) { }
-  void operator()(GluonField& U, const Point& n){
-    for (Direction k(1); k.is_good(); ++k)
-      for (Direction l(k + 1); l.is_good(); ++l)
-        val += U[n][k] * U[n + k][l]
-          * dag( U[n + l][k] ) * dag( U[n][l] );
-  }
-};
-
+// ... some IO
+// TODO: Move this as well!
 inline void to_bin_file(std::ofstream& of, const Cplx& c){
   of.write(reinterpret_cast<const char*>(&c.re), sizeof(double));
   of.write(reinterpret_cast<const char*>(&c.im), sizeof(double));
@@ -204,6 +71,8 @@ inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fnam
   of.close();
 }
 
+
+// Our measurement
 void measure(GluonField &U){
   std::vector<double> nor(ORD*2*3 + 2);
   SU3 dC; // derivative of C w.r.t. eta
@@ -218,18 +87,18 @@ void measure(GluonField &U){
   // shorthand for V3
   int V3 = L*L*L;
 
-  P_lower Pl; // Plaquettes U_{0,k} at t = 0
-  P_upper Pu; // Plaquettes U_{0,k} at t = T - 1
+  PlaqLowerKernel Pl; // Plaquettes U_{0,k} at t = 0
+  PlaqUpperKernel Pu; // Plaquettes U_{0,k} at t = T - 1
   U.apply_on_slice_with_bnd(Pl, Direction(0), 0);
   U.apply_on_slice_with_bnd(Pu, Direction(0), T-1);
   //meas_on_timeslice(U, 0, Pl);
   //meas_on_timeslice(U, T - 1, Pu);
-  P_upper Pm; // Plaquettes U_{0,k} at t = 1, ..., T - 2
+  PlaqUpperKernel Pm; // Plaquettes U_{0,k} at t = 1, ..., T - 2
   for (int t = 1; t < T - 1; ++t)
     U.apply_on_slice_with_bnd(Pm, Direction(0), t);
     //meas_on_timeslice(U, t, Pm);
 
-  P_spatial Ps; // Spatial plaq. at t = 1, ..., T-1
+  PlaqSpatialKernel Ps; // Spatial plaq. at t = 1, ..., T-1
   for (int t = 1; t < T; ++t)
     U.apply_on_slice_with_bnd(Ps, Direction(0), t);
     //meas_on_timeslice(U, t, Ps);
@@ -262,6 +131,8 @@ void measure(GluonField &U){
   write_file(tmp, tree, "ss_plaq.bindat");
 }
 
+
+// timing
 
 struct Timer {
   double t, tmp;
@@ -305,7 +176,7 @@ int main(int argc, char *argv[]) {
   //  LocalGaugeUpdate::rands.resize(L*L*L*(T+1));
   //for (int i = 0; i < L*L*L*(T+1); ++i)
   //   LocalGaugeUpdate::rands[i].init(i);
-  LocalGaugeUpdate::Rand.init(12312);
+  GaugeUpdateKernel::Rand.init(12312);
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
   // we want a L = 4 lattice
@@ -318,14 +189,14 @@ int main(int argc, char *argv[]) {
   bgf::get_abelian_bgf(0, 0, T, L, s);
   // initialzie the background field of U
   for (int t = 0; t <= T; ++t){
-    SetBgf f(t);
+    SetBgfKernel f(t);
     //U.apply_on_slice_with_bnd(f, Direction(0), t);
     U.apply_on_timeslice(f, t);
   }
   for (int i_ = 0; i_ < NRUN; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
       std::cout << i_;
-      MeasureNorm m(ORD + 1);
+      MeasureNormKernel m(ORD + 1);
       U.apply_everywhere(m);
       for (int i = 0 ; i < m.norm.size(); ++i)
         std::cout << " " << m.norm[i];
@@ -335,30 +206,26 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////////
     //
     //  gauge update
-    std::vector<LocalGaugeUpdate> gu;
+    std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
-      gu.push_back(LocalGaugeUpdate(mu));
-    // for x_0 = 0 update the temporal direction only
-    //U.apply_on_slice_with_bnd(gu[0], Direction(0), 0);
+      gu.push_back(GaugeUpdateKernel(mu));
     timings["Gauge Update"].start();
+    // for x_0 = 0 update the temporal direction only
     U.apply_on_timeslice(gu[0], 0);
     // for x_0 != 0 update all directions
-    for (int t = 1; t < T; ++t){
-      for (Direction mu; mu.is_good(); ++mu){
+    for (int t = 1; t < T; ++t)
+      for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu[mu], t);
-        //U.apply_on_slice_with_bnd(gu[mu], Direction(0), t);
-      }
-    }
+
     timings["Gauge Update"].stop();
     ////////////////////////////////////////////////////////
     //
     //  zero mode subtraction
-    std::vector<ZeroModeSubtraction> z;
+    std::vector<ZeroModeSubtractionKernel> z;
     double vinv = 1./L/L/L/L; // inverse volume
     for (Direction mu; mu.is_good(); ++mu)
-      z.push_back(ZeroModeSubtraction(mu, gu[mu].M*vinv));
-    //// for x_0 = 0 update the temporal direction only (as above)
-    //U.apply_on_slice_with_bnd(z[0], Direction(0), 0);
+      z.push_back(ZeroModeSubtractionKernel(mu, gu[mu].M*vinv));
+    // for x_0 = 0 update the temporal direction only (as above)
     timings["Zero Mode Subtraction"].start();
     U.apply_on_timeslice(z[0], 0);
     // for x_0 != 0 update all directions (as above)
@@ -370,13 +237,13 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
-    LocalGaugeFixing<GF_MODE> gf;
+    GaugeFixingKernel gf;
     timings["Gauge Fixing"].start();
     for (int t = 1; t < T; ++t)
       U.apply_on_timeslice(gf, t);
-      //U.apply_on_slice_with_bnd(gf, Direction(0), t);
     timings["Gauge Fixing"].stop();
-  }
+  } // end main for loop
+  // write out timings
   std::cout << "Timings:\n";
   for (tmap::const_iterator i = timings.begin(); i != timings.end();
        ++i){
