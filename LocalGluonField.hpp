@@ -8,7 +8,9 @@
 #include <Types.h>
 #include <iostream>
 #include <vector>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #ifdef MPI
 #include <mpi.h>
 #endif

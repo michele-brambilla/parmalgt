@@ -16,7 +16,7 @@ AC_LANG_CPLUSPLUS
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lfftw3':
-AC_CHECK_LIB([fftw3], [main])
+#AC_CHECK_LIB([fftw3], [main])
 # FIXME: Replace `main' with a function in `-lgsl':
 # AC_CHECK_LIB([gsl], [main])
 # FIXME: Replace `main' with a function in `-lgslcblas':

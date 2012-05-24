@@ -64,6 +64,9 @@ am_LocalQuench_OBJECTS = LocalQuench.$(OBJEXT) MyMath.$(OBJEXT) \
 	Background.$(OBJEXT)
 LocalQuench_OBJECTS = $(am_LocalQuench_OBJECTS)
 LocalQuench_LDADD = $(LDADD)
+LocalQuench_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(LocalQuench_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -242,8 +245,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -DSF -DSFBC -D__PARALLEL_OMP__ -DDSFMT_MEXP=19937 \
-  -DHAVE_TR1
+AM_CPPFLAGS = -DSF -DSFBC -D__PARALLEL_OMP__ \
+ -DHAVE_TR1 -DDSFMT_MEXP=19937 
 
 ACLOCAL_AMFLAGS = -I m4
 noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
@@ -258,6 +261,7 @@ dist_data_DATA = damocle.dag Quench.cfg run.sh
 LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
 
+LocalQuench_LDFLAGS = -static
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -359,7 +363,7 @@ clean-binPROGRAMS:
 	rm -f $$list
 LocalQuench$(EXEEXT): $(LocalQuench_OBJECTS) $(LocalQuench_DEPENDENCIES) 
 	@rm -f LocalQuench$(EXEEXT)
-	$(CXXLINK) $(LocalQuench_OBJECTS) $(LocalQuench_LDADD) $(LIBS)
+	$(LocalQuench_LINK) $(LocalQuench_OBJECTS) $(LocalQuench_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

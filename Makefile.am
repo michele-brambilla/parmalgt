@@ -1,5 +1,6 @@
-AM_CPPFLAGS = -DSF -DSFBC -D__PARALLEL_OMP__ -DDSFMT_MEXP=19937 \
-  -DHAVE_TR1
+AM_CPPFLAGS = -DSF -DSFBC -D__PARALLEL_OMP__ \
+ -DHAVE_TR1 -DDSFMT_MEXP=19937 
+
 ACLOCAL_AMFLAGS = -I m4
 noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
   QCDenvNODEpt.h QCDenvNODE.h Point.hpp newQCDpt.h lattice.h \
@@ -15,6 +16,7 @@ bin_PROGRAMS = LocalQuench
 
 LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
+LocalQuench_LDFLAGS = -static
 
 .PHONY: docs
 

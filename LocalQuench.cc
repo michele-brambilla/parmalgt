@@ -6,13 +6,18 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#include <time.h>
+#endif
 
 const int DIM = 4;
 const int ORD = 6;
 const int L = 6;
 const int T = 6;
 const int s = 0;
-const int NRUN = 100;
+const int NRUN = 50;
 const int MEAS_FREQ = 10;
 const double alpha = .05;
 const double taug = -.01;
@@ -262,11 +267,23 @@ struct Timer {
   double t, tmp;
   static double t_tot;
   Timer () : t(0.0) { };
-  void start() { tmp = omp_get_wtime(); };
+  void start() { 
+#ifdef _OPENMP
+    tmp = omp_get_wtime(); 
+#else
+    tmp = clock();
+#endif
+
+  }
   void stop() { 
+#ifdef _OPENMP
     double elapsed = omp_get_wtime() - tmp; 
+#else
+    double elapsed = ((double)(clock() - tmp))/CLOCKS_PER_SEC;
+#endif
     t += elapsed;
-    t_tot += elapsed;};
+    t_tot += elapsed;
+  }
 };
 
 
