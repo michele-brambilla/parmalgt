@@ -18,8 +18,8 @@ const int ORD = 6;
 const int L = 6;
 const int T = 6;
 const int s = 0;
-const int NRUN = 50;
-const int MEAS_FREQ = 10;
+const int NRUN = 1;
+const int MEAS_FREQ = 1;
 const int GF_MODE = 3;
 
 typedef bgf::AbelianBgf Bgf_t;
@@ -41,7 +41,9 @@ typedef GluonField::neighbors_t nt;
 // ... for the gauge update/fixing ...
 typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM> GaugeUpdateKernel;
 // TODO: get rid of this somehow ...
-template <class C, int N, int M> MyRand kernels::GaugeUpdateKernel<C, N, M>::Rand;
+template <class C, int N, int M> MyRand kernels::GaugeUpdateKernel<C,
+N, M>::Rand;
+template <class C, int N, int M> std::vector<MyRand> kernels::GaugeUpdateKernel<C,N,M>::rands;
 typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
 typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
 
@@ -49,11 +51,14 @@ typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
 typedef kernels::SetBgfKernel<Bgf_t, ORD, DIM> SetBgfKernel;
 
 
-// ... and for the measurements.
+// ... and for the measurements ...
 typedef kernels::PlaqLowerKernel<Bgf_t, ORD, DIM> PlaqLowerKernel;
 typedef kernels::PlaqUpperKernel<Bgf_t, ORD, DIM> PlaqUpperKernel;
 typedef kernels::PlaqSpatialKernel<Bgf_t, ORD, DIM> PlaqSpatialKernel;
 typedef kernels::MeasureNormKernel<Bgf_t, ORD, DIM> MeasureNormKernel;
+
+// ... and for the checkpointing.
+typedef kernels::FileWriterKernel<Bgf_t, ORD, DIM> FileWriterKernel;
 
 
 // ... some IO
@@ -173,10 +178,10 @@ int main(int argc, char *argv[]) {
   typedef std::map<std::string, Timer> tmap;
   tmap timings;
   // these are for testing of the multithreaded version
-  //  LocalGaugeUpdate::rands.resize(L*L*L*(T+1));
-  //for (int i = 0; i < L*L*L*(T+1); ++i)
-  //   LocalGaugeUpdate::rands[i].init(i);
-  GaugeUpdateKernel::Rand.init(12312);
+  GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
+  for (int i = 0; i < L*L*L*(T+1); ++i)
+    GaugeUpdateKernel::rands[i].init(i);
+  //GaugeUpdateKernel::Rand.init(12312);
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
   // we want a L = 4 lattice
@@ -250,5 +255,7 @@ int main(int argc, char *argv[]) {
     pretty_print(i->first, i->second.t);
   }
   pretty_print("TOTAL", Timer::t_tot);
+  FileWriterKernel fw;
+  U.apply_everywhere(fw);
   return 0;
 }

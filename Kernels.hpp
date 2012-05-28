@@ -4,6 +4,7 @@
 #include <LocalField.hpp>
 #include <PtTypes.hpp>
 #include <newQCDpt.h>
+#include <IO.hpp>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -45,7 +46,7 @@ namespace kernels {
 
    
     // for testing, c.f. below
-    //static std::vector<MyRand> rands;
+    static std::vector<MyRand> rands;
     static MyRand Rand;
     Direction mu;
     ptsu3 M; // zero momentum contribution
@@ -63,10 +64,10 @@ namespace kernels {
       W = U[n][mu] * W;
       // DH Feb. 6, 2012
       ptsu3 tmp  = W.reH() * taug; // take to the algebra
-      tmp[0] -= stau*SU3rand(Rand); // add noise
+      //tmp[0] -= stau*SU3rand(Rand); // add noise
       // use this to check if the multithreaded version gives 
       // identical results to the single threaded one
-      // tmp[0] -= stau*SU3rand(rands.at(n));
+      tmp[0] -= stau*SU3rand(rands.at(n));
       U[n][mu] = exp<bgf::AbelianBgf, ORD>(tmp)*U[n][mu]; // back to SU3
 #pragma omp critical // TODO maybe one can use a reduce or so here
       M += get_q(U[n][mu]); // zero momentum contribution
@@ -332,6 +333,31 @@ private:
   }
 };
 
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Writing a gluon to a file
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Fri May 25 15:59:06 2012
+
+  template <class BGF, int ORD,int DIM>
+  struct FileWriterKernel {
+
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    void operator()(GluonField& U, const Point& n){
+      for (Direction mu(0); mu.is_good(); ++mu)
+        U[n][mu].write(o);
+    }
+    io::CheckedIo o;
+  };
+  
 }
 
 #endif

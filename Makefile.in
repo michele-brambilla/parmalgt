@@ -61,12 +61,9 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(datadir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_LocalQuench_OBJECTS = LocalQuench.$(OBJEXT) MyMath.$(OBJEXT) \
 	MyRand.$(OBJEXT) newQCDpt.$(OBJEXT) Point.$(OBJEXT) \
-	Background.$(OBJEXT)
+	Background.$(OBJEXT) IO.$(OBJEXT)
 LocalQuench_OBJECTS = $(am_LocalQuench_OBJECTS)
 LocalQuench_LDADD = $(LDADD)
-LocalQuench_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(LocalQuench_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -259,9 +256,8 @@ dist_data_DATA = damocle.dag Quench.cfg run.sh
 #ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
 #  newQCDpt.cc Point.cc Background.cc
 LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
-  newQCDpt.cc Point.cc Background.cc
+  newQCDpt.cc Point.cc Background.cc IO.cc
 
-LocalQuench_LDFLAGS = -static
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -363,7 +359,7 @@ clean-binPROGRAMS:
 	rm -f $$list
 LocalQuench$(EXEEXT): $(LocalQuench_OBJECTS) $(LocalQuench_DEPENDENCIES) 
 	@rm -f LocalQuench$(EXEEXT)
-	$(LocalQuench_LINK) $(LocalQuench_OBJECTS) $(LocalQuench_LDADD) $(LIBS)
+	$(CXXLINK) $(LocalQuench_OBJECTS) $(LocalQuench_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -372,6 +368,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Background.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalQuench.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MyMath.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MyRand.Po@am__quote@

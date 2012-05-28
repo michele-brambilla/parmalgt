@@ -115,6 +115,20 @@ public:
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
+  ///  Write to file.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Fri May 25 16:36:27 2012
+
+  template <class Writer_t>
+    void write(Writer_t& o) const {
+    bgf_.write(o);
+    ptU_.write(o);
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
   ///  Read from buffer
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
@@ -561,6 +575,21 @@ public:
       i->buffer(j);
     return j;
   }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Write to file.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Fri May 25 16:39:34 2012
+
+  template <class Writer_t>
+  void write(Writer_t& o) const {
+    for (const_iterator i = begin(); i != end(); ++i)
+      i->write(o);
+  }
+
   // unbuffer
   std::vector<double>::const_iterator&
   unbuffer (  std::vector<double>::const_iterator& j ) {
