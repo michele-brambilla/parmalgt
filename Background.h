@@ -343,6 +343,11 @@ namespace bgf {
       for (const_iterator n = begin(); n!= end(); ++n)
         o.write(*n);
     }
+    template <class Reader_t>
+    void read(Reader_t& o) {
+      for (iterator n = begin(); n!= end(); ++n)
+        o.read(*n);
+    }
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////

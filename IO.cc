@@ -62,21 +62,19 @@ void io::CheckedIo::finalize() {
   fsize[1] = (bcount * 64 + last_io - fsize[0]) / mod;
   for (int i = 0; i < 2; i++)
     fsize[i] *= 8;
-  // get a finer resolution on w
-  unsigned char* wc = reinterpret_cast<unsigned char*> (w);
-  // pointer in wc to the last read position:
+  // pointer in w (unsigned char) to the last read position:
   int ptr = last_io;
   // do the padding
-  wc[ptr++] = 128;
+  w.c[ptr++] = 128;
   while (ptr % 64 != 56) {
     if (ptr >= 64) {
       md5process();
       ptr = 0;
     }
-    wc[ptr++] = 0;
+    w.c[ptr++] = 0;
   }
-  w[14] = fsize[0];
-  w[15] = fsize[1];
+  w.u[14] = fsize[0];
+  w.u[15] = fsize[1];
   md5process();
 
 }
@@ -91,7 +89,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g], r[i]);
+    b += lrol(a + f + k[i] + w.u[g], r[i]);
     a = tmp;
   }
   for (int i = 16; i < 32; i++) {
@@ -100,7 +98,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g], r[i]);
+    b += lrol(a + f + k[i] + w.u[g], r[i]);
     a = tmp;
   }
   for (int i = 32; i < 48; i++) {
@@ -109,7 +107,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g], r[i]);
+    b += lrol(a + f + k[i] + w.u[g], r[i]);
     a = tmp;
   }
   for (int i = 48; i < 64; i++) {
@@ -118,7 +116,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g], r[i]);
+    b += lrol(a + f + k[i] + w.u[g], r[i]);
     a = tmp;
   }
   h[0] += a;
@@ -134,5 +132,6 @@ std::ostream& io::operator <<(std::ostream& os, CheckedIo &io) {
     os << std::hex;
     for (int i = 0; i < 16; i++)
       os << (int) w[i];
+    os << std::dec;
     return os;
 }

@@ -355,9 +355,26 @@ private:
       for (Direction mu(0); mu.is_good(); ++mu)
         U[n][mu].write(o);
     }
-    io::CheckedIo o;
+    io::CheckedOut o;
   };
   
+  template <class BGF, int ORD,int DIM>
+  struct FileReaderKernel {
+
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    void operator()(GluonField& U, const Point& n){
+      for (Direction mu(0); mu.is_good(); ++mu)
+        U[n][mu].read(i);
+    }
+    io::CheckedIn i;
+  };
+
 }
 
 #endif

@@ -13,22 +13,34 @@
 #include <time.h>
 #endif
 
+// space-time dimensions
 const int DIM = 4;
+// perturbative order
 const int ORD = 6;
+// lattice size
 const int L = 6;
 const int T = 6;
+// s parameter for staggered
 const int s = 0;
-const int NRUN = 0;
+// total number of gauge updates
+const int NRUN = 20;
+// frequency of measurements
 const int MEAS_FREQ = 1;
+// testing: write/read to/from disk
+const bool do_write = true;
+const int WR_FREQ = 5;
+// testing gauge fixing option -- DO NOT TOUCH!
 const int GF_MODE = 3;
 
-typedef bgf::AbelianBgf Bgf_t;
-typedef BGptSU3<Bgf_t, ORD> ptSU3;
-typedef ptt::PtMatrix<ORD> ptsu3;
-typedef BGptGluon<bgf::AbelianBgf, ORD, DIM> ptGluon;
+// some shorthands
+typedef bgf::AbelianBgf Bgf_t; // background field
+typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
+typedef ptt::PtMatrix<ORD> ptsu3; // algebra variables
+typedef BGptGluon<bgf::AbelianBgf, ORD, DIM> ptGluon; // gluon
 typedef pt::Point<DIM> Point;
 typedef pt::Direction<DIM> Direction;
 
+// shorthand for gluon field
 typedef fields::LocalField<ptGluon, DIM> GluonField;
 typedef GluonField::neighbors_t nt;
 
@@ -59,7 +71,7 @@ typedef kernels::MeasureNormKernel<Bgf_t, ORD, DIM> MeasureNormKernel;
 
 // ... and for the checkpointing.
 typedef kernels::FileWriterKernel<Bgf_t, ORD, DIM> FileWriterKernel;
-
+typedef kernels::FileReaderKernel<Bgf_t, ORD, DIM> FileReaderKernel;
 
 // ... some IO
 // TODO: Move this as well!
@@ -195,7 +207,6 @@ int main(int argc, char *argv[]) {
   // initialzie the background field of U
   for (int t = 0; t <= T; ++t){
     SetBgfKernel f(t);
-    //U.apply_on_slice_with_bnd(f, Direction(0), t);
     U.apply_on_timeslice(f, t);
   }
   for (int i_ = 0; i_ < NRUN; ++i_){
@@ -247,6 +258,27 @@ int main(int argc, char *argv[]) {
     for (int t = 1; t < T; ++t)
       U.apply_on_timeslice(gf, t);
     timings["Gauge Fixing"].stop();
+
+    ////////////////////////////////////////////////////////
+    //
+    // For testing purposes: Write config to disk and read ...
+    //
+    //  Note that the code blocks { } below are needed to ensure
+    //  destruction of the writer kernel before the reader one is
+    //  constructed since the latter tries to read the .info file the
+    //  former writers and will throw an exception if it is not
+    //  found.
+    if ( i_ % WR_FREQ == 0 && do_write){
+      {
+        FileWriterKernel fw;
+        U.apply_everywhere(fw);
+      }
+      {
+        FileReaderKernel fr;
+        U.apply_everywhere(fr);
+      }
+    }
+
   } // end main for loop
   // write out timings
   std::cout << "Timings:\n";
@@ -255,7 +287,5 @@ int main(int argc, char *argv[]) {
     pretty_print(i->first, i->second.t);
   }
   pretty_print("TOTAL", Timer::t_tot);
-  FileWriterKernel fw;
-  U.apply_everywhere(fw);
   return 0;
 }

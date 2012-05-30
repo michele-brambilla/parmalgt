@@ -112,6 +112,13 @@ namespace ptt {
         for (int j = 0; j < 9; ++j)
           o.write((*n)[j]);
     }
+
+    template <class Reader_t>
+    void read(Reader_t& o) {
+      for (iterator n = begin(); n!= end(); ++n)
+        for (int j = 0; j < 9; ++j)
+          o.read((*n)[j]);
+    }
   
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
