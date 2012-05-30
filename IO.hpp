@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <boost/crc.hpp>
 #include <MyMath.h>
 #include <vector>
 #include <sstream>
