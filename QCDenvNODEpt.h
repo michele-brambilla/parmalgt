@@ -4,9 +4,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "fftw3.h"
+#include <fftw3.h>
 
 #include "QCDenvNODE.h"
+
+#include <Point.hpp>
 
 #ifdef __PARALLEL_OMP__
 #include <omp.h>
@@ -26,7 +28,6 @@ extern double mcpt[];
 
 
 #define SWAP(a, b, s) {(s) = (a); (a) = (b); (b) = (s);}
-
 
 
 class ptSU3_fld{
@@ -97,7 +98,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 
 
@@ -133,7 +134,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 	      }
 	    }
@@ -167,7 +168,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 	      }
 	    }
@@ -200,7 +201,7 @@ class ptSU3_fld{
 		xx[1] = k + YY[1]*4;
 		xx[0] = l;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC),filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC),filept);
 		
 	      }
 	    }
@@ -238,21 +239,14 @@ class ptSU3_fld{
 
 };
   
-
-
-
-
 inline ptSU3 ptSU3_fld::get(int *n) {
     return W[Z->get(n)];
 }
-
-
 
 inline int get(ptSU3_fld *W, int *n) {
     return (W->Z)->get(n);
 
 }
-
 
 inline int get(ptSU3_fld *W,int n,int step,int dir){
   return (W->Z)->get(n,step,dir);
@@ -261,8 +255,6 @@ inline int get(ptSU3_fld *W,int n,int step,int dir){
 inline int get(ptSU3_fld *W,int n){
   return (W->Z)->get(n);
 }
-
-
 
 // ------------- end class pt SU3_fld  --------------
 
@@ -316,7 +308,7 @@ class ptGluon_fld{
     FILE *filept;	
     if( (filept = fopen(filename, "w")) == NULL)  return 1;
     fwrite(W,sizeof(ptGluon), Z->Size, filept);
-    fwrite(placchetta, sizeof(Cplx), PTORD+1 , filept);
+    fwrite(placchetta, sizeof(Cplx), ORD+1 , filept);
     
     fclose(filept);
     return 0;
@@ -333,7 +325,7 @@ class ptGluon_fld{
       }
 
     fread(W,sizeof(ptGluon), Z->Size,filept); 
-    fread(placchetta, sizeof(Cplx), PTORD+1 , filept);
+    fread(placchetta, sizeof(Cplx), ORD+1 , filept);
 
     fclose(filept);
     return 0;
@@ -351,10 +343,10 @@ class ptGluon_fld{
     fseek(filept, offset, SEEK_SET);
     fread(W,sizeof(ptGluon), Z->Size,filept); 
 
-    offset = -(PTORD+1)*sizeof(Cplx);
+    offset = -(ORD+1)*sizeof(Cplx);
     fseek(filept, offset, SEEK_END);
     
-    fread(placchetta, sizeof(Cplx), PTORD+1 , filept);
+    fread(placchetta, sizeof(Cplx), ORD+1 , filept);
 
     fclose(filept);
     return 0;
@@ -392,7 +384,7 @@ class ptGluon_fld{
 		xx[1] = j + YY[0]*4;
 		xx[0] = i;
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 
 
@@ -432,7 +424,7 @@ class ptGluon_fld{
 /* 		xx[1] = j + YY[1]*4; */
 /* 		xx[0] = i+8; */
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 	      }
 	    }
@@ -470,7 +462,7 @@ class ptGluon_fld{
 /* 		xx[1] = j + YY[1]*4; */
 /* 		xx[0] = i+16; */
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 	      }
 	    }
@@ -507,7 +499,7 @@ class ptGluon_fld{
 /* 		xx[1] = j + YY[1]*4; */
 /* 		xx[0] = i+24; */
 		
-		fread(W+Z->get(xx), sizeof(double), 2*(1+PTORD*NC*NC)*4,filept);
+		fread(W+Z->get(xx), sizeof(double), 2*(1+ORD*NC*NC)*4,filept);
 		
 	      }
 	    }
@@ -540,7 +532,7 @@ class ptGluon_fld{
     for(int i = 0; i < Z->Size; i++){
       printf("i = %d\n",i);
       
-      W[i].prout();
+      //W[i].prout();
 
       printf("\n\n");
     }
@@ -553,7 +545,7 @@ class ptGluon_fld{
       W[i] = A.W[i];
   }
 
-  ptSU3* handle(){ return (ptSU3*)(W->U); }
+  ptSU3* handle(){ return (ptSU3*)(&(W[0])); }
   
   ptGluon get(int*);
 
@@ -562,11 +554,11 @@ class ptGluon_fld{
   ptSU3 get(int*, int);
 
   ptSU3 get(int n, int mu){
-      return W[Z->get(n)].U[mu];
+      return W[Z->get(n)][mu];
   }
 
   ptSU3 get(int n, int step, int dir, int mu){
-    return W[Z->get(n, step, dir)].U[mu];
+    return W[Z->get(n, step, dir)][mu];
   }
   
   friend int get(ptGluon_fld *W, int n, int mu) {
@@ -598,18 +590,39 @@ class ptGluon_fld{
   inline ptSU3 staple(int, int, int);  //(n, mu, nu)
   inline ptSU3 staple2x1(int, int, int); //(n, mu, nu)
   //  inline void wilson2x2(ptSU3&, int, int, int); //(n, mu, nu)
-};
 
-  inline ptGluon ptGluon_fld::get(int *n) {
+  ptSU3& operator()(const pt::Point&, const pt::Direction&); 
+  const ptSU3& operator()(const pt::Point&, const pt::Direction&) const;
+  pt::Point mk_point(int t, int x, int y, int z) const;
+
+}; // class ptGluon_fld
+
+
+// need to implement out of class
+// otherwise, we would get an "incomplete type" error
+
+inline ptSU3& ptGluon_fld::operator()(const pt::Point& n, const pt::Direction& mu) {
+  //return mu.deref_bkw(n.deref(W));
+  return mu.deref_bkw<ptSU3&, ptGluon&>(n.deref<ptGluon>(W));
+}
+
+inline pt::Point ptGluon_fld::mk_point(int t, int x, int y, int z) const {
+  int a[4] = {t,x,y,z};
+  return pt::Point(Z->get(a), Z->L.begin());
+}
+
+inline const ptSU3& ptGluon_fld::operator()
+  (const pt::Point& n, const pt::Direction& mu) const {
+  return mu.deref_bkw<const ptSU3&, const ptGluon&>(n.deref(W));
+}
+
+inline ptGluon ptGluon_fld::get(int *n) {
     return W[Z->get(n)];
   }
   
-  
-  inline ptSU3 ptGluon_fld::get(int *n, int mu) {
-    return W[Z->get(n)].U[mu];
+inline ptSU3 ptGluon_fld::get(int *n, int mu) {
+    return W[Z->get(n)][mu];
   }
-  
-  
   
 inline int get(ptGluon_fld *W, int *n) {
     return W->Z->get(n);
@@ -632,17 +645,14 @@ ptSU3 ptGluon_fld::staple(int n, int mu, int nu){
    */
 
 
-  return( W[Z->get(n, 1, mu)].U[nu]*
-	  dag(W[Z->L[n][4]].U[nu]*
-	      W[Z->get(n, 1, nu)].U[mu]) 
+  return( W[Z->get(n, 1, mu)][nu]*
+	  dag(W[Z->L[n][4]][nu]*
+	      W[Z->get(n, 1, nu)][mu]) 
 	  +
-	  dag(W[Z->get(n, -1, nu)].U[mu]*
-	      W[Z->get(n, 1, mu, -1, nu)].U[nu])*
-	  W[Z->get(n, -1, nu)].U[nu]);
+	  dag(W[Z->get(n, -1, nu)][mu]*
+	      W[Z->get(n, 1, mu, -1, nu)][nu])*
+	  W[Z->get(n, -1, nu)][nu]);
 }
-
-
-
 
 ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
 
@@ -678,9 +688,9 @@ ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
   f = Z->L[curr][mu  ];
   g = Z->L[f][5+nu];
 
-  tmp = ( W[a].U[nu] * W[b].U[nu] * dag(W[curr].U[nu] * W[c].U[nu] * W[d].U[mu] ) +
-          W[a].U[mu] * W[e].U[nu] * dag(W[curr].U[nu] * W[c].U[mu] * W[b].U[mu] ) +
-          W[a].U[nu] * dag(W[f].U[nu] * W[g].U[mu] * W[c].U[mu]) * W[f].U[mu] );
+  tmp = ( W[a][nu] * W[b][nu] * dag(W[curr][nu] * W[c][nu] * W[d][mu] ) +
+          W[a][mu] * W[e][nu] * dag(W[curr][nu] * W[c][mu] * W[b][mu] ) +
+          W[a][nu] * dag(W[f][nu] * W[g][mu] * W[c][mu]) * W[f][mu] );
   
   //  a = Z->L[curr][5+mu];
   b = Z->L[a][nu  ];
@@ -695,18 +705,12 @@ ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
   /*   a[mu] f^[nu] b^[mu] c^[mu] c[nu] = a[mu] (c[mu] b[mu] f[nu] )^ c[nu] */
   /*   b^[nu] c^[mu] g^[mu] g[nu] h[mu] = (g[mu] c[mu] b[nu] )^ g[nu] h[mu] */
     
-  tmp += ( dag(W[d].U[mu] * W[e].U[nu] * W[b].U[nu]) * W[d].U[nu] * W[c].U[nu]  +
-           W[a].U[mu] * dag(W[c].U[mu] * W[b].U[mu] * W[f].U[nu]) * W[c].U[nu]  +
-           dag(W[g].U[mu] * W[c].U[mu] * W[b].U[nu]) * W[g].U[nu] * W[h].U[mu] );
+  tmp += ( dag(W[d][mu] * W[e][nu] * W[b][nu]) * W[d][nu] * W[c][nu]  +
+           W[a][mu] * dag(W[c][mu] * W[b][mu] * W[f][nu]) * W[c][nu]  +
+           dag(W[g][mu] * W[c][mu] * W[b][nu]) * W[g][nu] * W[h][mu] );
 
   return tmp;
 }
-
-
-
-
-
-
 
 
 /* void ptGluon_fld::wilson2x2(ptSU3& tmp, int n, int mu, int nu){ */
@@ -735,8 +739,8 @@ ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
 /*   f = Z->L[e][5+mu]; */
 
 
-/*   tmp += ( W[n].U[mu] * W[a].U[mu] * W[b].U[nu] * W[c].U[nu] * */
-/* 	   dag( W[n].U[nu] * W[d].U[nu] * W[e].U[mu] * W[f].U[mu]) ); */
+/*   tmp += ( W[n][mu] * W[a][mu] * W[b][nu] * W[c][nu] * */
+/* 	   dag( W[n][nu] * W[d][nu] * W[e][mu] * W[f][mu]) ); */
   
   
 /*   //  return tmp; */
@@ -746,14 +750,14 @@ ptSU3 ptGluon_fld::staple2x1(int n, int mu, int nu){
 
 // ********* end class Gluon_fld **************
 
-
-
-
 class ptSpinColor_fld {
   
 public:
   latt *Z;
   ptSpinColor *psi;
+
+  const ptSpinColor& operator[](int i) const { return psi[i]; };
+  ptSpinColor& operator[](int i) { return psi[i]; };
   
   fftw_plan plan[2];
   SpinColor_fld *scfld;
@@ -772,6 +776,7 @@ public:
 	printf("There was an error in multi-threaded FFTW, program will be terminated.\n");
 	printf("######################################################################\n");
 	printf("\n");
+
       }
     else{
       fftw_plan_with_nthreads(NTHR); 
@@ -831,9 +836,9 @@ public:
       printf("i = %d\n",i);
       for(int mu = 0; mu < dim; mu++){
 	printf("\tmu = %d\n",mu);
-	for(int ord = 0; ord < PTORD+1; ord++){
+	for(int ord = 0; ord < ORD+1; ord++){
 	  printf("\t\tord = %d\n",ord);
-	  psi[i].psi[mu].ptCV[ord].prout();
+	  psi[i][mu][ord].prout();
 	  printf("\n");
 	}
 	printf("\n");
@@ -846,10 +851,10 @@ public:
     for(int i = 0; i < Z->Size; i++){
       for(int mu = 0; mu < dim; mu++){
 	for( int a = 0; a < NC; a++){
-	  if(fabs(psi[i].psi[mu].ptCV[o].whr[a].re)+
-	     fabs(psi[i].psi[mu].ptCV[o].whr[a].im) > 1e-10 ){
+	  if(fabs(psi[i][mu][o].whr[a].re)+
+	     fabs(psi[i][mu][o].whr[a].im) > 1e-10 ){
 	    printf("%d\t%d\t%d:\t",i,mu,a);
-	    psi[i].psi[mu].ptCV[o].whr[a].prout();
+	    psi[i][mu][o].whr[a].prout();
 	    printf("\n");
 	  }
 	}
@@ -860,18 +865,18 @@ public:
 
 
   void fout(std::ofstream& file) {
-    for(int ord = 0; ord < PTORD+1; ord++){
+    for(int ord = 0; ord < ORD+1; ord++){
       file << "ord = " << ord << endl << endl;
       for (int i = 0; i < Z->Size; i++)
 	for (int mu = 0; mu < dim; mu++)
 	  for (int a = 0; a < NC; a++) {
-	    if(fabs(psi[i].psi[mu].ptCV[ord].whr[a].re)+
-	       fabs(psi[i].psi[mu].ptCV[ord].whr[a].im) > 1e-10 )
+	    if(fabs(psi[i][mu][ord].whr[a].re)+
+	       fabs(psi[i][mu][ord].whr[a].im) > 1e-10 )
 	      file << i                        << " "
 		   << mu                       << " "
 		   << a                        << "\t"
-		   << psi[i].psi[mu].ptCV[ord].whr[a].re << "\t" 
-		   << psi[i].psi[mu].ptCV[ord].whr[a].im << std::endl;
+		   << psi[i][mu][ord].whr[a].re << "\t" 
+		   << psi[i][mu][ord].whr[a].im << std::endl;
 	  }
       file << endl;
     }
@@ -882,13 +887,13 @@ public:
       for (int i = 0; i < Z->Size; i++)
 	for (int mu = 0; mu < dim; mu++)
 	  for (int a = 0; a < NC; a++) {
-	    if(fabs(psi[i].psi[mu].ptCV[ord].whr[a].re)+
-	       fabs(psi[i].psi[mu].ptCV[ord].whr[a].im) > 1e-10 )
+	    if(fabs(psi[i][mu][ord].whr[a].re)+
+	       fabs(psi[i][mu][ord].whr[a].im) > 1e-10 )
 	      file << i                        << " "
 		   << mu                       << " "
 		   << a                        << "\t"
-		   << psi[i].psi[mu].ptCV[ord].whr[a].re << "\t" 
-		   << psi[i].psi[mu].ptCV[ord].whr[a].im << std::endl;
+		   << psi[i][mu][ord].whr[a].re << "\t" 
+		   << psi[i][mu][ord].whr[a].im << std::endl;
 	  }
   }
 
@@ -899,7 +904,7 @@ public:
   void operator=(ptSpinColor_fld &ptscfld) {
     Z = ptscfld.Z;
     for(int i = 0; i < Z->Size; i++)
-      psi[i] = ptscfld.psi[i];
+      psi[i] = ptscfld[i];
   }
   
 
@@ -907,15 +912,15 @@ public:
     
     for(int i = 0; i < Z->Size; i++){
       for(int mu = 0; mu < dim; mu++){
-	psi[i].psi[mu].ptCV[ord] = (scfld->psi[i]).psi[mu];
+        psi[i][mu][ord] = (*scfld)[i][mu];
       }
     }
 
   }
-  
+
 
   ptCVector* handle() {
-    return (ptCVector *) (psi->psi);
+    return (ptCVector *) (& (psi[0]));
   }
   
   ptSpinColor get(int *n){ return psi[Z->get(n)]; }
@@ -929,7 +934,7 @@ public:
   }
   
   ptCVector get(int n, int dir) {
-    return psi[Z->get(n)].psi[dir];
+    return psi[Z->get(n)][dir];
   }
 
 
@@ -964,8 +969,8 @@ public:
       for (int i = 0; i < Z->Size; i++){
 	for (int mu = 0; mu < dim; mu++){
 	  for (int a = 0; a < NC; a++) {
-	    scfld->psi[i].psi[mu].whr[a].re /= (double) Z->Size;
-	    scfld->psi[i].psi[mu].whr[a].im /= (double) Z->Size;
+	    scfld->psi[i][mu].whr[a].re /= (double) Z->Size;
+	    scfld->psi[i][mu].whr[a].im /= (double) Z->Size;
 	  }
 	}
 	
@@ -981,7 +986,7 @@ public:
       for (int i = 0; i < Z->Size; i++){
 	for (int mu = 0; mu < dim; mu++){
 	  for (int a = 0; a < NC; a++) {
-	    scfld->psi[i].psi[mu].whr[a] /= (double) Z->Size;
+	    (*scfld)[i][mu][a] /= (double) Z->Size;
 	  }
 	}
       }
@@ -1012,8 +1017,8 @@ public:
       for (int i = 0; i < Z->Size; i++){
 	for (int mu = 0; mu < dim; mu++){
 	  for (int a = 0; a < NC; a++) {
-	    scfld->psi[i].psi[mu].whr[a].re /= (double) Z->Size;
-	    scfld->psi[i].psi[mu].whr[a].im /= (double) Z->Size;
+	    scfld->psi[i][mu].whr[a].re /= (double) Z->Size;
+	    scfld->psi[i][mu].whr[a].im /= (double) Z->Size;
 	  }
 	}
 	
@@ -1028,7 +1033,7 @@ public:
       for (int i = 0; i < Z->Size; i++){
 	for (int mu = 0; mu < dim; mu++){
 	  for (int a = 0; a < NC; a++) {
-	    scfld->psi[i].psi[mu].whr[a] /= (double) Z->Size;
+	    scfld->psi[i][mu].whr[a] /= (double) Z->Size;
 	  }
 	}
       }
@@ -1203,7 +1208,7 @@ public:
    // per copiare non mi interessa l'ordine in cui accedo ai siti
    for(int i = 0; i < Z->Size; i++){
      for(int mu = 0; mu < dim; mu++){
-       psi[i].psi[mu].ptCV[0] = scfld->psi[i].psi[mu];
+       psi[i][mu][0] = scfld->psi[i][mu];
      }
    }
 
@@ -1218,7 +1223,7 @@ public:
 	  
 	 // massa critica
 	 for (int mu = 0; mu < dim; mu++ ) {		  
-	   psi[site_c].psi[mu].ptCV[jord] += mcpt[jord-kord]*psi[site_c].psi[mu].ptCV[kord];
+	   psi[site_c][mu][jord] += mcpt[jord-kord]*psi[site_c][mu][kord];
 	 }
 
 #ifndef _USE_HALFSPINOR_
@@ -1232,8 +1237,8 @@ public:
 	    
 	   for( int nu = 0; nu < dim; nu++ ){
 	      
-	     psi[site_c].psi[nu].ptCV[jord] -= .5*dag(Umu.W[point_dn].U[mu].ptU[jord-kord-1])*Xi1.psi[nu];
-	     psi[site_c].psi[nu].ptCV[jord] -= .5*( Umu.W[site_c].U[mu].ptU[jord-kord-1] )*Xi2.psi[nu];
+	     psi[site_c][nu][jord] -= .5*dag(Umu.W[point_dn][mu][jord-kord-1])*Xi1[nu];
+	     psi[site_c][nu][jord] -= .5*( Umu.W[site_c][mu][jord-kord-1] )*Xi2[nu];
 	   } //nu
 	    
 	 } // mu
@@ -1245,171 +1250,171 @@ public:
 	 point_up = Umu.Z->get(curr, 1, 0);
 	 point_dn = Umu.Z->get(curr,-1, 0);
 	 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re + psi[point_dn].psi[3].ptCV[kord].whr[0].im;    Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im - psi[point_dn].psi[3].ptCV[kord].whr[0].re;
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re + psi[point_dn].psi[3].ptCV[kord].whr[1].im;    Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im - psi[point_dn].psi[3].ptCV[kord].whr[1].re;
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re + psi[point_dn].psi[3].ptCV[kord].whr[2].im;    Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im - psi[point_dn].psi[3].ptCV[kord].whr[2].re;
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].im;    Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im - psi[point_dn].psi[2].ptCV[kord].whr[0].re;
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].im;    Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im - psi[point_dn].psi[2].ptCV[kord].whr[1].re;
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].im;    Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im - psi[point_dn].psi[2].ptCV[kord].whr[2].re;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re + psi[point_dn][3][kord].whr[0].im;    Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im - psi[point_dn][3][kord].whr[0].re;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re + psi[point_dn][3][kord].whr[1].im;    Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im - psi[point_dn][3][kord].whr[1].re;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re + psi[point_dn][3][kord].whr[2].im;    Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im - psi[point_dn][3][kord].whr[2].re;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re + psi[point_dn][2][kord].whr[0].im;    Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im - psi[point_dn][2][kord].whr[0].re;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re + psi[point_dn][2][kord].whr[1].im;    Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im - psi[point_dn][2][kord].whr[1].re;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re + psi[point_dn][2][kord].whr[2].im;    Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im - psi[point_dn][2][kord].whr[2].re;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[0].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[0].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][0][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][0][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re - psi[point_up].psi[3].ptCV[kord].whr[0].im;      Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im + psi[point_up].psi[3].ptCV[kord].whr[0].re;
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re - psi[point_up].psi[3].ptCV[kord].whr[1].im;      Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im + psi[point_up].psi[3].ptCV[kord].whr[1].re;
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re - psi[point_up].psi[3].ptCV[kord].whr[2].im;      Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im + psi[point_up].psi[3].ptCV[kord].whr[2].re;
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].im;      Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im + psi[point_up].psi[2].ptCV[kord].whr[0].re;
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].im;      Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im + psi[point_up].psi[2].ptCV[kord].whr[1].re;
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].im;      Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im + psi[point_up].psi[2].ptCV[kord].whr[2].re;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re - psi[point_up][3][kord].whr[0].im;      Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im + psi[point_up][3][kord].whr[0].re;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re - psi[point_up][3][kord].whr[1].im;      Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im + psi[point_up][3][kord].whr[1].re;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re - psi[point_up][3][kord].whr[2].im;      Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im + psi[point_up][3][kord].whr[2].re;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re - psi[point_up][2][kord].whr[0].im;      Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im + psi[point_up][2][kord].whr[0].re;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re - psi[point_up][2][kord].whr[1].im;      Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im + psi[point_up][2][kord].whr[1].re;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re - psi[point_up][2][kord].whr[2].im;      Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im + psi[point_up][2][kord].whr[2].re;
 
-	 Xi2.psi[0] = Umu.W[curr].U[0].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[0].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][0][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][0][jord-kord-1]*Xi2[1];
 	 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*(Xi1.psi[0] + Xi2.psi[0]);
-	 psi[site_c].psi[1].ptCV[jord] -= .5*(Xi1.psi[1] + Xi2.psi[1]);
+	 psi[site_c][0][jord] -= .5*(Xi1[0] + Xi2[0]);
+	 psi[site_c][1][jord] -= .5*(Xi1[1] + Xi2[1]);
 
-	 psi[site_c].psi[2].ptCV[jord].whr[0].re += .5*( Xi1.psi[1].whr[0].im - Xi2.psi[1].whr[0].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[0].im -= .5*( Xi1.psi[1].whr[0].re - Xi2.psi[1].whr[0].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].re += .5*( Xi1.psi[1].whr[1].im - Xi2.psi[1].whr[1].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].im -= .5*( Xi1.psi[1].whr[1].re - Xi2.psi[1].whr[1].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].re += .5*( Xi1.psi[1].whr[2].im - Xi2.psi[1].whr[2].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].im -= .5*( Xi1.psi[1].whr[2].re - Xi2.psi[1].whr[2].re );
+	 psi[site_c][2][jord].whr[0].re += .5*( Xi1[1].whr[0].im - Xi2[1].whr[0].im );
+	 psi[site_c][2][jord].whr[0].im -= .5*( Xi1[1].whr[0].re - Xi2[1].whr[0].re );
+	 psi[site_c][2][jord].whr[1].re += .5*( Xi1[1].whr[1].im - Xi2[1].whr[1].im );
+	 psi[site_c][2][jord].whr[1].im -= .5*( Xi1[1].whr[1].re - Xi2[1].whr[1].re );
+	 psi[site_c][2][jord].whr[2].re += .5*( Xi1[1].whr[2].im - Xi2[1].whr[2].im );
+	 psi[site_c][2][jord].whr[2].im -= .5*( Xi1[1].whr[2].re - Xi2[1].whr[2].re );
 
-	 psi[site_c].psi[3].ptCV[jord].whr[0].re += .5*( Xi1.psi[0].whr[0].im - Xi2.psi[0].whr[0].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[0].im -= .5*( Xi1.psi[0].whr[0].re - Xi2.psi[0].whr[0].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].re += .5*( Xi1.psi[0].whr[1].im - Xi2.psi[0].whr[1].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].im -= .5*( Xi1.psi[0].whr[1].re - Xi2.psi[0].whr[1].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].re += .5*( Xi1.psi[0].whr[2].im - Xi2.psi[0].whr[2].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].im -= .5*( Xi1.psi[0].whr[2].re - Xi2.psi[0].whr[2].re );
+	 psi[site_c][3][jord].whr[0].re += .5*( Xi1[0].whr[0].im - Xi2[0].whr[0].im );
+	 psi[site_c][3][jord].whr[0].im -= .5*( Xi1[0].whr[0].re - Xi2[0].whr[0].re );
+	 psi[site_c][3][jord].whr[1].re += .5*( Xi1[0].whr[1].im - Xi2[0].whr[1].im );
+	 psi[site_c][3][jord].whr[1].im -= .5*( Xi1[0].whr[1].re - Xi2[0].whr[1].re );
+	 psi[site_c][3][jord].whr[2].re += .5*( Xi1[0].whr[2].im - Xi2[0].whr[2].im );
+	 psi[site_c][3][jord].whr[2].im -= .5*( Xi1[0].whr[2].re - Xi2[0].whr[2].re );
 	 
 	 // mu = 1
 	 point_up = Umu.Z->get(curr, 1, 1);
 	 point_dn = Umu.Z->get(curr,-1, 1);
 	 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re - psi[point_dn].psi[3].ptCV[kord].whr[0].re;    Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im - psi[point_dn].psi[3].ptCV[kord].whr[0].im;
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re - psi[point_dn].psi[3].ptCV[kord].whr[1].re;    Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im - psi[point_dn].psi[3].ptCV[kord].whr[1].im;
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re - psi[point_dn].psi[3].ptCV[kord].whr[2].re;    Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im - psi[point_dn].psi[3].ptCV[kord].whr[2].im;
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].re;    Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im + psi[point_dn].psi[2].ptCV[kord].whr[0].im;
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].re;    Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im + psi[point_dn].psi[2].ptCV[kord].whr[1].im;
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].re;    Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im + psi[point_dn].psi[2].ptCV[kord].whr[2].im;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re - psi[point_dn][3][kord].whr[0].re;    Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im - psi[point_dn][3][kord].whr[0].im;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re - psi[point_dn][3][kord].whr[1].re;    Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im - psi[point_dn][3][kord].whr[1].im;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re - psi[point_dn][3][kord].whr[2].re;    Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im - psi[point_dn][3][kord].whr[2].im;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re + psi[point_dn][2][kord].whr[0].re;    Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im + psi[point_dn][2][kord].whr[0].im;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re + psi[point_dn][2][kord].whr[1].re;    Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im + psi[point_dn][2][kord].whr[1].im;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re + psi[point_dn][2][kord].whr[2].re;    Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im + psi[point_dn][2][kord].whr[2].im;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[1].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[1].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][1][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][1][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re + psi[point_up].psi[3].ptCV[kord].whr[0].re;    Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im + psi[point_up].psi[3].ptCV[kord].whr[0].im;
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re + psi[point_up].psi[3].ptCV[kord].whr[1].re;    Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im + psi[point_up].psi[3].ptCV[kord].whr[1].im;
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re + psi[point_up].psi[3].ptCV[kord].whr[2].re;    Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im + psi[point_up].psi[3].ptCV[kord].whr[2].im;
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].re;    Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im - psi[point_up].psi[2].ptCV[kord].whr[0].im;
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].re;    Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im - psi[point_up].psi[2].ptCV[kord].whr[1].im;
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].re;    Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im - psi[point_up].psi[2].ptCV[kord].whr[2].im;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re + psi[point_up][3][kord].whr[0].re;    Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im + psi[point_up][3][kord].whr[0].im;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re + psi[point_up][3][kord].whr[1].re;    Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im + psi[point_up][3][kord].whr[1].im;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re + psi[point_up][3][kord].whr[2].re;    Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im + psi[point_up][3][kord].whr[2].im;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re - psi[point_up][2][kord].whr[0].re;    Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im - psi[point_up][2][kord].whr[0].im;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re - psi[point_up][2][kord].whr[1].re;    Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im - psi[point_up][2][kord].whr[1].im;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re - psi[point_up][2][kord].whr[2].re;    Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im - psi[point_up][2][kord].whr[2].im;
 
-	 Xi2.psi[0] = Umu.W[curr].U[1].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[1].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][1][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][1][jord-kord-1]*Xi2[1];
 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*(Xi1.psi[0] + Xi2.psi[0]);
-	 psi[site_c].psi[1].ptCV[jord] -= .5*(Xi1.psi[1] + Xi2.psi[1]);
+	 psi[site_c][0][jord] -= .5*(Xi1[0] + Xi2[0]);
+	 psi[site_c][1][jord] -= .5*(Xi1[1] + Xi2[1]);
 
-	 psi[site_c].psi[2].ptCV[jord] -= .5*( Xi1.psi[1] - Xi2.psi[1] );
-	 psi[site_c].psi[3].ptCV[jord] += .5*( Xi1.psi[0] - Xi2.psi[0] );
+	 psi[site_c][2][jord] -= .5*( Xi1[1] - Xi2[1] );
+	 psi[site_c][3][jord] += .5*( Xi1[0] - Xi2[0] );
 
 	 
 	 // mu = 2
 	 point_up = Umu.Z->get(curr, 1, 2);
 	 point_dn = Umu.Z->get(curr,-1, 2);
 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].im;
-	 Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im - psi[point_dn].psi[2].ptCV[kord].whr[0].re;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re + psi[point_dn][2][kord].whr[0].im;
+	 Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im - psi[point_dn][2][kord].whr[0].re;
 	 
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].im;
-	 Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im - psi[point_dn].psi[2].ptCV[kord].whr[1].re;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re + psi[point_dn][2][kord].whr[1].im;
+	 Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im - psi[point_dn][2][kord].whr[1].re;
 	 
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].im;
-	 Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im - psi[point_dn].psi[2].ptCV[kord].whr[2].re;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re + psi[point_dn][2][kord].whr[2].im;
+	 Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im - psi[point_dn][2][kord].whr[2].re;
 	 
 
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re - psi[point_dn].psi[3].ptCV[kord].whr[0].im;
-	 Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im + psi[point_dn].psi[3].ptCV[kord].whr[0].re;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re - psi[point_dn][3][kord].whr[0].im;
+	 Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im + psi[point_dn][3][kord].whr[0].re;
 
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re - psi[point_dn].psi[3].ptCV[kord].whr[1].im;
-	 Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im + psi[point_dn].psi[3].ptCV[kord].whr[1].re;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re - psi[point_dn][3][kord].whr[1].im;
+	 Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im + psi[point_dn][3][kord].whr[1].re;
 
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re - psi[point_dn].psi[3].ptCV[kord].whr[2].im;
-	 Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im + psi[point_dn].psi[3].ptCV[kord].whr[2].re;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re - psi[point_dn][3][kord].whr[2].im;
+	 Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im + psi[point_dn][3][kord].whr[2].re;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[2].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[2].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][2][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][2][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].im;
-	 Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im + psi[point_up].psi[2].ptCV[kord].whr[0].re;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re - psi[point_up][2][kord].whr[0].im;
+	 Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im + psi[point_up][2][kord].whr[0].re;
 	 
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].im;
-	 Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im + psi[point_up].psi[2].ptCV[kord].whr[1].re;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re - psi[point_up][2][kord].whr[1].im;
+	 Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im + psi[point_up][2][kord].whr[1].re;
 	 
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].im;
-	 Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im + psi[point_up].psi[2].ptCV[kord].whr[2].re;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re - psi[point_up][2][kord].whr[2].im;
+	 Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im + psi[point_up][2][kord].whr[2].re;
 	 
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re + psi[point_up].psi[3].ptCV[kord].whr[0].im;
-	 Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im - psi[point_up].psi[3].ptCV[kord].whr[0].re;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re + psi[point_up][3][kord].whr[0].im;
+	 Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im - psi[point_up][3][kord].whr[0].re;
 	 
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re + psi[point_up].psi[3].ptCV[kord].whr[1].im;
-	 Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im - psi[point_up].psi[3].ptCV[kord].whr[1].re;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re + psi[point_up][3][kord].whr[1].im;
+	 Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im - psi[point_up][3][kord].whr[1].re;
 	 
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re + psi[point_up].psi[3].ptCV[kord].whr[2].im;
-	 Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im - psi[point_up].psi[3].ptCV[kord].whr[2].re;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re + psi[point_up][3][kord].whr[2].im;
+	 Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im - psi[point_up][3][kord].whr[2].re;
 
-	 Xi2.psi[0] = Umu.W[curr].U[2].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[2].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][2][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][2][jord-kord-1]*Xi2[1];
 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*( Xi1.psi[0] + Xi2.psi[0] );
-	 psi[site_c].psi[1].ptCV[jord] -= .5*( Xi1.psi[1] + Xi2.psi[1] );
+	 psi[site_c][0][jord] -= .5*( Xi1[0] + Xi2[0] );
+	 psi[site_c][1][jord] -= .5*( Xi1[1] + Xi2[1] );
 
-	 psi[site_c].psi[2].ptCV[jord].whr[0].re += .5*( Xi1.psi[0].whr[0].im - Xi2.psi[0].whr[0].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[0].im -= .5*( Xi1.psi[0].whr[0].re - Xi2.psi[0].whr[0].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].re += .5*( Xi1.psi[0].whr[1].im - Xi2.psi[0].whr[1].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].im -= .5*( Xi1.psi[0].whr[1].re - Xi2.psi[0].whr[1].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].re += .5*( Xi1.psi[0].whr[2].im - Xi2.psi[0].whr[2].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].im -= .5*( Xi1.psi[0].whr[2].re - Xi2.psi[0].whr[2].re );
+	 psi[site_c][2][jord].whr[0].re += .5*( Xi1[0].whr[0].im - Xi2[0].whr[0].im );
+	 psi[site_c][2][jord].whr[0].im -= .5*( Xi1[0].whr[0].re - Xi2[0].whr[0].re );
+	 psi[site_c][2][jord].whr[1].re += .5*( Xi1[0].whr[1].im - Xi2[0].whr[1].im );
+	 psi[site_c][2][jord].whr[1].im -= .5*( Xi1[0].whr[1].re - Xi2[0].whr[1].re );
+	 psi[site_c][2][jord].whr[2].re += .5*( Xi1[0].whr[2].im - Xi2[0].whr[2].im );
+	 psi[site_c][2][jord].whr[2].im -= .5*( Xi1[0].whr[2].re - Xi2[0].whr[2].re );
 
-	 psi[site_c].psi[3].ptCV[jord].whr[0].re -= .5*( Xi1.psi[1].whr[0].im - Xi2.psi[1].whr[0].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[0].im += .5*( Xi1.psi[1].whr[0].re - Xi2.psi[1].whr[0].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].re -= .5*( Xi1.psi[1].whr[1].im - Xi2.psi[1].whr[1].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].im += .5*( Xi1.psi[1].whr[1].re - Xi2.psi[1].whr[1].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].re -= .5*( Xi1.psi[1].whr[2].im - Xi2.psi[1].whr[2].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].im += .5*( Xi1.psi[1].whr[2].re - Xi2.psi[1].whr[2].re );
+	 psi[site_c][3][jord].whr[0].re -= .5*( Xi1[1].whr[0].im - Xi2[1].whr[0].im );
+	 psi[site_c][3][jord].whr[0].im += .5*( Xi1[1].whr[0].re - Xi2[1].whr[0].re );
+	 psi[site_c][3][jord].whr[1].re -= .5*( Xi1[1].whr[1].im - Xi2[1].whr[1].im );
+	 psi[site_c][3][jord].whr[1].im += .5*( Xi1[1].whr[1].re - Xi2[1].whr[1].re );
+	 psi[site_c][3][jord].whr[2].re -= .5*( Xi1[1].whr[2].im - Xi2[1].whr[2].im );
+	 psi[site_c][3][jord].whr[2].im += .5*( Xi1[1].whr[2].re - Xi2[1].whr[2].re );
 
 	 // mu = 3
 	 point_up = Umu.Z->get(curr, 1, 3);
 	 point_dn = Umu.Z->get(curr,-1, 3);
 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].re;    Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im + psi[point_dn].psi[2].ptCV[kord].whr[0].im;
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].re;    Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im + psi[point_dn].psi[2].ptCV[kord].whr[1].im;
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].re;    Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im + psi[point_dn].psi[2].ptCV[kord].whr[2].im;
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re + psi[point_dn].psi[3].ptCV[kord].whr[0].re;    Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im + psi[point_dn].psi[3].ptCV[kord].whr[0].im;
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re + psi[point_dn].psi[3].ptCV[kord].whr[1].re;    Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im + psi[point_dn].psi[3].ptCV[kord].whr[1].im;
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re + psi[point_dn].psi[3].ptCV[kord].whr[2].re;    Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im + psi[point_dn].psi[3].ptCV[kord].whr[2].im;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re + psi[point_dn][2][kord].whr[0].re;    Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im + psi[point_dn][2][kord].whr[0].im;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re + psi[point_dn][2][kord].whr[1].re;    Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im + psi[point_dn][2][kord].whr[1].im;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re + psi[point_dn][2][kord].whr[2].re;    Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im + psi[point_dn][2][kord].whr[2].im;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re + psi[point_dn][3][kord].whr[0].re;    Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im + psi[point_dn][3][kord].whr[0].im;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re + psi[point_dn][3][kord].whr[1].re;    Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im + psi[point_dn][3][kord].whr[1].im;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re + psi[point_dn][3][kord].whr[2].re;    Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im + psi[point_dn][3][kord].whr[2].im;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[3].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[3].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][3][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][3][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].re;    Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im - psi[point_up].psi[2].ptCV[kord].whr[0].im;
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].re;    Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im - psi[point_up].psi[2].ptCV[kord].whr[1].im;
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].re;    Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im - psi[point_up].psi[2].ptCV[kord].whr[2].im;
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re - psi[point_up].psi[3].ptCV[kord].whr[0].re;    Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im - psi[point_up].psi[3].ptCV[kord].whr[0].im;
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re - psi[point_up].psi[3].ptCV[kord].whr[1].re;    Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im - psi[point_up].psi[3].ptCV[kord].whr[1].im;
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re - psi[point_up].psi[3].ptCV[kord].whr[2].re;    Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im - psi[point_up].psi[3].ptCV[kord].whr[2].im;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re - psi[point_up][2][kord].whr[0].re;    Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im - psi[point_up][2][kord].whr[0].im;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re - psi[point_up][2][kord].whr[1].re;    Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im - psi[point_up][2][kord].whr[1].im;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re - psi[point_up][2][kord].whr[2].re;    Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im - psi[point_up][2][kord].whr[2].im;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re - psi[point_up][3][kord].whr[0].re;    Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im - psi[point_up][3][kord].whr[0].im;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re - psi[point_up][3][kord].whr[1].re;    Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im - psi[point_up][3][kord].whr[1].im;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re - psi[point_up][3][kord].whr[2].re;    Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im - psi[point_up][3][kord].whr[2].im;
 	 
-	 Xi2.psi[0] = Umu.W[curr].U[3].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[3].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][3][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][3][jord-kord-1]*Xi2[1];
 	 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*(Xi1.psi[0] + Xi2.psi[0]);
-	 psi[site_c].psi[1].ptCV[jord] -= .5*(Xi1.psi[1] + Xi2.psi[1]);
+	 psi[site_c][0][jord] -= .5*(Xi1[0] + Xi2[0]);
+	 psi[site_c][1][jord] -= .5*(Xi1[1] + Xi2[1]);
 	 
-	 psi[site_c].psi[2].ptCV[jord] -= .5*( Xi1.psi[0] - Xi2.psi[0] );
-	 psi[site_c].psi[3].ptCV[jord] -= .5*( Xi1.psi[1] - Xi2.psi[1] );
+	 psi[site_c][2][jord] -= .5*( Xi1[0] - Xi2[0] );
+	 psi[site_c][3][jord] -= .5*( Xi1[1] - Xi2[1] );
 
 #endif	  
 	  
@@ -1421,7 +1426,7 @@ public:
      // metto su scfld per applicare M0^-1, inverto e rimetto in psi
      for(int i = 0; i < Z->Size; i++){
        for(int mu = 0; mu < dim; mu++){
-	 scfld->psi[i].psi[mu] = psi[i].psi[mu].ptCV[jord];
+	 scfld->psi[i][mu] = psi[i][mu][jord];
        }
      }
       
@@ -1431,7 +1436,7 @@ public:
       
      for(int i = 0; i < Z->Size; i++){
        for(int mu = 0; mu < dim; mu++){
-	 psi[i].psi[mu].ptCV[jord] = -(scfld->psi[i].psi[mu]);
+	 psi[i][mu][jord] = -(scfld->psi[i][mu]);
        }
      }
       
@@ -1461,7 +1466,7 @@ public:
       ttid = omp_get_thread_num();
       for(int i = ttid*chunk; i < (ttid+1)*chunk; i++){
 	for(int mu = 0; mu < dim; mu++){
-	  psi[i].psi[mu].ptCV[0] = scfld->psi[i].psi[mu];
+	  psi[i][mu][0] = scfld->psi[i][mu];
 	}
       } // siti
 #pragma omp barrier
@@ -1486,7 +1491,7 @@ public:
 		for( int kord = 0; kord < jord; kord++) {
 		  // massa critica
 		  for (int mu = 0; mu < dim; mu++ ) {		  
-		    psi[site_c].psi[mu].ptCV[jord] += mcpt[jord-kord]*psi[site_c].psi[mu].ptCV[kord];
+		    psi[site_c][mu][jord] += mcpt[jord-kord]*psi[site_c][mu][kord];
 		  }
 
 #ifndef _USE_HALFSPINOR_
@@ -1500,8 +1505,8 @@ public:
 		    psi[point_up].uno_m_gmu(Xi2,mu,kord);
 		    
 		    for( int nu = 0; nu < dim; nu++ ){
-		      psi[site_c].psi[nu].ptCV[jord] -= .5*(dag(Umu.W[point_dn].U[mu].ptU[jord-kord-1])*Xi1.psi[nu]);
-		      psi[site_c].psi[nu].ptCV[jord] -= .5*( Umu.W[site_c].U[mu].ptU[jord-kord-1] )*Xi2.psi[nu];
+		      psi[site_c][nu][jord] -= .5*(dag(Umu.W[point_dn][mu][jord-kord-1])*Xi1[nu]);
+		      psi[site_c][nu][jord] -= .5*( Umu.W[site_c][mu][jord-kord-1] )*Xi2[nu];
 		    } //nu
 		    
 		  } // mu
@@ -1514,171 +1519,171 @@ public:
 	 point_up = Umu.Z->get(curr, 1, 0);
 	 point_dn = Umu.Z->get(curr,-1, 0);
 	 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re + psi[point_dn].psi[3].ptCV[kord].whr[0].im;    Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im - psi[point_dn].psi[3].ptCV[kord].whr[0].re;
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re + psi[point_dn].psi[3].ptCV[kord].whr[1].im;    Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im - psi[point_dn].psi[3].ptCV[kord].whr[1].re;
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re + psi[point_dn].psi[3].ptCV[kord].whr[2].im;    Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im - psi[point_dn].psi[3].ptCV[kord].whr[2].re;
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].im;    Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im - psi[point_dn].psi[2].ptCV[kord].whr[0].re;
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].im;    Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im - psi[point_dn].psi[2].ptCV[kord].whr[1].re;
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].im;    Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im - psi[point_dn].psi[2].ptCV[kord].whr[2].re;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re + psi[point_dn][3][kord].whr[0].im;    Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im - psi[point_dn][3][kord].whr[0].re;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re + psi[point_dn][3][kord].whr[1].im;    Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im - psi[point_dn][3][kord].whr[1].re;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re + psi[point_dn][3][kord].whr[2].im;    Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im - psi[point_dn][3][kord].whr[2].re;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re + psi[point_dn][2][kord].whr[0].im;    Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im - psi[point_dn][2][kord].whr[0].re;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re + psi[point_dn][2][kord].whr[1].im;    Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im - psi[point_dn][2][kord].whr[1].re;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re + psi[point_dn][2][kord].whr[2].im;    Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im - psi[point_dn][2][kord].whr[2].re;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[0].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[0].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][0][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][0][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re - psi[point_up].psi[3].ptCV[kord].whr[0].im;      Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im + psi[point_up].psi[3].ptCV[kord].whr[0].re;
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re - psi[point_up].psi[3].ptCV[kord].whr[1].im;      Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im + psi[point_up].psi[3].ptCV[kord].whr[1].re;
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re - psi[point_up].psi[3].ptCV[kord].whr[2].im;      Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im + psi[point_up].psi[3].ptCV[kord].whr[2].re;
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].im;      Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im + psi[point_up].psi[2].ptCV[kord].whr[0].re;
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].im;      Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im + psi[point_up].psi[2].ptCV[kord].whr[1].re;
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].im;      Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im + psi[point_up].psi[2].ptCV[kord].whr[2].re;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re - psi[point_up][3][kord].whr[0].im;      Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im + psi[point_up][3][kord].whr[0].re;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re - psi[point_up][3][kord].whr[1].im;      Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im + psi[point_up][3][kord].whr[1].re;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re - psi[point_up][3][kord].whr[2].im;      Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im + psi[point_up][3][kord].whr[2].re;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re - psi[point_up][2][kord].whr[0].im;      Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im + psi[point_up][2][kord].whr[0].re;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re - psi[point_up][2][kord].whr[1].im;      Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im + psi[point_up][2][kord].whr[1].re;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re - psi[point_up][2][kord].whr[2].im;      Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im + psi[point_up][2][kord].whr[2].re;
 
-	 Xi2.psi[0] = Umu.W[curr].U[0].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[0].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][0][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][0][jord-kord-1]*Xi2[1];
 	 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*(Xi1.psi[0] + Xi2.psi[0]);
-	 psi[site_c].psi[1].ptCV[jord] -= .5*(Xi1.psi[1] + Xi2.psi[1]);
+	 psi[site_c][0][jord] -= .5*(Xi1[0] + Xi2[0]);
+	 psi[site_c][1][jord] -= .5*(Xi1[1] + Xi2[1]);
 
-	 psi[site_c].psi[2].ptCV[jord].whr[0].re += .5*( Xi1.psi[1].whr[0].im - Xi2.psi[1].whr[0].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[0].im -= .5*( Xi1.psi[1].whr[0].re - Xi2.psi[1].whr[0].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].re += .5*( Xi1.psi[1].whr[1].im - Xi2.psi[1].whr[1].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].im -= .5*( Xi1.psi[1].whr[1].re - Xi2.psi[1].whr[1].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].re += .5*( Xi1.psi[1].whr[2].im - Xi2.psi[1].whr[2].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].im -= .5*( Xi1.psi[1].whr[2].re - Xi2.psi[1].whr[2].re );
+	 psi[site_c][2][jord].whr[0].re += .5*( Xi1[1].whr[0].im - Xi2[1].whr[0].im );
+	 psi[site_c][2][jord].whr[0].im -= .5*( Xi1[1].whr[0].re - Xi2[1].whr[0].re );
+	 psi[site_c][2][jord].whr[1].re += .5*( Xi1[1].whr[1].im - Xi2[1].whr[1].im );
+	 psi[site_c][2][jord].whr[1].im -= .5*( Xi1[1].whr[1].re - Xi2[1].whr[1].re );
+	 psi[site_c][2][jord].whr[2].re += .5*( Xi1[1].whr[2].im - Xi2[1].whr[2].im );
+	 psi[site_c][2][jord].whr[2].im -= .5*( Xi1[1].whr[2].re - Xi2[1].whr[2].re );
 
-	 psi[site_c].psi[3].ptCV[jord].whr[0].re += .5*( Xi1.psi[0].whr[0].im - Xi2.psi[0].whr[0].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[0].im -= .5*( Xi1.psi[0].whr[0].re - Xi2.psi[0].whr[0].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].re += .5*( Xi1.psi[0].whr[1].im - Xi2.psi[0].whr[1].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].im -= .5*( Xi1.psi[0].whr[1].re - Xi2.psi[0].whr[1].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].re += .5*( Xi1.psi[0].whr[2].im - Xi2.psi[0].whr[2].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].im -= .5*( Xi1.psi[0].whr[2].re - Xi2.psi[0].whr[2].re );
+	 psi[site_c][3][jord].whr[0].re += .5*( Xi1[0].whr[0].im - Xi2[0].whr[0].im );
+	 psi[site_c][3][jord].whr[0].im -= .5*( Xi1[0].whr[0].re - Xi2[0].whr[0].re );
+	 psi[site_c][3][jord].whr[1].re += .5*( Xi1[0].whr[1].im - Xi2[0].whr[1].im );
+	 psi[site_c][3][jord].whr[1].im -= .5*( Xi1[0].whr[1].re - Xi2[0].whr[1].re );
+	 psi[site_c][3][jord].whr[2].re += .5*( Xi1[0].whr[2].im - Xi2[0].whr[2].im );
+	 psi[site_c][3][jord].whr[2].im -= .5*( Xi1[0].whr[2].re - Xi2[0].whr[2].re );
 	 
 	 // mu = 1
 	 point_up = Umu.Z->get(curr, 1, 1);
 	 point_dn = Umu.Z->get(curr,-1, 1);
 	 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re - psi[point_dn].psi[3].ptCV[kord].whr[0].re;    Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im - psi[point_dn].psi[3].ptCV[kord].whr[0].im;
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re - psi[point_dn].psi[3].ptCV[kord].whr[1].re;    Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im - psi[point_dn].psi[3].ptCV[kord].whr[1].im;
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re - psi[point_dn].psi[3].ptCV[kord].whr[2].re;    Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im - psi[point_dn].psi[3].ptCV[kord].whr[2].im;
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].re;    Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im + psi[point_dn].psi[2].ptCV[kord].whr[0].im;
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].re;    Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im + psi[point_dn].psi[2].ptCV[kord].whr[1].im;
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].re;    Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im + psi[point_dn].psi[2].ptCV[kord].whr[2].im;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re - psi[point_dn][3][kord].whr[0].re;    Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im - psi[point_dn][3][kord].whr[0].im;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re - psi[point_dn][3][kord].whr[1].re;    Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im - psi[point_dn][3][kord].whr[1].im;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re - psi[point_dn][3][kord].whr[2].re;    Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im - psi[point_dn][3][kord].whr[2].im;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re + psi[point_dn][2][kord].whr[0].re;    Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im + psi[point_dn][2][kord].whr[0].im;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re + psi[point_dn][2][kord].whr[1].re;    Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im + psi[point_dn][2][kord].whr[1].im;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re + psi[point_dn][2][kord].whr[2].re;    Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im + psi[point_dn][2][kord].whr[2].im;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[1].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[1].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][1][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][1][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re + psi[point_up].psi[3].ptCV[kord].whr[0].re;    Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im + psi[point_up].psi[3].ptCV[kord].whr[0].im;
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re + psi[point_up].psi[3].ptCV[kord].whr[1].re;    Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im + psi[point_up].psi[3].ptCV[kord].whr[1].im;
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re + psi[point_up].psi[3].ptCV[kord].whr[2].re;    Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im + psi[point_up].psi[3].ptCV[kord].whr[2].im;
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].re;    Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im - psi[point_up].psi[2].ptCV[kord].whr[0].im;
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].re;    Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im - psi[point_up].psi[2].ptCV[kord].whr[1].im;
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].re;    Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im - psi[point_up].psi[2].ptCV[kord].whr[2].im;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re + psi[point_up][3][kord].whr[0].re;    Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im + psi[point_up][3][kord].whr[0].im;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re + psi[point_up][3][kord].whr[1].re;    Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im + psi[point_up][3][kord].whr[1].im;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re + psi[point_up][3][kord].whr[2].re;    Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im + psi[point_up][3][kord].whr[2].im;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re - psi[point_up][2][kord].whr[0].re;    Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im - psi[point_up][2][kord].whr[0].im;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re - psi[point_up][2][kord].whr[1].re;    Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im - psi[point_up][2][kord].whr[1].im;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re - psi[point_up][2][kord].whr[2].re;    Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im - psi[point_up][2][kord].whr[2].im;
 
-	 Xi2.psi[0] = Umu.W[curr].U[1].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[1].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][1][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][1][jord-kord-1]*Xi2[1];
 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*(Xi1.psi[0] + Xi2.psi[0]);
-	 psi[site_c].psi[1].ptCV[jord] -= .5*(Xi1.psi[1] + Xi2.psi[1]);
+	 psi[site_c][0][jord] -= .5*(Xi1[0] + Xi2[0]);
+	 psi[site_c][1][jord] -= .5*(Xi1[1] + Xi2[1]);
 
-	 psi[site_c].psi[2].ptCV[jord] -= .5*( Xi1.psi[1] - Xi2.psi[1] );
-	 psi[site_c].psi[3].ptCV[jord] += .5*( Xi1.psi[0] - Xi2.psi[0] );
+	 psi[site_c][2][jord] -= .5*( Xi1[1] - Xi2[1] );
+	 psi[site_c][3][jord] += .5*( Xi1[0] - Xi2[0] );
 
 	 
 	 // mu = 2
 	 point_up = Umu.Z->get(curr, 1, 2);
 	 point_dn = Umu.Z->get(curr,-1, 2);
 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].im;
-	 Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im - psi[point_dn].psi[2].ptCV[kord].whr[0].re;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re + psi[point_dn][2][kord].whr[0].im;
+	 Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im - psi[point_dn][2][kord].whr[0].re;
 	 
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].im;
-	 Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im - psi[point_dn].psi[2].ptCV[kord].whr[1].re;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re + psi[point_dn][2][kord].whr[1].im;
+	 Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im - psi[point_dn][2][kord].whr[1].re;
 	 
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].im;
-	 Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im - psi[point_dn].psi[2].ptCV[kord].whr[2].re;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re + psi[point_dn][2][kord].whr[2].im;
+	 Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im - psi[point_dn][2][kord].whr[2].re;
 	 
 
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re - psi[point_dn].psi[3].ptCV[kord].whr[0].im;
-	 Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im + psi[point_dn].psi[3].ptCV[kord].whr[0].re;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re - psi[point_dn][3][kord].whr[0].im;
+	 Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im + psi[point_dn][3][kord].whr[0].re;
 
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re - psi[point_dn].psi[3].ptCV[kord].whr[1].im;
-	 Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im + psi[point_dn].psi[3].ptCV[kord].whr[1].re;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re - psi[point_dn][3][kord].whr[1].im;
+	 Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im + psi[point_dn][3][kord].whr[1].re;
 
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re - psi[point_dn].psi[3].ptCV[kord].whr[2].im;
-	 Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im + psi[point_dn].psi[3].ptCV[kord].whr[2].re;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re - psi[point_dn][3][kord].whr[2].im;
+	 Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im + psi[point_dn][3][kord].whr[2].re;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[2].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[2].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][2][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][2][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].im;
-	 Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im + psi[point_up].psi[2].ptCV[kord].whr[0].re;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re - psi[point_up][2][kord].whr[0].im;
+	 Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im + psi[point_up][2][kord].whr[0].re;
 	 
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].im;
-	 Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im + psi[point_up].psi[2].ptCV[kord].whr[1].re;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re - psi[point_up][2][kord].whr[1].im;
+	 Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im + psi[point_up][2][kord].whr[1].re;
 	 
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].im;
-	 Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im + psi[point_up].psi[2].ptCV[kord].whr[2].re;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re - psi[point_up][2][kord].whr[2].im;
+	 Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im + psi[point_up][2][kord].whr[2].re;
 	 
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re + psi[point_up].psi[3].ptCV[kord].whr[0].im;
-	 Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im - psi[point_up].psi[3].ptCV[kord].whr[0].re;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re + psi[point_up][3][kord].whr[0].im;
+	 Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im - psi[point_up][3][kord].whr[0].re;
 	 
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re + psi[point_up].psi[3].ptCV[kord].whr[1].im;
-	 Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im - psi[point_up].psi[3].ptCV[kord].whr[1].re;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re + psi[point_up][3][kord].whr[1].im;
+	 Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im - psi[point_up][3][kord].whr[1].re;
 	 
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re + psi[point_up].psi[3].ptCV[kord].whr[2].im;
-	 Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im - psi[point_up].psi[3].ptCV[kord].whr[2].re;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re + psi[point_up][3][kord].whr[2].im;
+	 Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im - psi[point_up][3][kord].whr[2].re;
 
-	 Xi2.psi[0] = Umu.W[curr].U[2].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[2].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][2][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][2][jord-kord-1]*Xi2[1];
 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*( Xi1.psi[0] + Xi2.psi[0] );
-	 psi[site_c].psi[1].ptCV[jord] -= .5*( Xi1.psi[1] + Xi2.psi[1] );
+	 psi[site_c][0][jord] -= .5*( Xi1[0] + Xi2[0] );
+	 psi[site_c][1][jord] -= .5*( Xi1[1] + Xi2[1] );
 
-	 psi[site_c].psi[2].ptCV[jord].whr[0].re += .5*( Xi1.psi[0].whr[0].im - Xi2.psi[0].whr[0].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[0].im -= .5*( Xi1.psi[0].whr[0].re - Xi2.psi[0].whr[0].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].re += .5*( Xi1.psi[0].whr[1].im - Xi2.psi[0].whr[1].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[1].im -= .5*( Xi1.psi[0].whr[1].re - Xi2.psi[0].whr[1].re );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].re += .5*( Xi1.psi[0].whr[2].im - Xi2.psi[0].whr[2].im );
-	 psi[site_c].psi[2].ptCV[jord].whr[2].im -= .5*( Xi1.psi[0].whr[2].re - Xi2.psi[0].whr[2].re );
+	 psi[site_c][2][jord].whr[0].re += .5*( Xi1[0].whr[0].im - Xi2[0].whr[0].im );
+	 psi[site_c][2][jord].whr[0].im -= .5*( Xi1[0].whr[0].re - Xi2[0].whr[0].re );
+	 psi[site_c][2][jord].whr[1].re += .5*( Xi1[0].whr[1].im - Xi2[0].whr[1].im );
+	 psi[site_c][2][jord].whr[1].im -= .5*( Xi1[0].whr[1].re - Xi2[0].whr[1].re );
+	 psi[site_c][2][jord].whr[2].re += .5*( Xi1[0].whr[2].im - Xi2[0].whr[2].im );
+	 psi[site_c][2][jord].whr[2].im -= .5*( Xi1[0].whr[2].re - Xi2[0].whr[2].re );
 
-	 psi[site_c].psi[3].ptCV[jord].whr[0].re -= .5*( Xi1.psi[1].whr[0].im - Xi2.psi[1].whr[0].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[0].im += .5*( Xi1.psi[1].whr[0].re - Xi2.psi[1].whr[0].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].re -= .5*( Xi1.psi[1].whr[1].im - Xi2.psi[1].whr[1].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[1].im += .5*( Xi1.psi[1].whr[1].re - Xi2.psi[1].whr[1].re );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].re -= .5*( Xi1.psi[1].whr[2].im - Xi2.psi[1].whr[2].im );
-	 psi[site_c].psi[3].ptCV[jord].whr[2].im += .5*( Xi1.psi[1].whr[2].re - Xi2.psi[1].whr[2].re );
+	 psi[site_c][3][jord].whr[0].re -= .5*( Xi1[1].whr[0].im - Xi2[1].whr[0].im );
+	 psi[site_c][3][jord].whr[0].im += .5*( Xi1[1].whr[0].re - Xi2[1].whr[0].re );
+	 psi[site_c][3][jord].whr[1].re -= .5*( Xi1[1].whr[1].im - Xi2[1].whr[1].im );
+	 psi[site_c][3][jord].whr[1].im += .5*( Xi1[1].whr[1].re - Xi2[1].whr[1].re );
+	 psi[site_c][3][jord].whr[2].re -= .5*( Xi1[1].whr[2].im - Xi2[1].whr[2].im );
+	 psi[site_c][3][jord].whr[2].im += .5*( Xi1[1].whr[2].re - Xi2[1].whr[2].re );
 
 	 // mu = 3
 	 point_up = Umu.Z->get(curr, 1, 3);
 	 point_dn = Umu.Z->get(curr,-1, 3);
 
-	 Xi1.psi[0].whr[0].re = psi[point_dn].psi[0].ptCV[kord].whr[0].re + psi[point_dn].psi[2].ptCV[kord].whr[0].re;    Xi1.psi[0].whr[0].im = psi[point_dn].psi[0].ptCV[kord].whr[0].im + psi[point_dn].psi[2].ptCV[kord].whr[0].im;
-	 Xi1.psi[0].whr[1].re = psi[point_dn].psi[0].ptCV[kord].whr[1].re + psi[point_dn].psi[2].ptCV[kord].whr[1].re;    Xi1.psi[0].whr[1].im = psi[point_dn].psi[0].ptCV[kord].whr[1].im + psi[point_dn].psi[2].ptCV[kord].whr[1].im;
-	 Xi1.psi[0].whr[2].re = psi[point_dn].psi[0].ptCV[kord].whr[2].re + psi[point_dn].psi[2].ptCV[kord].whr[2].re;    Xi1.psi[0].whr[2].im = psi[point_dn].psi[0].ptCV[kord].whr[2].im + psi[point_dn].psi[2].ptCV[kord].whr[2].im;
-	 Xi1.psi[1].whr[0].re = psi[point_dn].psi[1].ptCV[kord].whr[0].re + psi[point_dn].psi[3].ptCV[kord].whr[0].re;    Xi1.psi[1].whr[0].im = psi[point_dn].psi[1].ptCV[kord].whr[0].im + psi[point_dn].psi[3].ptCV[kord].whr[0].im;
-	 Xi1.psi[1].whr[1].re = psi[point_dn].psi[1].ptCV[kord].whr[1].re + psi[point_dn].psi[3].ptCV[kord].whr[1].re;    Xi1.psi[1].whr[1].im = psi[point_dn].psi[1].ptCV[kord].whr[1].im + psi[point_dn].psi[3].ptCV[kord].whr[1].im;
-	 Xi1.psi[1].whr[2].re = psi[point_dn].psi[1].ptCV[kord].whr[2].re + psi[point_dn].psi[3].ptCV[kord].whr[2].re;    Xi1.psi[1].whr[2].im = psi[point_dn].psi[1].ptCV[kord].whr[2].im + psi[point_dn].psi[3].ptCV[kord].whr[2].im;
+	 Xi1[0].whr[0].re = psi[point_dn][0][kord].whr[0].re + psi[point_dn][2][kord].whr[0].re;    Xi1[0].whr[0].im = psi[point_dn][0][kord].whr[0].im + psi[point_dn][2][kord].whr[0].im;
+	 Xi1[0].whr[1].re = psi[point_dn][0][kord].whr[1].re + psi[point_dn][2][kord].whr[1].re;    Xi1[0].whr[1].im = psi[point_dn][0][kord].whr[1].im + psi[point_dn][2][kord].whr[1].im;
+	 Xi1[0].whr[2].re = psi[point_dn][0][kord].whr[2].re + psi[point_dn][2][kord].whr[2].re;    Xi1[0].whr[2].im = psi[point_dn][0][kord].whr[2].im + psi[point_dn][2][kord].whr[2].im;
+	 Xi1[1].whr[0].re = psi[point_dn][1][kord].whr[0].re + psi[point_dn][3][kord].whr[0].re;    Xi1[1].whr[0].im = psi[point_dn][1][kord].whr[0].im + psi[point_dn][3][kord].whr[0].im;
+	 Xi1[1].whr[1].re = psi[point_dn][1][kord].whr[1].re + psi[point_dn][3][kord].whr[1].re;    Xi1[1].whr[1].im = psi[point_dn][1][kord].whr[1].im + psi[point_dn][3][kord].whr[1].im;
+	 Xi1[1].whr[2].re = psi[point_dn][1][kord].whr[2].re + psi[point_dn][3][kord].whr[2].re;    Xi1[1].whr[2].im = psi[point_dn][1][kord].whr[2].im + psi[point_dn][3][kord].whr[2].im;
 
-	 Xi1.psi[0] = dag(Umu.W[point_dn].U[3].ptU[jord-kord-1])*Xi1.psi[0];
-	 Xi1.psi[1] = dag(Umu.W[point_dn].U[3].ptU[jord-kord-1])*Xi1.psi[1];
+	 Xi1[0] = dag(Umu.W[point_dn][3][jord-kord-1])*Xi1[0];
+	 Xi1[1] = dag(Umu.W[point_dn][3][jord-kord-1])*Xi1[1];
 
-	 Xi2.psi[0].whr[0].re = psi[point_up].psi[0].ptCV[kord].whr[0].re - psi[point_up].psi[2].ptCV[kord].whr[0].re;    Xi2.psi[0].whr[0].im = psi[point_up].psi[0].ptCV[kord].whr[0].im - psi[point_up].psi[2].ptCV[kord].whr[0].im;
-	 Xi2.psi[0].whr[1].re = psi[point_up].psi[0].ptCV[kord].whr[1].re - psi[point_up].psi[2].ptCV[kord].whr[1].re;    Xi2.psi[0].whr[1].im = psi[point_up].psi[0].ptCV[kord].whr[1].im - psi[point_up].psi[2].ptCV[kord].whr[1].im;
-	 Xi2.psi[0].whr[2].re = psi[point_up].psi[0].ptCV[kord].whr[2].re - psi[point_up].psi[2].ptCV[kord].whr[2].re;    Xi2.psi[0].whr[2].im = psi[point_up].psi[0].ptCV[kord].whr[2].im - psi[point_up].psi[2].ptCV[kord].whr[2].im;
-	 Xi2.psi[1].whr[0].re = psi[point_up].psi[1].ptCV[kord].whr[0].re - psi[point_up].psi[3].ptCV[kord].whr[0].re;    Xi2.psi[1].whr[0].im = psi[point_up].psi[1].ptCV[kord].whr[0].im - psi[point_up].psi[3].ptCV[kord].whr[0].im;
-	 Xi2.psi[1].whr[1].re = psi[point_up].psi[1].ptCV[kord].whr[1].re - psi[point_up].psi[3].ptCV[kord].whr[1].re;    Xi2.psi[1].whr[1].im = psi[point_up].psi[1].ptCV[kord].whr[1].im - psi[point_up].psi[3].ptCV[kord].whr[1].im;
-	 Xi2.psi[1].whr[2].re = psi[point_up].psi[1].ptCV[kord].whr[2].re - psi[point_up].psi[3].ptCV[kord].whr[2].re;    Xi2.psi[1].whr[2].im = psi[point_up].psi[1].ptCV[kord].whr[2].im - psi[point_up].psi[3].ptCV[kord].whr[2].im;
+	 Xi2[0].whr[0].re = psi[point_up][0][kord].whr[0].re - psi[point_up][2][kord].whr[0].re;    Xi2[0].whr[0].im = psi[point_up][0][kord].whr[0].im - psi[point_up][2][kord].whr[0].im;
+	 Xi2[0].whr[1].re = psi[point_up][0][kord].whr[1].re - psi[point_up][2][kord].whr[1].re;    Xi2[0].whr[1].im = psi[point_up][0][kord].whr[1].im - psi[point_up][2][kord].whr[1].im;
+	 Xi2[0].whr[2].re = psi[point_up][0][kord].whr[2].re - psi[point_up][2][kord].whr[2].re;    Xi2[0].whr[2].im = psi[point_up][0][kord].whr[2].im - psi[point_up][2][kord].whr[2].im;
+	 Xi2[1].whr[0].re = psi[point_up][1][kord].whr[0].re - psi[point_up][3][kord].whr[0].re;    Xi2[1].whr[0].im = psi[point_up][1][kord].whr[0].im - psi[point_up][3][kord].whr[0].im;
+	 Xi2[1].whr[1].re = psi[point_up][1][kord].whr[1].re - psi[point_up][3][kord].whr[1].re;    Xi2[1].whr[1].im = psi[point_up][1][kord].whr[1].im - psi[point_up][3][kord].whr[1].im;
+	 Xi2[1].whr[2].re = psi[point_up][1][kord].whr[2].re - psi[point_up][3][kord].whr[2].re;    Xi2[1].whr[2].im = psi[point_up][1][kord].whr[2].im - psi[point_up][3][kord].whr[2].im;
 	 
-	 Xi2.psi[0] = Umu.W[curr].U[3].ptU[jord-kord-1]*Xi2.psi[0];
-	 Xi2.psi[1] = Umu.W[curr].U[3].ptU[jord-kord-1]*Xi2.psi[1];
+	 Xi2[0] = Umu.W[curr][3][jord-kord-1]*Xi2[0];
+	 Xi2[1] = Umu.W[curr][3][jord-kord-1]*Xi2[1];
 	 
 	 // reconstruct
-	 psi[site_c].psi[0].ptCV[jord] -= .5*(Xi1.psi[0] + Xi2.psi[0]);
-	 psi[site_c].psi[1].ptCV[jord] -= .5*(Xi1.psi[1] + Xi2.psi[1]);
+	 psi[site_c][0][jord] -= .5*(Xi1[0] + Xi2[0]);
+	 psi[site_c][1][jord] -= .5*(Xi1[1] + Xi2[1]);
 	 
-	 psi[site_c].psi[2].ptCV[jord] -= .5*( Xi1.psi[0] - Xi2.psi[0] );
-	 psi[site_c].psi[3].ptCV[jord] -= .5*( Xi1.psi[1] - Xi2.psi[1] );
+	 psi[site_c][2][jord] -= .5*( Xi1[0] - Xi2[0] );
+	 psi[site_c][3][jord] -= .5*( Xi1[1] - Xi2[1] );
 
 #endif	  
 
@@ -1693,7 +1698,7 @@ public:
       // per copiare non mi interessa l'ordine in cui accedo ai siti
 	for(int i = ttid*chunk; i < (ttid+1)*chunk; i++){
 	  for(int mu = 0; mu < dim; mu++){
-	    scfld->psi[i].psi[mu] = psi[i].psi[mu].ptCV[jord];
+	    scfld->psi[i][mu] = psi[i][mu][jord];
 	  }
 	} // siti
 #pragma omp barrier
@@ -1710,7 +1715,7 @@ public:
 	ttid = omp_get_thread_num();
 	for(int i = ttid*chunk; i < (ttid+1)*chunk; i++){
 	  for(int mu = 0; mu < dim; mu++){
-	    psi[i].psi[mu].ptCV[jord] = -(scfld->psi[i].psi[mu]);
+	    psi[i][mu][jord] = -(scfld->psi[i][mu]);
 	  }
 	} // siti
 #pragma omp barrier

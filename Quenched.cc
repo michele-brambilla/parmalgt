@@ -1,5 +1,6 @@
 #include<fstream>
 #include<string>
+#include <fenv.h>
 
 #include"nspt.h"
 #include "MassC.h"
@@ -10,11 +11,11 @@ using namespace std;
 #include "mpi.h"
 #endif
 
-Cplx* w       = new Cplx[PTORD+1];
-Cplx* w1      = new Cplx[PTORD+1];
-Cplx* w2      = new Cplx[PTORD+1];
-double* norm  = new double[PTORD];
-double* norm1 = new double[PTORD];
+Cplx* w       = new Cplx[ORD+1];
+Cplx* w1      = new Cplx[ORD+1];
+Cplx* w2      = new Cplx[ORD+1];
+double* norm  = new double[ORD];
+double* norm1 = new double[ORD];
 Cplx** trU;
 ptSU3* U;
 
@@ -44,7 +45,7 @@ extern fftw_plan *planFA;
 
 extern fftw_plan *planGluon;
 
-extern double *knorm[allocORD+1];
+extern double *knorm[ORD+1];
 FILE *FPkn;
 #endif
 
@@ -97,7 +98,7 @@ int initialize(int argc, char** argv){
   trU = new Cplx* [dim];
   for( int i = 0; i < dim; i++)
     {
-      trU[i] = new Cplx[PTORD];
+      trU[i] = new Cplx[ORD];
     }
 
 
@@ -120,7 +121,8 @@ int initialize(int argc, char** argv){
   get_val(fp, "init_status", "%d" ,&(nspt_pars.Init)  );
   get_val(fp, "plaq_out",    "%s" ,nspt_pars.plaqn    );
   get_val(fp, "last_conf",   "%s" ,nspt_pars.confn    );
-  get_val(fp, "PTORD",       "%d" ,&(PTORD)           );
+  get_val(fp, "s",           "%d" ,&(nspt_pars.s)     );
+  //get_val(fp, "ORD",       "%d" ,&(ORD)           );
   for( int tid = 0; tid < NTHR; tid++)
     {
       get_val(fp, "seed",        "%ld",&seed[tid]     );
@@ -158,9 +160,9 @@ int initialize(int argc, char** argv){
       }      
 #endif
       break;
-    case 'n':
-      PTORD = atoi(optarg);
-      break;
+      //case 'n':
+      //ORD = atoi(optarg);
+      // break;
     case 'g':
       act_pars.tau_g = atof(optarg);
       break;
@@ -275,31 +277,31 @@ int initialize(int argc, char** argv){
   sprintf(nspt_pars.name2x2,"%s2x2_%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.r%d.txt",
 	  nspt_pars.plaqn, type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2], act_pars.sz[3], fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD,rank);
+	  ORD,rank);
 #endif
 
   sprintf(nspt_pars.plaqn,"%s_%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.r%d.txt",
 	  nspt_pars.plaqn, type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2], act_pars.sz[3], fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD,rank);
+	  ORD,rank);
 #ifndef APE_CONFIG
   sprintf(nspt_pars.confn,"%s%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.r%d.dat",
 	  nspt_pars.confn, type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g,
-	  allocORD,rank);
+	  ORD,rank);
 #endif
   sprintf(nspt_pars.logn,"%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.r%d.log",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD,rank);
+	  ORD,rank);
   sprintf(nspt_pars.normn,"%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.r%d.nor",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g, 
-	  PTORD,rank);
+	  ORD,rank);
   sprintf(nspt_pars.trun,"%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.r%d.trU",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD,rank);
+	  ORD,rank);
 
 #else
 
@@ -307,31 +309,31 @@ int initialize(int argc, char** argv){
   sprintf(nspt_pars.name2x2,"%s2x2_%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.txt",
 	  nspt_pars.plaqn, type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2], act_pars.sz[3], fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD);
+	  ORD);
 #endif
 
   sprintf(nspt_pars.plaqn,"%s_%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.txt",
 	  nspt_pars.plaqn, type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2], act_pars.sz[3], fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD);
+	  ORD);
 #ifndef APE_CONFIG
   sprintf(nspt_pars.confn,"%s%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.dat",
 	  nspt_pars.confn, type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g,
-	  allocORD);
+	  ORD);
 #endif
   sprintf(nspt_pars.logn,"%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.log",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD);
+	  ORD);
   sprintf(nspt_pars.normn,"%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.nor",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD);
+	  ORD);
   sprintf(nspt_pars.trun,"%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.trU",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g,
-	  PTORD);
+	  ORD);
 
 #endif
 
@@ -352,7 +354,7 @@ int initialize(int argc, char** argv){
 	  << "Tau_g\t\t"        << act_pars.tau_g    << std::endl
 	  << "Alpha\t\t"        << act_pars.alpha    << std::endl
 	  << "Init status\t"    << nspt_pars.Init    << std::endl
-	  << "Ordine\t\t"       << PTORD             << std::endl
+	  << "Ordine\t\t"       << ORD             << std::endl
 	  <<                                            std::endl
 #ifdef __PARALLEL_OMP__
 	  << "Numero Threads\t" << NTHR              << std::endl
@@ -412,12 +414,12 @@ int initialize(int argc, char** argv){
   sprintf(kname,"knorm_%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.dat",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g, 
-	  PTORD);
+	  ORD);
 #else
   sprintf(kname,"knorm_acc_%s_nf0_%dx%dx%dx%d_a%2.2f_tg%3.3f_o%d.dat",
 	  type_g, act_pars.sz[0], act_pars.sz[1], 
 	  act_pars.sz[2],act_pars.sz[3],fabs(act_pars.alpha), act_pars.tau_g, 
-	  PTORD);
+	  ORD);
 #endif
   FPkn = fopen(kname,"wb");
   delete [] kname;
@@ -449,6 +451,20 @@ int QuenchedAllocate(ptGluon_fld& Umu){
   act_pars.tau_g *= -1;
 #endif
 
+  // Added by DH, Feb 1, 2012
+  // initialize the background field factory
+  // FIXME: We are brave here and assume 
+  // Lx == Ly == Lz == L
+  //
+  // ADDED by MDB, DH March 2012
+  //   act_pars.sz[0] is -- by now the number of time slices allocated
+  //                  in memory
+  // Thus, we get in Stefan Sint notation
+  //  act_pars.sz[0] = T + 1,
+  // then, we have
+  //  T' = L = T + s
+  bgf::get_abelian_bgf(0, 0, act_pars.sz[0] - 1, act_pars.sz[1], nspt_pars.s);
+
   // Genera il campo gluone freddo o da configurazione
   // secondo il flag nspt_pars.Init. Se legge da configurazione
   // legge anche la placchetta ad file e la confronta con una
@@ -458,7 +474,31 @@ int QuenchedAllocate(ptGluon_fld& Umu){
 
     for(int i = 0; i < act_pars.iVol; i++){
       for(int mu = 0; mu < dim; mu++){
-	Umu.W[i].U[mu].id();
+	//Umu.W[i][mu].id();
+        // Added by DH, Feb 1, 2012
+        // FIXME: We are brave again and assume
+        // Lx == Ly == Lz == L
+        // in lattice.h, we have
+        //
+        // GETINDEX(x, y, z, t) = x * L^3 + y * L^2 + z * sizeT + t
+        // sizeT = Sz[3];
+        // hence, we can get the time coordinate through
+        // t = i % L
+        // UPDATE: THIS IS WRONG!!!
+        // The GETINDEX funciton is simply misleading. In the fermion
+        // part, the component with index 0 is temporal, which is 
+        // labeled 'x' in GETINDEX
+        // Hence:
+        // t = i / L^3
+        // now, initialize the bg field ...
+        //*/ // Abelian DOES NOT WORK, YET
+        int t = i / (act_pars.sz[1] * act_pars.sz[2] * act_pars.sz[3]); //% act_pars.sz[3];
+        int index = Umu.Z->L[i][4];
+        Umu.W[index][mu].bgf() = bgf::get_abelian_bgf(t, mu);
+        //std::cout <<  Umu.W[index][mu].bgf() << std::endl;
+        /*/ // Trivial
+        Umu.W[i][mu].bgf() = bgf::unit<bgf::AbelianBgf>();
+        //*/
       }
     }
 
@@ -476,7 +516,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
 #ifndef APE_CONFIG
     if( plaquette_check(w, w1) ){
       std::cout << "La misura della placchetta non corrisponde." << std::endl;
-      for (int i1=0; i1 <= PTORD; i1++){
+      for (int i1=0; i1 <= ORD; i1++){
 	printf("%e %e\t",w[i1].re, w[i1].im );
 	printf("%e %e\n",w1[i1].re,w1[i1].im);
       }
@@ -484,7 +524,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
     }
 #endif
     std::cout << "\nMisura della placchetta:" << std::endl;
-    for (int i1=0; i1 <= PTORD; i1++){
+    for (int i1=0; i1 <= ORD; i1++){
       printf("%e %e\n",w[i1].re,w[i1].im);
     }
 
@@ -499,7 +539,7 @@ int QuenchedAllocate(ptGluon_fld& Umu){
   logfile << "Inizio run\t\t" << ctime(&tempo) << std::endl;
 
 #ifdef __K_MOM_ANALYSIS__
-  for(int i1 = 0; i1 <= allocORD;i1++)
+  for(int i1 = 0; i1 <= ORD;i1++)
     knorm[i1] = new double[Umu.Z->Size];
 #endif
 
@@ -580,7 +620,7 @@ int NsptFinalize(ptGluon_fld& Umu, int t){
   plaquette_measure(Umu, act_pars);
 
   printf("Misura della placchetta:\n");
-  for (int i1=0; i1 <= PTORD; i1++){
+  for (int i1=0; i1 <= ORD; i1++){
     printf("%e\t%e\n", w[i1].re, w[i1].im);
   }
 
@@ -606,9 +646,9 @@ int NsptFinalize(ptGluon_fld& Umu, int t){
   return 0;
 }
 
-
-
 int main(int argc, char** argv){
+
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);  // Enable fpe
 
   if( initialize(argc, argv) ){ exit(1); }
 
@@ -632,17 +672,17 @@ int main(int argc, char** argv){
 #endif
 
   planGluon = new fftw_plan[2];
-  planGluon[0] = fftw_plan_many_dft(dim, LL.Sz, dim*(NC*NC*allocORD+1),
+  planGluon[0] = fftw_plan_many_dft(dim, LL.Sz, dim*(NC*NC*ORD+1),
 				     (fftw_complex *) Umu.W, 
-				     NULL, dim*(NC*NC*allocORD+1), 1,
+				     NULL, dim*(NC*NC*ORD+1), 1,
 				     (fftw_complex *) Umu.W, 
-				     NULL, dim*(NC*NC*allocORD+1), 1,
+				     NULL, dim*(NC*NC*ORD+1), 1,
 				     FFTW_FORWARD, FFTW_ESTIMATE);
-  planGluon[1] = fftw_plan_many_dft(dim, LL.Sz, dim*(NC*NC*allocORD+1),
+  planGluon[1] = fftw_plan_many_dft(dim, LL.Sz, dim*(NC*NC*ORD+1),
 				     (fftw_complex *) Umu.W, 
-				     NULL, dim*(NC*NC*allocORD+1), 1,
+				     NULL, dim*(NC*NC*ORD+1), 1,
 				     (fftw_complex *) Umu.W, 
-				     NULL, dim*(NC*NC*allocORD+1), 1,
+				     NULL, dim*(NC*NC*ORD+1), 1,
 				     FFTW_BACKWARD, FFTW_ESTIMATE);
 #endif
 
@@ -657,17 +697,17 @@ int main(int argc, char** argv){
   Wgauge = &WFA;
 
   planFA = new fftw_plan[2];
-  planFA[0] = fftw_plan_many_dft(dim, LL.Sz, NC*NC*PTORD+1,
+  planFA[0] = fftw_plan_many_dft(dim, LL.Sz, NC*NC*ORD+1,
   				     (fftw_complex *) WFA.W, 
-  				     NULL, NC*NC*allocORD+1, 1,
+  				     NULL, NC*NC*ORD+1, 1,
   				     (fftw_complex *) WFA.W, 
-  				     NULL, NC*NC*allocORD+1, 1,
+  				     NULL, NC*NC*ORD+1, 1,
   				     FFTW_FORWARD, FFTW_ESTIMATE);
-  planFA[1] = fftw_plan_many_dft(dim, LL.Sz, NC*NC*PTORD+1,
+  planFA[1] = fftw_plan_many_dft(dim, LL.Sz, NC*NC*ORD+1,
   				     (fftw_complex *) WFA.W, 
-  				     NULL, NC*NC*allocORD+1, 1,
+  				     NULL, NC*NC*ORD+1, 1,
   				     (fftw_complex *) WFA.W, 
-  				     NULL, NC*NC*allocORD+1, 1,
+  				     NULL, NC*NC*ORD+1, 1,
   				     FFTW_BACKWARD, FFTW_ESTIMATE);
 #endif
   
@@ -681,11 +721,12 @@ int main(int argc, char** argv){
     t1 += nspt_pars.Beat;
 
     NsptEvolve(Umu);
-    
+
     // Legge i nuovi parametri da damocle
     if( AggiornaParametri(Umu) ){
       return 0;
     }
+
   }
 
   NsptFinalize(Umu, t1);

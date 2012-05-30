@@ -1,3 +1,5 @@
+#ifndef _MY_RAND_H_
+#define _MY_RAND_H_
 #include <cmath>
 #include <limits.h>
 #include <cstdlib>
@@ -150,3 +152,4 @@ public:
   
 };
 
+#endif // def _MY_RAND_H_

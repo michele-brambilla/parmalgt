@@ -1,0 +1,276 @@
+\documentclass[a4paper]{scrartcl}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{gnuplot-lua-tikz}
+
+\title{NSPT in the Schrödinger Functional}
+
+\author{Dirk Hesse}
+
+\date{\today}
+
+\newcommand{\ord}[1]{\ensuremath{^{(#1)}}}
+
+\begin{document}
+
+\maketitle
+
+We pursue the implementation of numerical stochastic perturbation
+theory in the Schrödinger functional.
+
+\section{Preliminary}
+\label{sec:preliminary}
+
+\subsection{Links With a Background Field}
+\label{sec:links-with-backgr}
+
+Assume we have a background field $V$ and fluctuations $q$, such that
+we can write the links as
+%
+\begin{equation}
+  \label{eq:1}
+  U = \exp\{q\} V.
+\end{equation}
+%
+We will use two different ways to express the perturbative expansion
+of (\ref{eq:1}),
+%
+\begin{align}
+  \label{eq:3}
+  U =&\; V + g\, U\ord 1 + g^2\, U\ord 2 + \ldots\\
+  \label{eq:5}
+    =&\; \left (
+      1 + g\, \tilde U\ord 1 + g^2\, \tilde U\ord 2 + \ldots
+      \right) V \equiv \tilde U \,V.
+\end{align}
+%
+The connection to the perturbative expansion of the algebra
+valued $q$-field,
+%
+\begin{equation}
+  \label{eq:2}
+  q = g\, q\ord 1 + g^2 q \ord 2 + \ldots
+\end{equation}
+%
+can be established writing (\ref{eq:1}) explicitly,
+%
+\begin{equation}
+  \label{eq:4}
+  \exp \{ q \} = 1 + g \, q \ord 1 + g^2\, \left\{
+    q \ord 2 + \frac 1 2 \left(q\ord 1\right)^2 \right\}
+   + \ldots,
+\end{equation}
+%
+and identifying the terms in the series with the ones in
+(\ref{eq:5}) order by order. To go from the group to the algebra, one
+has to calculate
+%
+\begin{equation}
+  \label{eq:6}
+  q = \log\{\tilde U\} = g\, \tilde U \ord 1 + g^2 \, \left\{
+    \tilde U \ord 2 - \frac 1 2 \left( \tilde U \ord 1 \right)^2
+    \right \} + \ldots,
+\end{equation}
+%
+and compare the terms with the naive series
+%
+\begin{equation}
+  \label{eq:7}
+  q = g\,q\ord 1 + g^2 \,q\ord 2 + \ldots
+\end{equation}
+%
+again, order by order in the coupling.
+
+\subsubsection{Arithmetic}
+\label{sec:arithmetic}
+
+The multiplication rule for the representation (\ref{eq:3}) is rather
+simple, we get (setting $U\ord 0 \equiv V$ and $\tilde U \ord 0 \equiv
+1$)
+%
+\begin{equation}
+  \label{eq:8}
+  \left ( U' \times U \right)\ord i = \sum_{j = 0}^{i} {U'}\ord j U
+  \ord{i-j} = \sum_{j = 0}^{i} {\tilde U '}\hspace{0em}\ord j V' 
+  {\tilde U} \ord {i- j}V.
+\end{equation}
+%
+Finally, we have
+%
+\begin{equation}
+  \label{eq:9}
+  \widetilde {\left( U' \times U \right)}\ord i = \left ( U' \times U
+  \right)\ord i \left(V'\times V \right)^{-1}.
+\end{equation}
+%
+For the addition, we have the following rules,
+%
+\begin{equation}
+  \label{eq:10}
+  \left ( U' + U \right)\ord i = {U'}\ord i + U \ord i = {\tilde U'}
+  \hspace{0em}\ord i V' + {\tilde U}\ord i V,
+\end{equation}
+%
+and again, we must perform
+%
+\begin{equation}
+  \label{eq:11}
+  \widetilde {\left( U' + U\right)}\ord i = \left ( U' + U
+  \right)\ord i \left(V' + V \right)^{-1}.
+\end{equation}
+
+\subsubsection{Implementation}
+\label{sec:implementation}
+
+Inspecting the addition and multiplication rules given in the last
+section, it seems beneficial to store the link variables in the
+expansion (\ref{eq:3}). Only for applying the exponential function,
+the form (\ref{eq:5}) is needed in priciple.
+
+\subsubsection{Exponential and Logarithm}
+\label{sec:expon-logar}
+
+We opt for the following convention. The \texttt{BGptSU3} type lives
+always in the Group $SU(3)$. Another type, \texttt{PtMatrix} (defined
+for now in \texttt{PtTypes.hpp}) is responsible for storing elements
+of the algebra $su(3)$. The $g$-expansion represented by
+\texttt{PtMatrix} is always assumed to start with $g$. The methods
+$\log$ and \texttt{reH} are understood as mappings $SU(3) \to su(3)$,
+and assume that the background field is unity.
+
+If the natural logarithm $\log$ is applied to a \texttt{BGptSU3}
+instance, the method will assume that the background field associated
+with its arguments is unity. It will calculate $q = \log \{\tilde U\}$
+using the Mercator series
+%
+\begin{equation}
+  \label{eq:13}
+  \log \{\tilde U\} = \sum_{i=1}^{\mathrm{PT\_ORD}} 
+  (-1)^{n+1} \frac {(\tilde U - 1)^n} n,
+\end{equation}
+%
+aborting the series at the highest perturbative order considered
+(i.e. \texttt{PT\_ORD} in the code). If the user calls
+%
+\begin{equation}
+  \label{eq:19}
+  \log(V + U),
+\end{equation}
+%
+where $V + U$ is represented by a \texttt{BGptSU3} instance, the
+program will check if $V = 1$ holds and throw an exception if it is
+not the case. The same check is in place for
+%
+\begin{equation}
+  \label{eq:20}
+  \mathrm{reH}(V + U) = \frac 1 2 \left[ (V + U) - (V + U)^\dagger
+    \right]_{\mathrm{traceless}}.
+\end{equation}
+%
+When the exponential function is applied, the code assumes that we
+have stored the algebra valued fields $q$ in the \texttt{PtMatrix}
+instance given as the argument of $\exp$. The exponential
+is then evaluated in the usual way,
+%
+\begin{equation}
+  \label{eq:14}
+  \tilde U = \exp \{ q\} = \sum_{i = 0}^{\mathrm{PT\_ORD}} \frac {q^n}{n!},
+\end{equation}
+%
+and finally the $U\ord i = {\tilde U}\ord i V$ are returned. Since the
+perturbative expansion of $q$ is assumed to start at $g$, we can set
+$V = 1$.
+
+\section{Boundary Conditions}
+\label{sec:boundary-conditions}
+
+The Schrödinger functional boundary conditions are implemented with
+relative ease. We have
+
+\begin{equation}
+  \label{eq:15}
+  U_k(x) = W_k(\vec x)|_{x_0 = 0}, \quad  U_k(x) = W_k'(\vec x)|_{x_0 = T}.
+\end{equation}
+%
+The boundary conditions in the spatial directrions are periodic, and
+thus the existing code does not need to be changed. In the current
+code, the temporal size of the allocated storage is called
+\texttt{act\_pars.zs[3]}, we will refer to this variable as $s_3$ for
+brevity. A rather simple way to implement the Dirchlet boundary
+conditions is to identify $s_3 \equiv (T + a)/a$. When the lattice is
+sweeped in the gauge update, the lattice site is identified by an
+integer value \texttt{curr}. We will refer to this label with $n$. It
+is calculated as
+%
+\begin{equation}
+  \label{eq:16}
+  n = x_0 + s_3 ( x_1 + L [ x_2 + L\, x_3] ).
+\end{equation}
+%
+Hence, we can easily extract the time component using $t = (n \mod
+s_3)$. Then we just abort the gauge update if we hit the boundary,
+%
+\begin{equation}
+  \label{eq:17}
+  (t = 0 \land \mu \neq 0) \lor t = T\quad \Rightarrow
+  \mathtt{abort}.
+\end{equation}
+
+\section{Gauge Fixing, Zero Mode Subtraction}
+\label{sec:gauge-fixing}
+
+Here, we present the results of some experimentation with gauge fixing
+and zero mode subtraction. A very simplistic (and ultimately wrong)
+approach is to just use the Faddeev-Popov method for all active
+links. This is, as is pointed out in \cite{Luscher:1992an}, is however
+not an admissible procedure. In our calculations, we found that the
+norm of the gauge field increases abnormally and thus indicates that
+the simulation is invalid, c.f. figure \ref{fig:norm} (the approach
+described above is labeled "Plain Faddeev-Popov ").
+
+\begin{figure}
+  \centering
+  \input{plots/norm.tex}  
+  \caption{History of the norm of $U\ord {12}$ on
+    a $T/a = 5$, $L/a = 6$ lattice.}
+  \label{fig:norm}
+\end{figure}
+
+The problem at hand is that only the diagonal modes of the temporal
+components of $q$ should be fixed at the $t=0$ boundary, and thus the
+usual procedure is not valid. A naive approach to solve this is to
+omit the gauge fixing of said field components altogether, hoping that
+there will be some restoring force that prevents an abnormal raise of
+the norm of the fields that are not fixed. This could come e.g. from
+the boundary. This method seems to work, inspecting figure
+\ref{fig:norm} again, we only find that a subtraction of zero modes is
+required. The procedure explained above is labeled "Naive GF" in the
+figure.
+
+To investigate the issue of the temporal components of the gauge
+fields at $t=0$ more closely, we define the norm
+
+\begin{equation}
+  \label{eq:18}
+  n_0\ord i = \frac 1 {L^3} \sum_{\vec x}\left\| U_0 \ord i(0, \vec
+    x) \right\|.
+\end{equation}
+
+Figure \ref{fig:n0nor} shows a sample history of $n_0\ord {12}$. We
+see that the value stabilizes and we may thus infer that the naive
+gauge fixing procedure mentioned above does not expose any unexpected
+behavior.
+
+\begin{figure}
+  \centering
+  \input{plots/n0nor}
+  \caption{History of $n_0\ord {12} $on a $T/a = 5$, 
+    $L/a = 6$ lattice.}
+  \label{fig:n0nor}
+\end{figure}
+
+\bibliographystyle{alpha}
+\bibliography{bibliography.bib}
+
+\end{document}

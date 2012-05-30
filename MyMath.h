@@ -123,7 +123,7 @@ public:
     return ((z.re == re)&&(z.im == im));
   }
 
-  bool operator !=(const Cplx& z){
+  bool operator !=(const Cplx& z) const {
     return !((z.re == re)&&(z.im == im));
   }
 
@@ -135,7 +135,7 @@ inline Cplx   cbrt(Cplx);
 inline Cplx    sin(Cplx);
 inline Cplx    cos(Cplx);
 inline Cplx    tan(Cplx);
-inline Cplx    exp(Cplx);
+Cplx    exp(Cplx);
 inline Cplx   asin(Cplx);
 inline Cplx   acos(Cplx);
 inline Cplx   atan(Cplx);
@@ -148,6 +148,10 @@ inline bool operator!=(double, Cplx);
 
 
 
+inline std::ostream& operator<<(std::ostream& os, const Cplx& c){
+  os << c.re << c.im;
+  return os;
+}
 
 
 
@@ -464,6 +468,29 @@ private:
 public:
   Cplx whr[9];
 
+  // Added by Dirk on Jan. 11, 2012
+  // easy access to the elements through the () operator
+  // const and non-const versions
+  const Cplx& operator()(int i, int j) const  { return whr[i*3 + j]; }
+  Cplx& operator()(int i, int j)  { return whr[i*3 + j]; }
+  const Cplx& operator[](int i) const { return whr[i]; }
+  Cplx& operator[](int i) { return whr[i]; }
+  // iterators
+  typedef Cplx const * const_iterator;
+  typedef Cplx * iterator;
+  iterator begin(void) {return whr;}
+  const_iterator begin(void) const {return whr;}
+  iterator end(void) {return whr + 9;}
+  const_iterator end(void) const {return whr + 9;}
+  // DH added on Feb. 7, 2012
+  // Norm
+  double Norm(void) const {
+    double norm = 0;
+    for (int i = 0; i < 9; ++i)
+      norm += whr[i].re*whr[i].re + whr[i].im*whr[i].im;
+    return sqrt(norm);
+  }
+
   SU3 (){};
 
   SU3 (const Cplx *matr) {
@@ -651,9 +678,30 @@ public:
     return *this;
   }
 
+  //
+  // This little execise is supposed to show a bug in the *=  operator
+  // defined below. The plain multiplication works ...
+  //
+
+  //*/
+  // My Version (DH)
+
+  SU3& operator *= (const Cplx& z){
+    for (iterator i = begin(); i != end(); ++i) *i *= z;
+    return *this;
+  }
+  /*/
+  // Old Version -- BUGGY
+  
   void operator*=(const Cplx& z) {
+    // The problem lies here ...
+    // we should insert a
+    // double tmp = whr[0].re;
     whr[0].re = z.re * whr[0].re - z.im * whr[0].im;
+    // and replace this line with
     whr[0].im = z.re * whr[0].im + z.im * whr[0].re;
+    //whr[0].im = z.re * whr[0].im + z.im * tmp;
+    //                                   --------
     whr[1].re = z.re * whr[1].re - z.im * whr[1].im;
     whr[1].im = z.re * whr[1].im + z.im * whr[1].re;
     whr[2].re = z.re * whr[2].re - z.im * whr[2].im;
@@ -671,7 +719,7 @@ public:
     whr[8].re = z.re * whr[8].re - z.im * whr[8].im;
     whr[8].im = z.re * whr[8].im + z.im * whr[8].re;    
   }
-  
+  //*/
   void operator/=(const Cplx& z) { 
     Cplx den(1./z);
     whr[0].re = den.re * whr[0].re - den.im * whr[0].im;
@@ -1057,6 +1105,11 @@ class CVector {
 public:
   Cplx whr[3];
 
+  // Added: DH on Jan. 26, 2012
+  // access operators
+  Cplx& operator[] (const int& i) { return whr[i]; };
+  const Cplx& operator[] (const int& i) const { return whr[i]; };
+
   CVector (){};
 
   CVector (Cplx *vec) {
@@ -1325,7 +1378,14 @@ public:
     res.whr[2].im = -V.whr[2].im;
     return res;
   }
-
+  /// Added: Jan. 18, 2012 DH
+  bool operator==(const CVector& other) const {
+    for (const Cplx *i = this->whr, *j = other.whr; 
+         i != this->whr + 3; ++i, ++j)
+      if (*i != *j)
+        return false;
+    return true;
+  }
 }; // end class CVector
 
 

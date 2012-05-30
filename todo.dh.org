@@ -1,0 +1,46 @@
+Todo list for the Schrödinger Functional implementation
+
+* Coding
+
+** General stuff [0/3]
+- [ ] Gauge Fixing
+- [ ] Zero Modes 
+      It seems that this is not needed. In the original SF paper
+      (LNWW92) it is stated in chapter 3.3 (one loop effective action)
+      that there could be a finite number of zero modes, but that this
+      is an unlikely case.
+- [ ] Boundary conditions
+      lattice.h is the starting point here
+  * [ ] Find out which are the active links at the boundary
+  * [ ] Decide if it is easiest to change the Vol variable and have
+        the sums in the code automatically right or change the return
+        value of the get() method to return a null pointer if the link
+        is not active
+    * The second option seems to be the easiest to implement and maybe
+      also the cleanest, even though the if clauses could add some costs
+    * One could also introduce a special kind of link that just does
+      not change, but has the same methods, which are just void...
+
+** Links (newQCDpt)[3/3]
+- [X] Dagger operator
+- [X] exp
+  - [X] log
+
+* Remarks etc.
+- [X] comparing QCDpt.cc and MyMath.cc, the reH() methods seem to do
+  different things!
+      The answer to that comes in two parts. reH is supposed to
+      project back to SU(3). This is however easier to do in the
+      algebra. Hence, the method A.reH() should apply to an element A
+      of the Lie algebra su(3) and
+
+      1) set A = (A + A^\dagger)/2
+      2) subtract tr(A)/3 from each diagonal element
+
+      This is, however only done correctly in QCDpt.cc!
+- If one sets in Quench.cfg the init_status flag to anything other
+  than zero and if no configuration is stored, one only gets zeros, at
+  all orders! So don't forget init_status == 0!
+
+      
+

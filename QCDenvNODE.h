@@ -1,4 +1,14 @@
+#ifndef SF
 #include "QCDpt.h"
+#else
+#include "newQCDpt.h"
+//const int ORD = 6;
+typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
+typedef ptt::PtMatrix<ORD> ptsu3;
+typedef BGptCVector<ORD> ptCVector;
+typedef BGptGluon<bgf::AbelianBgf, ORD, 4> ptGluon;
+typedef BGptSpinColor<ORD, 4> ptSpinColor;
+#endif
 #include "lattice.h"
 #include<iostream>
 #include<fstream>
@@ -18,8 +28,8 @@ typedef struct {
 typedef struct {
     indx id;
     int mo;
-    double pt[allocORD+1];
-    int cf[allocORD+1];
+    double pt[ORD+1];
+    int cf[ORD+1];
 } eigv;
 
 
@@ -51,7 +61,10 @@ class SU3_fld{
 
   SU3* handle(){ return W; }
 
-  SU3 get(int *);  
+  SU3 get(int *);
+
+  const SU3& operator[](int i) const { return W[i]; };
+  SU3& operator[](int i) { return W[i]; };
   
   SU3 get(int n,int step,int dir){
     return W[Z->get(n, step, dir)];
@@ -96,8 +109,6 @@ class SU3_fld{
 inline int get(SU3_fld *W,int n,int step,int dir){
   return W->Z->get(n,step,dir);
 }
-
-  
 
   
 class Gluon_fld{
@@ -278,7 +289,9 @@ public:
 	psi = new SpinColor[Z->Size];
     }
     
-
+    const SpinColor& operator[](int i) const { return psi[i]; }
+    SpinColor& operator[](int i) { return psi[i]; }
+    
     
     SpinColor_fld(latt *z) {
 	Z = z;

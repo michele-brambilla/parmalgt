@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <vector>
 
 #define dim 4
 #define x0 1
@@ -95,8 +96,10 @@ public:
 #endif
 
 
-  int **L;  
-  latt(int *size) {
+  //int **L;  
+  std::vector<std::vector<int> > L;
+  latt(int *size) : L(size[0]*size[1]*size[2]*size[3], 
+                      std::vector<int>(1 + 2*dim) ){
     int c = 0;
 
 #if (dim == 4)
@@ -110,12 +113,12 @@ public:
     sizeYZT  = Sz[1]*Sz[2]*Sz[3];
     Size    = Sz[0]*Sz[1]*Sz[2]*Sz[3];
     
-    L = new int*[Size];
+    //L = new int*[Size];
+    //
+    //for(int ii=0; ii<Size; ii++){
+    //  L[ii] = new int[1+2*dim];      
+    //}    
 
-    for(int ii=0; ii<Size; ii++){
-      L[ii] = new int[1+2*dim];      
-    }    
-  
     for (int i = 0; i < Size; i++){
       // il sito nel reticolo deve corrispondere alla locazione fisica, mentre
       // il numero contenuto deve essere la locazione di memoria

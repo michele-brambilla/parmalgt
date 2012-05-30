@@ -1,10 +1,13 @@
 /* Condizioni al contorno in lattice.h  */
 /* E' l'unico altroparametro da settare */
 
-#define dim 4
-#define allocORD 6
-extern int PTORD;
+#ifndef CHOICES_H
+#define CHOICES_H
 
+#define dim 4
+//#define allocORD 6
+//extern int PTORD;
+const int ORD = 6;
 
 #define _SQRT_BETA_EXPANSION_
 
@@ -16,10 +19,10 @@ extern int PTORD;
 #define TLSYM 1
 #define IWA 2
 #define DBW2 3
-#define GAUGE_ACTION IWA //Alternatives: WIL, TLSYM, IWA, DBW2
+#define GAUGE_ACTION WIL //Alternatives: WIL, TLSYM, IWA, DBW2
 
 #ifdef __PARALLEL_OMP__
-#define ntt  2
+#define ntt  1
 #define ntx  1
 #define nty  1
 #define ntz  1
@@ -32,5 +35,5 @@ extern int PTORD;
 
 #define __ZERO_FLAG__ 1
 
-
+#endif
 
