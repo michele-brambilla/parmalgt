@@ -336,7 +336,7 @@ private:
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
-  ///  Writing a gluon to a file
+  ///  Writing a gluon to a file.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri May 25 15:59:06 2012
@@ -358,6 +358,14 @@ private:
     io::CheckedOut o;
   };
   
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Reading a gluon from a file.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed May 30 18:37:03 2012
+
   template <class BGF, int ORD,int DIM>
   struct FileReaderKernel {
 

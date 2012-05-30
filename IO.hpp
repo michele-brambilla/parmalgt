@@ -36,29 +36,49 @@ namespace io {
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
-  ///  Helper class to write complex numbers to a std::ostream and
-  ///  calculate the md5 checksum on-the-fly.
+  ///  Helper calculate the md5 checksum on-the-fly.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri May 25 16:25:45 2012
 
   class CheckedIo {
   public:
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Constructor.
+    ///
+    ///  Initialize the md5 algorithm.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Wed May 30 18:37:52 2012
     CheckedIo() : bcount(0), buffcnt(0) { 
       h[0] = 0x67452301;
       h[1] = 0xEFCDAB89;
       h[2] = 0x98BADCFE;
       h[3] = 0x10325476;
     } 
-    ~CheckedIo() {
-      //CheckedIo::finalize();
-      //std::cout << "md5 checksum: " << *this << std::endl;
-    }
+    ~CheckedIo() { }
     void finalize();
-    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Return the md5 as a vector.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Wed May 30 18:38:30 2012
     std::vector<unsigned> get_h() const {
       return std::vector<unsigned>(h, h+4);
     }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Return the md5 as a string.
+    ///
+    ///  Note: This calls finialize, so it should only be called ONCE!
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Wed May 30 18:38:39 2012
     std::string md5(){
       finalize();
       unsigned char* w = reinterpret_cast<unsigned char*> (h);
@@ -69,6 +89,13 @@ namespace io {
       s << std::dec;
       return s.str();
     }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Process a dobule.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Wed May 30 18:40:06 2012
     void process(const double& d){
       w.d[buffcnt++] = d;
       if (buffcnt == 8){
@@ -91,6 +118,15 @@ namespace io {
     }
   };
 
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Writes complex numbers to a file and calculates the md5
+  ///  checksum on-the-fly.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed May 30 18:40:15 2012
   class CheckedOut : public CheckedIo {
   public:
     CheckedOut() : CheckedIo(), os("gauge.cfg", std::ios::trunc |
@@ -101,6 +137,13 @@ namespace io {
       param["md5"] = CheckedIo::md5();
       param.write();
     }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Write a complex to disk.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Wed May 30 18:40:45 2012
     void write(const Cplx &c){
       CheckedIo::process(c.re);
       CheckedIo::process(c.im);
@@ -114,6 +157,16 @@ namespace io {
 
   class IoError : public std::exception {};
 
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Read complex numbers from disk.
+  ///
+  ///  Check if the md5 checksum is right.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed May 30 18:40:58 2012
   class CheckedIn : public CheckedIo {
   public:
     CheckedIn() : CheckedIo(), is("gauge.cfg", std::ios::binary ),
