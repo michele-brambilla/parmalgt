@@ -8,14 +8,10 @@
 #include <vector>
 
 
-namespace io {
+// Please note the MD5 Copyright notice in the 
+// implementation file IO.cc!
 
-  namespace detail {
-    union md5atom {
-      double d;
-      unsigned u[sizeof(double)]; // should be unsigned[2] on x86...
-    };
-  }
+namespace io {
 
   class CheckedIo;
 
@@ -25,7 +21,7 @@ namespace io {
   //////////////////////////////////////////////////////////////////////
   ///
   ///  Helper class to write complex numbers to a std::ostream and
-  ///  calculate the crc32 checksum on-the-fly.
+  ///  calculate the md5 checksum on-the-fly.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri May 25 16:25:45 2012
@@ -43,34 +39,29 @@ namespace io {
       os.close();
       finalize();
       std::cout << "md5 checksum: " << *this << std::endl;
-      //std::cout << "Checksum: " << crc.checksum() << std::endl;
     }
     void finalize();
     void write(const Cplx &c){
-      w[buffcnt].d = c.re;
-      w[buffcnt+1].d = c.im;
+      //w[buffcnt] = c.re;
+      //w[buffcnt+1].d = c.im;
+      reinterpret_cast<double *>(w)[buffcnt] = c.re;
+      reinterpret_cast<double *>(w)[buffcnt+1] = c.im;
       buffcnt += 2;
       if (buffcnt == 8){
         md5process();
         buffcnt = 0;
         ++bcount;
+        os.write(reinterpret_cast<char const*>(w), 16*sizeof(unsigned));
       }
-      //os.write(reinterpret_cast<char const*>(&(c.re)), sizeof(double));
-      //os.write(reinterpret_cast<char const*>(&(c.im)), sizeof(double));
-      //crc.process_block(reinterpret_cast<void const*>((&c.re)),
-      //                  reinterpret_cast<void const*>((&c.re + 1)));
-      //crc.process_block(reinterpret_cast<void const*>((&c.im)),
-      //                  reinterpret_cast<void const*>((&c.im + 1)));
     }
     std::vector<unsigned> get_h() const {
       return std::vector<unsigned>(h, h+4);
     }
   private:
     std::ofstream os;
-    //boost::crc_optimal<32> crc;
     unsigned h[4];
     static const unsigned r[], k[];
-    detail::md5atom w[8];
+    unsigned w[16];
     // block count
     unsigned bcount;
     // buffer count

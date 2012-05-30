@@ -1,4 +1,29 @@
 #include <IO.hpp>
+
+// NOTICE FOR THE MD5 PART ONLY:
+//
+// Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
+// rights reserved.
+
+// License to copy and use this software is granted provided that it
+// is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+// Algorithm" in all material mentioning or referencing this software
+// or this function.
+//
+// License is also granted to make and use derivative works provided
+// that such works are identified as "derived from the RSA Data
+// Security, Inc. MD5 Message-Digest Algorithm" in all material
+// mentioning or referencing the derived work.
+//
+// RSA Data Security, Inc. makes no representations concerning either
+// the merchantability of this software or the suitability of this
+// software for any particular purpose. It is provided "as is"
+// without express or implied warranty of any kind.
+//
+// These notices must be retained in any copies of any part of this
+// documentation and/or software.
+
+
 /*
  * static members
  */
@@ -22,19 +47,8 @@ const unsigned io::CheckedIo::k[] = { 3614090360u, 3905402710u, 606105819u,
 
 void io::CheckedIo::finalize() {
 
-  // count of the blocks
-  //unsigned bcount = 0;
-
-  //while (!f->fail()) {
-  //  // get 512 bit chunk from file
-  //  f->read(reinterpret_cast<char*> (w), 64);
-  //  if (!f->fail()) {
-  //    md5process();
-  //    bcount++;
-  //  }
-  //}
-  // get the length of the last read
-  unsigned last_read = buffcnt*sizeof(double);
+  // get the length of the last io
+  unsigned last_io = buffcnt*sizeof(double);
   /*
    * the algorithm ends as follows:
    * o append the bit "1" to the message
@@ -44,15 +58,14 @@ void io::CheckedIo::finalize() {
   unsigned fsize[] = { 0, 0 };
   // handle files of more than 4GB
   const unsigned mod = 536870912; // max_unsigned_value / 8
-  fsize[0] = (bcount * 64 + last_read) % mod;
-  fsize[1] = (bcount * 64 + last_read - fsize[0]) / mod;
+  fsize[0] = (bcount * 64 + last_io) % mod;
+  fsize[1] = (bcount * 64 + last_io - fsize[0]) / mod;
   for (int i = 0; i < 2; i++)
     fsize[i] *= 8;
   // get a finer resolution on w
   unsigned char* wc = reinterpret_cast<unsigned char*> (w);
   // pointer in wc to the last read position:
-  int ptr = last_read;
-  std::cout << last_read << "\n";
+  int ptr = last_io;
   // do the padding
   wc[ptr++] = 128;
   while (ptr % 64 != 56) {
@@ -62,10 +75,8 @@ void io::CheckedIo::finalize() {
     }
     wc[ptr++] = 0;
   }
-  //w[14] = fsize[0];
-  //w[15] = fsize[1];
-  w[7].u[0] = fsize[0];
-  w[7].u[1] = fsize[1];
+  w[14] = fsize[0];
+  w[15] = fsize[1];
   md5process();
 
 }
@@ -80,7 +91,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g/2].u[g%2], r[i]);
+    b += lrol(a + f + k[i] + w[g], r[i]);
     a = tmp;
   }
   for (int i = 16; i < 32; i++) {
@@ -89,7 +100,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g/2].u[g%2], r[i]);
+    b += lrol(a + f + k[i] + w[g], r[i]);
     a = tmp;
   }
   for (int i = 32; i < 48; i++) {
@@ -98,7 +109,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g/2].u[g%2], r[i]);
+    b += lrol(a + f + k[i] + w[g], r[i]);
     a = tmp;
   }
   for (int i = 48; i < 64; i++) {
@@ -107,7 +118,7 @@ void io::CheckedIo::md5process() {
     tmp = d;
     d = c;
     c = b;
-    b += lrol(a + f + k[i] + w[g/2].u[g%2], r[i]);
+    b += lrol(a + f + k[i] + w[g], r[i]);
     a = tmp;
   }
   h[0] += a;

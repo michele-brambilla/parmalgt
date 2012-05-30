@@ -18,7 +18,7 @@ const int ORD = 6;
 const int L = 6;
 const int T = 6;
 const int s = 0;
-const int NRUN = 1;
+const int NRUN = 0;
 const int MEAS_FREQ = 1;
 const int GF_MODE = 3;
 
