@@ -1,10 +1,11 @@
 #include <IO.hpp>
 
-// NOTICE FOR THE MD5 PART ONLY:
+// The CheckedIo class uses the RSA Data Security, Inc. MD5
+// Message-Digest Algorithm.
 //
 // Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
 // rights reserved.
-
+//
 // License to copy and use this software is granted provided that it
 // is identified as the "RSA Data Security, Inc. MD5 Message-Digest
 // Algorithm" in all material mentioning or referencing this software

@@ -217,7 +217,9 @@ int main(int argc, char *argv[]) {
       for (int i = 0 ; i < m.norm.size(); ++i)
         std::cout << " " << m.norm[i];
       std::cout << "\n";
+      timings["measurements"].start();
       measure(U);
+      timings["measurements"].stop();
     }
     ////////////////////////////////////////////////////////
     //
@@ -269,6 +271,7 @@ int main(int argc, char *argv[]) {
     //  former writers and will throw an exception if it is not
     //  found.
     if ( i_ % WR_FREQ == 0 && do_write){
+      timings["IO"].start();
       {
         FileWriterKernel fw;
         U.apply_everywhere(fw);
@@ -277,8 +280,8 @@ int main(int argc, char *argv[]) {
         FileReaderKernel fr;
         U.apply_everywhere(fr);
       }
+      timings["IO"].stop();
     }
-
   } // end main for loop
   // write out timings
   std::cout << "Timings:\n";
