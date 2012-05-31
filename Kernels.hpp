@@ -18,9 +18,6 @@
 namespace kernels {
   
   // here for now, should move to parameters
-  const double taug = -.01;
-  const double stau = 0.1;
-  const double alpha = .05;
 
 
   //////////////////////////////////////////////////////////////////////
@@ -51,7 +48,10 @@ namespace kernels {
     Direction mu;
     ptsu3 M; // zero momentum contribution
     
-    explicit GaugeUpdateKernel(const Direction& nu) : mu(nu) { }
+    double taug, stau;
+
+    explicit GaugeUpdateKernel(const Direction& nu, const double& t) :
+      mu(nu), taug(t), stau(sqrt(t)) { }
     
     void operator()(GluonField& U, const Point& n) {
       ptSU3 W;
@@ -63,7 +63,7 @@ namespace kernels {
       // Close the staple
       W = U[n][mu] * W;
       // DH Feb. 6, 2012
-      ptsu3 tmp  = W.reH() * taug; // take to the algebra
+      ptsu3 tmp  = W.reH() * -taug; // take to the algebra
       //tmp[0] -= stau*SU3rand(Rand); // add noise
       // use this to check if the multithreaded version gives 
       // identical results to the single threaded one
@@ -99,11 +99,13 @@ namespace kernels {
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
-public:
-  void operator()(GluonField& U, const Point& n) const { 
+  public:
+    explicit GaugeFixingKernel (const double& a) : alpha (a) { }
+    void operator()(GluonField& U, const Point& n) const { 
     do_it(U, n, mode_selektor<N>());
-  }
+    }
 private:
+    double alpha;
   template <int M> struct mode_selektor { };
   void do_it(GluonField& U, const Point& n, 
              const mode_selektor<1>&) const {
@@ -266,12 +268,16 @@ private:
     typedef fields::LocalField<ptGluon, DIM> GluonField;
     ptSU3 val;
     PlaqLowerKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
-  void operator()(GluonField& U, const Point& n){
-    Direction t(0);
-    for (Direction k(1); k.is_good(); ++k)
-      val += U[n][k].bgf() * U[n + k][t] * 
-        dag( U[n +t][k] ) * dag( U[n][t] );
-  }
+    void operator()(GluonField& U, const Point& n){
+      Direction t(0);
+      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      for (Direction k(1); k.is_good(); ++k)
+        tmp += U[n][k].bgf() * U[n + k][t] * 
+          dag( U[n +t][k] ) * dag( U[n][t] );
+#pragma omp critical
+      val += tmp;
+    }
+  
 };
 
 
@@ -299,10 +305,12 @@ private:
   PlaqUpperKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
   void operator()(GluonField& U, const Point& n){
     Direction t(0);
-    ptSU3 tmp;
+    ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
     for (Direction k(1); k.is_good(); ++k)
-      val += dag( U [n + t][k].bgf() ) * dag( U[n][t] ) *
+      tmp += dag( U [n + t][k].bgf() ) * dag( U[n][t] ) *
               U[n][k] * U[n + k][t];
+#pragma omp cirtical
+    val += tmp;
   }
 };
 
@@ -323,14 +331,17 @@ private:
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
-  ptSU3 val;
-  PlaqSpatialKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
-  void operator()(GluonField& U, const Point& n){
-    for (Direction k(1); k.is_good(); ++k)
-      for (Direction l(k + 1); l.is_good(); ++l)
-        val += U[n][k] * U[n + k][l]
-          * dag( U[n + l][k] ) * dag( U[n][l] );
-  }
+    ptSU3 val;
+    PlaqSpatialKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
+    void operator()(GluonField& U, const Point& n){
+      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      for (Direction k(1); k.is_good(); ++k)
+        for (Direction l(k + 1); l.is_good(); ++l)
+          tmp += U[n][k] * U[n + k][l]
+            * dag( U[n + l][k] ) * dag( U[n][l] );
+#pragma omp critical
+      val += tmp;
+    }
 };
 
   //////////////////////////////////////////////////////////////////////

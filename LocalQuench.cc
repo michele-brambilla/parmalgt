@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <Kernels.hpp>
+#include <uparam.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -18,19 +19,22 @@ const int DIM = 4;
 // perturbative order
 const int ORD = 6;
 // lattice size
-const int L = 6;
-const int T = 6;
+int L;// = 6;
+int T;// = 6;
 // s parameter for staggered
-const int s = 0;
+int s;// = 0;
 // total number of gauge updates
-const int NRUN = 20;
+int NRUN;// = 20;
 // frequency of measurements
-const int MEAS_FREQ = 1;
+int MEAS_FREQ;// = 1;
 // testing: write/read to/from disk
-const bool do_write = true;
+const bool do_write = false;
 const int WR_FREQ = 5;
 // testing gauge fixing option -- DO NOT TOUCH!
 const int GF_MODE = 3;
+//
+double taug;// = -.01;
+double alpha;// = .05;
 
 // some shorthands
 typedef bgf::AbelianBgf Bgf_t; // background field
@@ -186,6 +190,17 @@ void pretty_print(const std::string& s, const double& d){
 double Timer::t_tot = 0.0;
 
 int main(int argc, char *argv[]) {
+  // read the parameters
+  uparam::Param p("input");
+  p.read();
+  L = atof(p["L"].c_str());
+  s = atoi(p["s"].c_str());
+  alpha = atof(p["alpha"].c_str());
+  taug = atof(p["taug"].c_str());
+  std::cout << alpha << "\n" << taug << std::endl;
+  NRUN = atoi(p["NRUN"].c_str());
+  MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str());
+  T = L;
   // timing stuff
   typedef std::map<std::string, Timer> tmap;
   tmap timings;
@@ -193,7 +208,7 @@ int main(int argc, char *argv[]) {
   GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
   for (int i = 0; i < L*L*L*(T+1); ++i)
     GaugeUpdateKernel::rands[i].init(i);
-  //GaugeUpdateKernel::Rand.init(12312);
+  GaugeUpdateKernel::Rand.init(12312);
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
   // we want a L = 4 lattice
@@ -226,7 +241,7 @@ int main(int argc, char *argv[]) {
     //  gauge update
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
-      gu.push_back(GaugeUpdateKernel(mu));
+      gu.push_back(GaugeUpdateKernel(mu, taug));
     timings["Gauge Update"].start();
     // for x_0 = 0 update the temporal direction only
     U.apply_on_timeslice(gu[0], 0);
@@ -255,7 +270,7 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
-    GaugeFixingKernel gf;
+    GaugeFixingKernel gf(alpha);
     timings["Gauge Fixing"].start();
     for (int t = 1; t < T; ++t)
       U.apply_on_timeslice(gf, t);
