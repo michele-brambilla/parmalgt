@@ -8,6 +8,7 @@
 #include <fstream>
 #include <Kernels.hpp>
 #include <uparam.hpp>
+#include <stdlib.h>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -27,9 +28,6 @@ int s;// = 0;
 int NRUN;// = 20;
 // frequency of measurements
 int MEAS_FREQ;// = 1;
-// testing: write/read to/from disk
-const bool do_write = false;
-const int WR_FREQ = 5;
 // testing gauge fixing option -- DO NOT TOUCH!
 const int GF_MODE = 3;
 //
@@ -57,8 +55,7 @@ typedef GluonField::neighbors_t nt;
 // ... for the gauge update/fixing ...
 typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM> GaugeUpdateKernel;
 // TODO: get rid of this somehow ...
-template <class C, int N, int M> MyRand kernels::GaugeUpdateKernel<C,
-N, M>::Rand;
+//template <class C, int N, int M> MyRand kernels::GaugeUpdateKernel<C,N, M>::Rand;
 template <class C, int N, int M> std::vector<MyRand> kernels::GaugeUpdateKernel<C,N,M>::rands;
 typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
 typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
@@ -191,24 +188,24 @@ double Timer::t_tot = 0.0;
 
 int main(int argc, char *argv[]) {
   // read the parameters
-  uparam::Param p("input");
-  p.read();
+  uparam::Param p;
+  p.read("input");
   L = atof(p["L"].c_str());
   s = atoi(p["s"].c_str());
   alpha = atof(p["alpha"].c_str());
   taug = atof(p["taug"].c_str());
-  std::cout << alpha << "\n" << taug << std::endl;
   NRUN = atoi(p["NRUN"].c_str());
   MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str());
   T = L;
   // timing stuff
   typedef std::map<std::string, Timer> tmap;
   tmap timings;
-  // these are for testing of the multithreaded version
+  // random stuff
+  srand(atoi(p["seed"].c_str()));
   GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
   for (int i = 0; i < L*L*L*(T+1); ++i)
-    GaugeUpdateKernel::rands[i].init(i);
-  GaugeUpdateKernel::Rand.init(12312);
+    GaugeUpdateKernel::rands[i].init(rand());
+  //GaugeUpdateKernel::Rand.init(12312);
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
   // we want a L = 4 lattice
@@ -221,10 +218,16 @@ int main(int argc, char *argv[]) {
   bgf::get_abelian_bgf(0, 0, T, L, s);
   // initialzie the background field of U
   for (int t = 0; t <= T; ++t){
-    SetBgfKernel f(t);
-    U.apply_on_timeslice(f, t);
+    if ( p["read"] == "none" ){
+      SetBgfKernel f(t);
+      U.apply_on_timeslice(f, t);
+    }
+    else {
+      FileReaderKernel fr(p);
+      U.apply_everywhere(fr);
+    }
   }
-  for (int i_ = 0; i_ < NRUN; ++i_){
+  for (int i_ = 1; i_ <= NRUN; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
       std::cout << i_;
       MeasureNormKernel m(ORD + 1);
@@ -256,8 +259,10 @@ int main(int argc, char *argv[]) {
     //  zero mode subtraction
     std::vector<ZeroModeSubtractionKernel> z;
     double vinv = 1./L/L/L/L; // inverse volume
-    for (Direction mu; mu.is_good(); ++mu)
-      z.push_back(ZeroModeSubtractionKernel(mu, gu[mu].M*vinv));
+    for (Direction mu; mu.is_good(); ++mu){
+      gu[mu].reduce();
+      z.push_back(ZeroModeSubtractionKernel(mu, gu[mu].M[0]*vinv));
+    }
     // for x_0 = 0 update the temporal direction only (as above)
     timings["Zero Mode Subtraction"].start();
     U.apply_on_timeslice(z[0], 0);
@@ -276,28 +281,23 @@ int main(int argc, char *argv[]) {
       U.apply_on_timeslice(gf, t);
     timings["Gauge Fixing"].stop();
 
-    ////////////////////////////////////////////////////////
-    //
-    // For testing purposes: Write config to disk and read ...
-    //
-    //  Note that the code blocks { } below are needed to ensure
-    //  destruction of the writer kernel before the reader one is
-    //  constructed since the latter tries to read the .info file the
-    //  former writers and will throw an exception if it is not
-    //  found.
-    if ( i_ % WR_FREQ == 0 && do_write){
-      timings["IO"].start();
-      {
-        FileWriterKernel fw;
-        U.apply_everywhere(fw);
-      }
-      {
-        FileReaderKernel fr;
-        U.apply_everywhere(fr);
-      }
-      timings["IO"].stop();
-    }
+    //if ( i_ % WR_FREQ == 0 && do_write){
+    //  timings["IO"].start();
+    //  {
+    //    FileWriterKernel fw;
+    //    U.apply_everywhere(fw);
+    //  }
+    //  {
+    //    FileReaderKernel fr;
+    //    U.apply_everywhere(fr);
+    //  }
+    //  timings["IO"].stop();
+    //}
   } // end main for loop
+  if ( p["write"] != "none"){
+    FileWriterKernel fw(p);
+    U.apply_everywhere(fw);
+  }
   // write out timings
   std::cout << "Timings:\n";
   for (tmap::const_iterator i = timings.begin(); i != timings.end();

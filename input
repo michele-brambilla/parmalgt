@@ -1,0 +1,9 @@
+L 4 # Lattice extend, we set T = L in the simulation
+s 0 
+alpha 0.05
+taug 0.01
+NRUN 40
+MEAS_FREQ 1
+seed 1234
+read mycfg
+write none

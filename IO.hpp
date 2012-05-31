@@ -129,13 +129,14 @@ namespace io {
   ///  \date Wed May 30 18:40:15 2012
   class CheckedOut : public CheckedIo {
   public:
-    CheckedOut() : CheckedIo(), os("gauge.cfg", std::ios::trunc |
-                                   std::ios::binary ),
-                   param("gauge.info"){ }
+    explicit CheckedOut(uparam::Param &p) : 
+      CheckedIo(), os((p["write"] + ".cfg").c_str(), std::ios::trunc |
+                      std::ios::binary ), param(p){
+    }
     ~CheckedOut() { 
       os.close();
       param["md5"] = CheckedIo::md5();
-      param.write();
+      param.write(param["write"] + ".info");
     }
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -169,9 +170,23 @@ namespace io {
   ///  \date Wed May 30 18:40:58 2012
   class CheckedIn : public CheckedIo {
   public:
-    CheckedIn() : CheckedIo(), is("gauge.cfg", std::ios::binary ),
-                  param("gauge.info"){
-      param.read();
+    explicit CheckedIn(uparam::Param &p) : 
+      CheckedIo(), is((p["read"] + ".cfg").c_str(), std::ios::binary ), param(p) {
+      param.read(p["read"] + ".info");
+      for (uparam::Param::const_iterator i = param.begin(); i!=
+             param.end(); ++i){
+        if (i->first == "md5" || i->first == "read" 
+            || i->first == "write" || i->first == "seed")
+          continue;
+        if (i->second != p[i->first]){
+          std::cout << "Parameter mismatch: "<< i->first << std::endl;
+          std::cout << "   in .info file : " << i->second 
+                    << ", in current simulation: " 
+                    << p[i->first] << std::endl;
+          throw IoError();
+        }
+      }
+
     }
     ~CheckedIn() {
       is.close();

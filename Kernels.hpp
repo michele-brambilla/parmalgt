@@ -5,7 +5,15 @@
 #include <PtTypes.hpp>
 #include <newQCDpt.h>
 #include <IO.hpp>
-
+#include <uparam.hpp>
+#ifdef _OPENMP
+#include <omp.h>
+#else
+namespace kernels {
+  int omp_get_max_threads() { return 1; }
+  int omp_get_thread_num() { return 0; }
+}
+#endif
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 ///
@@ -44,14 +52,14 @@ namespace kernels {
    
     // for testing, c.f. below
     static std::vector<MyRand> rands;
-    static MyRand Rand;
+    //static MyRand Rand;
     Direction mu;
-    ptsu3 M; // zero momentum contribution
+    std::vector<ptsu3> M; // zero momentum contribution
     
     double taug, stau;
 
     explicit GaugeUpdateKernel(const Direction& nu, const double& t) :
-      mu(nu), taug(t), stau(sqrt(t)) { }
+      mu(nu), M(omp_get_max_threads()), taug(t), stau(sqrt(t)) { }
     
     void operator()(GluonField& U, const Point& n) {
       ptSU3 W;
@@ -69,8 +77,15 @@ namespace kernels {
       // identical results to the single threaded one
       tmp[0] -= stau*SU3rand(rands.at(n));
       U[n][mu] = exp<bgf::AbelianBgf, ORD>(tmp)*U[n][mu]; // back to SU3
-#pragma omp critical // TODO maybe one can use a reduce or so here
-      M += get_q(U[n][mu]); // zero momentum contribution
+      //#pragma omp critical // TODO maybe one can use a reduce or so here
+      M[omp_get_thread_num()] += get_q(U[n][mu]); // zero momentum contribution
+    }
+    
+    void reduce(){
+      typename std::vector<ptsu3>::iterator j = M.begin();
+      if (++j != M.end())
+        for (; j != M.end(); ++j)
+          M[0] += *j;
     }
   };
 
@@ -362,6 +377,8 @@ private:
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
 
+    explicit FileWriterKernel (uparam::Param& p) : o(p) { }
+
     void operator()(GluonField& U, const Point& n){
       for (Direction mu(0); mu.is_good(); ++mu)
         U[n][mu].write(o);
@@ -386,6 +403,8 @@ private:
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    explicit FileReaderKernel (uparam::Param& p) : i(p) { }
 
     void operator()(GluonField& U, const Point& n){
       for (Direction mu(0); mu.is_good(); ++mu)

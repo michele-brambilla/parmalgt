@@ -16,11 +16,18 @@
 namespace uparam {
   class Param {
   public:
-    explicit Param (const std::string& filename) : fname(filename) { }
-    void read(){
-      std::ifstream inf(fname.c_str());
+    typedef std::map<std::string, std::string> map_t;
+    typedef map_t::iterator iterator;
+    typedef map_t::const_iterator const_iterator;
+    iterator begin() { return params.begin(); }
+    iterator end() { return params.end(); }
+    const_iterator begin() const { return params.begin(); }
+    const_iterator end() const { return params.end(); }
+
+    void read(const std::string& s){
+      std::ifstream inf(s.c_str());
       if (!inf.is_open()) {
-        std::cerr << "PARAMETER FILE " << fname  << " NOT FOUND!\n";
+        std::cerr << "PARAMETER FILE " << s  << " NOT FOUND!\n";
         throw std::exception();
       }
       while (inf.good()) {
@@ -29,9 +36,9 @@ namespace uparam {
       }
       inf.close();
     }
-    void write(){
+    void write(const std::string& s){
       std::map<std::string, std::string>::const_iterator i;
-      std::ofstream of(fname.c_str(), std::ios::trunc);
+      std::ofstream of(s.c_str(), std::ios::trunc);
       for (i = params.begin(); i != params.end(); ++i)
         of << i->first << "  " << i->second << "\n";
       of.close();
@@ -40,8 +47,7 @@ namespace uparam {
       return params[s];
     }
   private:
-    std::string fname;
-    std::map<std::string, std::string> params;
+    map_t params;
     std::string to_upper(std::string& in){
       std::transform(in.begin(), in.end(), in.begin(), 
                      (int(*)(int))std::toupper);
