@@ -7,6 +7,9 @@ AM_INIT_AUTOMAKE([1.11])
 AC_CONFIG_SRCDIR([Background.h])
 AC_CONFIG_HEADERS([config.h])
 
+# Prevent autoconf from trying to regenerate configure
+AM_MAINTAINER_MODE
+
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CXX
