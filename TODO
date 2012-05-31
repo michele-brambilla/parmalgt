@@ -1,0 +1,42 @@
+Discusion with Francesco, Stefan, Mattia in Dublin, March 6th, 2012
+
+* Short-Term
+
+** Coding
+- openMPI (to get CPU time)
+   - for Quenceched code
+- New observable: \bar V (\nu -derivative)
+
+** Analysis
+- How does the noise scale with L?
+- Autocorrelation?!
+- Extrapolation in the step size.
+
+** Simulations
+- Confirmation of correctnes of Quenched code
+   - run on L = 4, 6, 8, 12
+   - compare with loop data for coupling
+- Plaquette
+   - in the bulk P(T/2)
+   - at the boundary P(0), P(T)
+   - compare to NP data at high beta
+- New observable: \bar V (\nu -derivative)
+- Running coupling Quenched for L = T +/- a
+   - change c_t at tree level
+   - can compute c_t at one loop, two loop?
+
+
+** Speculations
+- Three loop cut-off effects of \bar g...
+
+* Mid-Term
+
+** Coding
+- Fermions
+- SU(2)
+- Other representations of the gauge group.
+  - Only changes coupling of the gluons to the fermions, not the gauge
+    action.
+
+** Socializing
+- connect to Regensburg/Wuppertal people
