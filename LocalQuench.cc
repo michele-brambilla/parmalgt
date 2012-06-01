@@ -15,6 +15,15 @@
 #else
 #include <time.h>
 #endif
+#include <signal.h>
+
+bool soft_kill = false;
+int got_signal = 100;
+void kill_handler(int s){
+       soft_kill = true;
+       got_signal = s;
+       std::cout << "INITIATE KILL SEQUENCE\n"; 
+}
 
 // space-time dimensions
 const int DIM = 4;
@@ -157,6 +166,9 @@ struct Timer {
 double Timer::t_tot = 0.0;
 
 int main(int argc, char *argv[]) {
+  signal(SIGUSR1, kill_handler);
+  signal(SIGUSR2, kill_handler);
+  signal(SIGXCPU, kill_handler);
   ////////////////////////////////////////////////////////////////////
   // read the parameters
   uparam::Param p;
@@ -210,7 +222,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////////////////////////////////////////////////
   //
   // start the simulation
-  for (int i_ = 1; i_ <= NRUN; ++i_){
+  for (int i_ = 1; i_ <= NRUN && !soft_kill; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
       std::cout << i_;
       MeasureNormKernel m(ORD + 1);
