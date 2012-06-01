@@ -32,7 +32,8 @@ namespace uparam {
       }
       while (inf.good()) {
         std::string name = get_str(inf);
-        params[name] = get_str(inf);
+        if (name != "")
+          params[name] = get_str(inf);
       }
       inf.close();
     }

@@ -15515,7 +15515,7 @@ done
 
 
 
-ac_config_files="$ac_config_files Makefile testing/Makefile Doxyfile"
+ac_config_files="$ac_config_files Makefile Doxyfile"
 
 # AC_CONFIG_FILES([SU2/makefile
 #                  dSFMT/Makefile
@@ -16644,7 +16644,6 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "testing/Makefile") CONFIG_FILES="$CONFIG_FILES testing/Makefile" ;;
     "Doxyfile") CONFIG_FILES="$CONFIG_FILES Doxyfile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

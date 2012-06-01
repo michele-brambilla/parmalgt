@@ -44,7 +44,7 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([bzero clock_gettime gettimeofday memset pow sqrt])
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_CONFIG_FILES([Makefile testing/Makefile Doxyfile])
+AC_CONFIG_FILES([Makefile Doxyfile])
 # AC_CONFIG_FILES([SU2/makefile
 #                  dSFMT/Makefile
 #                  makefile
