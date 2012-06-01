@@ -207,6 +207,35 @@ namespace io {
     std::ifstream is;
     uparam::Param param;
   };
+
+  ////////////////////////////////////////////////////////////
+  // writing binary data to files
+  
+  inline void to_bin_file(std::ofstream& of, const Cplx& c){
+    of.write(reinterpret_cast<const char*>(&c.re), sizeof(double));
+    of.write(reinterpret_cast<const char*>(&c.im), sizeof(double));
+  }
+  template <class ptSU3, int ORD>
+  inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fname){
+    std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+    to_bin_file(of, tree);
+    for (int i = 0; i < ORD; ++i)
+      to_bin_file(of, U[i].Tr());
+    of.close();
+  }
+  
+  ////////////////////////////////////////////////////////////
+  // formated cout for the timings/parameters
+  template <typename T>
+  inline void pretty_print(const std::string& s, const T& d,
+                           const std::string& unit = ""){
+    std::cout.width(25); 
+    std::cout << s; 
+    std::cout.width(0);
+    std::cout << ": " << d << unit << std::endl;
+  };
+
+
 }
 
 

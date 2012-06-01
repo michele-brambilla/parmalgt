@@ -9,6 +9,7 @@
 #include <Kernels.hpp>
 #include <uparam.hpp>
 #include <stdlib.h>
+#include <IO.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -51,18 +52,13 @@ typedef GluonField::neighbors_t nt;
 // Make aliases for the Kernels ...
 //
 
-
 // ... for the gauge update/fixing ...
 typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM> GaugeUpdateKernel;
-// TODO: get rid of this somehow ...
-//template <class C, int N, int M> MyRand kernels::GaugeUpdateKernel<C,N, M>::Rand;
-template <class C, int N, int M> std::vector<MyRand> kernels::GaugeUpdateKernel<C,N,M>::rands;
 typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
 typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
 
 // ... to set the background field ...
 typedef kernels::SetBgfKernel<Bgf_t, ORD, DIM> SetBgfKernel;
-
 
 // ... and for the measurements ...
 typedef kernels::PlaqLowerKernel<Bgf_t, ORD, DIM> PlaqLowerKernel;
@@ -73,22 +69,6 @@ typedef kernels::MeasureNormKernel<Bgf_t, ORD, DIM> MeasureNormKernel;
 // ... and for the checkpointing.
 typedef kernels::FileWriterKernel<Bgf_t, ORD, DIM> FileWriterKernel;
 typedef kernels::FileReaderKernel<Bgf_t, ORD, DIM> FileReaderKernel;
-
-// ... some IO
-// TODO: Move this as well!
-inline void to_bin_file(std::ofstream& of, const Cplx& c){
-  of.write(reinterpret_cast<const char*>(&c.re), sizeof(double));
-  of.write(reinterpret_cast<const char*>(&c.im), sizeof(double));
-}
-
-inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fname){
-  std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
-  to_bin_file(of, tree);
-  for (int i = 0; i < ORD; ++i)
-    to_bin_file(of, U[i].Tr());
-  of.close();
-}
-
 
 // Our measurement
 void measure(GluonField &U){
@@ -125,30 +105,29 @@ void measure(GluonField &U){
   ptSU3 tmp = Pl.val + Pu.val;
   std::for_each(tmp.begin(), tmp.end(), pta::mul(dC));
   Cplx tree = tmp.bgf().ApplyFromLeft(dC).Tr();
-  write_file(tmp, tree, "Gp.bindat");
+  io::write_file<ptSU3, ORD>(tmp, tree, "Gp.bindat");
 
   // Evaluate v
   tmp = Pl.val + Pu.val;
   std::for_each(tmp.begin(), tmp.end(), pta::mul(d_dC));
   tree = tmp.bgf().ApplyFromLeft(d_dC).Tr();
-  write_file(tmp, tree, "v.bindat");
+  io::write_file<ptSU3, ORD>(tmp, tree, "v.bindat");
 
   // Evaluate bd_plaq (nomenclature as in MILC code)
   tmp = (Pl.val + Pu.val) / 6 / V3;
   tree = tmp.bgf().Tr();
-  write_file(tmp, tree, "bd_plaq.bindat");
+  io::write_file<ptSU3, ORD>(tmp, tree, "bd_plaq.bindat");
 
   // Evaluate st_plaq
   tmp = (Pl.val + Pu.val + Pm.val) / 3 / V3 / T;
   tree = tmp.bgf().Tr();
-  write_file(tmp, tree, "st_plaq.bindat");
+  io::write_file<ptSU3, ORD>(tmp, tree, "st_plaq.bindat");
 
   // Eval. ss_plaq
   tmp = Ps.val / 3 / V3 / (T-1);
   tree = tmp.bgf().Tr();
-  write_file(tmp, tree, "ss_plaq.bindat");
+  io::write_file<ptSU3, ORD>(tmp, tree, "ss_plaq.bindat");
 }
-
 
 // timing
 
@@ -175,21 +154,15 @@ struct Timer {
   }
 };
 
-
-// formated cout for the timings
-void pretty_print(const std::string& s, const double& d){
-  std::cout.width(25); 
-  std::cout << s; 
-  std::cout.width(0);
-  std::cout << ": " << d << "s" << std::endl;
-};
-
 double Timer::t_tot = 0.0;
 
 int main(int argc, char *argv[]) {
+  ////////////////////////////////////////////////////////////////////
   // read the parameters
   uparam::Param p;
   p.read("input");
+  std::cout << "INPUT PARAMETERS:\n";
+  p.print();
   L = atof(p["L"].c_str());
   s = atoi(p["s"].c_str());
   alpha = atof(p["alpha"].c_str());
@@ -197,15 +170,21 @@ int main(int argc, char *argv[]) {
   NRUN = atoi(p["NRUN"].c_str());
   MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str());
   T = L;
+  ////////////////////////////////////////////////////////////////////
+  //
   // timing stuff
   typedef std::map<std::string, Timer> tmap;
   tmap timings;
-  // random stuff
+  ////////////////////////////////////////////////////////////////////
+  //
+  // random number generators
   srand(atoi(p["seed"].c_str()));
   GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
   for (int i = 0; i < L*L*L*(T+1); ++i)
     GaugeUpdateKernel::rands[i].init(rand());
-  //GaugeUpdateKernel::Rand.init(12312);
+  ////////////////////////////////////////////////////////////////////
+  //
+  // lattice setup
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
   // we want a L = 4 lattice
@@ -216,17 +195,21 @@ int main(int argc, char *argv[]) {
   GluonField U(e, 1, 0, nt());
   // initialize background field get method
   bgf::get_abelian_bgf(0, 0, T, L, s);
-  // initialzie the background field of U
-  for (int t = 0; t <= T; ++t){
-    if ( p["read"] == "none" ){
+  ////////////////////////////////////////////////////////////////////
+  //
+  // initialzie the background field of U or read config
+  if ( p["read"] == "none" )
+    for (int t = 0; t <= T; ++t){
       SetBgfKernel f(t);
       U.apply_on_timeslice(f, t);
     }
-    else {
-      FileReaderKernel fr(p);
-      U.apply_everywhere(fr);
-    }
+  else {
+    FileReaderKernel fr(p);
+    U.apply_everywhere(fr);
   }
+  ////////////////////////////////////////////////////////////////////
+  //
+  // start the simulation
   for (int i_ = 1; i_ <= NRUN; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
       std::cout << i_;
@@ -280,20 +263,8 @@ int main(int argc, char *argv[]) {
     for (int t = 1; t < T; ++t)
       U.apply_on_timeslice(gf, t);
     timings["Gauge Fixing"].stop();
-
-    //if ( i_ % WR_FREQ == 0 && do_write){
-    //  timings["IO"].start();
-    //  {
-    //    FileWriterKernel fw;
-    //    U.apply_everywhere(fw);
-    //  }
-    //  {
-    //    FileReaderKernel fr;
-    //    U.apply_everywhere(fr);
-    //  }
-    //  timings["IO"].stop();
-    //}
   } // end main for loop
+  // write the gauge configuration
   if ( p["write"] != "none"){
     FileWriterKernel fw(p);
     U.apply_everywhere(fw);
@@ -302,8 +273,8 @@ int main(int argc, char *argv[]) {
   std::cout << "Timings:\n";
   for (tmap::const_iterator i = timings.begin(); i != timings.end();
        ++i){
-    pretty_print(i->first, i->second.t);
+    io::pretty_print(i->first, i->second.t, "s");
   }
-  pretty_print("TOTAL", Timer::t_tot);
+  io::pretty_print("TOTAL", Timer::t_tot, "s");
   return 0;
 }

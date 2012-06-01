@@ -23,11 +23,9 @@ namespace kernels {
 ///
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Thu May 24 17:55:49 2012
+
 namespace kernels {
   
-  // here for now, should move to parameters
-
-
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -58,7 +56,7 @@ namespace kernels {
     
     double taug, stau;
 
-    explicit GaugeUpdateKernel(const Direction& nu, const double& t) :
+    GaugeUpdateKernel(const Direction& nu, const double& t) :
       mu(nu), M(omp_get_max_threads()), taug(t), stau(sqrt(t)) { }
     
     void operator()(GluonField& U, const Point& n) {
@@ -88,6 +86,8 @@ namespace kernels {
           M[0] += *j;
     }
   };
+  template <class C, int N, int M> std::vector<MyRand> kernels::GaugeUpdateKernel<C,N,M>::rands;
+
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////

@@ -5,6 +5,12 @@
 #include <algorithm>
 #include <map>
 
+namespace io {
+  template <typename T>
+  inline void pretty_print(const std::string& s, const T& d, 
+                           const std::string& unit = "");
+}
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 ///
@@ -37,15 +43,18 @@ namespace uparam {
       }
       inf.close();
     }
-    void write(const std::string& s){
-      std::map<std::string, std::string>::const_iterator i;
+    void write(const std::string& s) const {
       std::ofstream of(s.c_str(), std::ios::trunc);
-      for (i = params.begin(); i != params.end(); ++i)
+      for (const_iterator i = begin(); i != end(); ++i)
         of << i->first << "  " << i->second << "\n";
       of.close();
     }
     std::string& operator[](const std::string& s){
       return params[s];
+    }
+    void print() const {
+      for (const_iterator i = begin(); i != end(); ++i)
+        io::pretty_print(i->first, i->second);
     }
   private:
     map_t params;
