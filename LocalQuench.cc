@@ -165,6 +165,15 @@ struct Timer {
 
 double Timer::t_tot = 0.0;
 
+// helper function to feed int, double etc. to the parameters
+template <typename T> 
+std::string to_string(const T& x){
+  std::stringstream sts;
+  sts << x;
+  return sts.str();
+}
+
+
 int main(int argc, char *argv[]) {
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
@@ -182,6 +191,12 @@ int main(int argc, char *argv[]) {
   NRUN = atoi(p["NRUN"].c_str());
   MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str());
   T = L;
+  // also write the number of space-time dimensions
+  // and perturbative order to the parameters, to
+  // make sure they are written in the .info file 
+  // for the configurations stored on disk
+  p["NDIM"] = to_string(DIM);
+  p["ORD"] = to_string(ORD);
   ////////////////////////////////////////////////////////////////////
   //
   // timing stuff
