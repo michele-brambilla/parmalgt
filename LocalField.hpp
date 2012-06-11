@@ -92,6 +92,7 @@ namespace fields {
     const data_t& operator[](const pt::Point<DIM> &n) const {
       return n.template deref<const data_t>(rep);
     }
+    
     pt::Point<DIM> mk_point(const typename geometry::Geometry<DIM>::raw_pt_t& n){
       g.mk_point(n);
     }
@@ -128,25 +129,30 @@ namespace fields {
       while (iter.is_good()) f(*this, iter.yield());
     }
     template <class M>
-    void apply_on_timeslice(M& f, const int& t){
-      // first, use 'red' points
-      geometry::SliceIterator<DIM, 0> iter =
-        g.template mk_slice_iterator<0>(pt::Direction<DIM>(0), t, 0);
-     
-      int size = g.bnd_vol(0), sizeh = size/2, i = 0;
-      std::vector<pt::Point<DIM> > points(size, g.begin());
 
-      while (iter.is_good()){
-        points[i] = iter.yield();
-        points[sizeh + i] = iter.yield();
-        ++i;
+    void apply_on_timeslice(M& f, const int& t){
+      // parallelize with a simple checker-board scheme ...
+      int size = g.bnd_vol(0), sizeh = size/2, i = 0;
+      // use this to remember the points
+      static std::vector<std::vector<pt::Point<DIM> > > pts(g[0] + 1);
+      if (pts[t].size() == 0){
+        geometry::SliceIterator<DIM, 0> iter =
+          g.template mk_slice_iterator<0>(pt::Direction<DIM>(0), t, 0);
+
+        pts[t].resize(size, g.begin());
+        while (iter.is_good()){
+          pts[t][i] = iter.yield();
+          pts[t][sizeh + i] = iter.yield();
+          ++i;
+        }
       }
-#pragma omp parallel for default(none) shared(f, t, size, points, sizeh)
+
+#pragma omp parallel for default(none) shared(f, t, size, pts, sizeh)
       for (int i = 0; i < sizeh; ++i)
-        f(*this, points[i]);
-#pragma omp parallel for default(none) shared(f, t, size, points, sizeh)
+        f(*this, pts[t][i]);
+#pragma omp parallel for default(none) shared(f, t, size, pts, sizeh)
       for (int i = sizeh; i < size; ++i)
-        f(*this, points[i]);
+        f(*this, pts[t][i]);
     }
     template <class M>
     void apply_everywhere(M& f){

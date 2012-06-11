@@ -29,20 +29,26 @@ void kill_handler(int s){
 const int DIM = 4;
 // perturbative order
 const int ORD = 6;
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+//
+// PARAMETERS to be read later
+
 // lattice size
-int L;// = 6;
-int T;// = 6;
+int L;
+int T;
 // s parameter for staggered
-int s;// = 0;
+int s;
 // total number of gauge updates
-int NRUN;// = 20;
+int NRUN;
 // frequency of measurements
-int MEAS_FREQ;// = 1;
+int MEAS_FREQ;
 // testing gauge fixing option -- DO NOT TOUCH!
 const int GF_MODE = 3;
-//
-double taug;// = -.01;
-double alpha;// = .05;
+// integration step and gauge fixing parameter
+double taug;
+double alpha;
 
 // some shorthands
 typedef bgf::AbelianBgf Bgf_t; // background field
@@ -190,7 +196,7 @@ int main(int argc, char *argv[]) {
   taug = atof(p["taug"].c_str());
   NRUN = atoi(p["NRUN"].c_str());
   MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str());
-  T = L;
+  T = L-s;
   // also write the number of space-time dimensions
   // and perturbative order to the parameters, to
   // make sure they are written in the .info file 
