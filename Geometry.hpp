@@ -113,6 +113,14 @@ namespace geometry {
       return bnd_vols[dim];
     }
     int vol() const { return V; }
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Get the extend in a certain direction.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Jun 11 18:33:23 2012
+    int operator[](const int& i) const { return extents[i]; }
   private:
     /// Local lattice extends.
     extents_t extents;
