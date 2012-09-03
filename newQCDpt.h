@@ -69,7 +69,11 @@ template <class B> struct IsZero<true, B> {
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 ///
-///  BGptSU3 represents a series  V + g U^(1) + g^2 U^(2) + ...
+///  BGptSU3<B, ORD> represents a series 
+///
+///       V + g U^(1) + g^2 U^(2) + ... + g^ORD U^(ORD),
+///
+///  where V is a background field of type B.
 ///
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Tue Jan 24 16:55:46 2012
@@ -478,7 +482,7 @@ inline BGptSU3<B, ORD> exp(const ptt::PtMatrix<ORD>& q){
   BGptSU3<B, ORD> result(bgf::unit<B>(), q);
   // result = 1 + q 
   ptt::PtMatrix<ORD> tmp(q);
-  for ( int i = 2; i < ORD; ++i){
+  for ( int i = 2; i <= ORD; ++i){
     tmp *= q;
     tmp /= i;
     result.ptU() += tmp;
