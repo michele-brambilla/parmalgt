@@ -169,6 +169,15 @@ namespace ptt {
       return result -= other;
     }
   
+
+    
+    // Here, we only want to implement the *= and /= operators for
+    // scalar types, where the operation is trivial. Hence, we have to
+    // make a small detour through a separate implementation function,
+    // whose second argument determines if we have a scalar
+    // multiplication. For which types T this is the case, the
+    // class template member ScalarMultiplyable<T>::type decides for us.
+
     template <typename T> self_t& operator*=(const T& other) {
       return mul_assign_impl(other, typename ScalarMultiplyable<T>::type());
     }
@@ -197,6 +206,9 @@ namespace ptt {
 
   private:
     su3_array_t array_;
+
+    // implementation of *= and /=. For an explaination c.f. above.
+
     template <typename T> self_t& mul_assign_impl(const T& other, True){
       std::for_each(begin(), end(), pta::mul(other));
       return *this;

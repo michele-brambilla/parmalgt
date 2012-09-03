@@ -86,7 +86,8 @@ namespace kernels {
           M[0] += *j;
     }
   };
-  template <class C, int N, int M> std::vector<MyRand> kernels::GaugeUpdateKernel<C,N,M>::rands;
+  template <class C, int N, int M> std::vector<MyRand> 
+    kernels::GaugeUpdateKernel<C,N,M>::rands;
 
 
   //////////////////////////////////////////////////////////////////////

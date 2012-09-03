@@ -1,5 +1,6 @@
-#include <QCDenvNODEpt.h>
 #include <gtest/gtest.h>
+#include <Point.hpp>
+#include <lattice.h>
 
 using namespace pt;
 

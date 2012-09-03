@@ -18,7 +18,7 @@ TEST(Geometry, Neighbors){
     for (; n[1] < SIZE; ++n[1])
       for (; n[2] < SIZE; ++n[2])
         for (; n[3] < SIZE; ++n[3])
-          for (pt::Direction<DIM> mu; mu.good(); ++mu){
+          for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
             geometry::Geometry<DIM>::raw_pt_t x(n);
             x[mu]++;
             ASSERT_EQ(g.mk_point(x), g.mk_point(n) + mu);

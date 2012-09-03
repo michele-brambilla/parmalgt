@@ -35,12 +35,14 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = test_Geometry$(EXEEXT)
+bin_PROGRAMS = test_Geometry$(EXEEXT) test_Bgfield$(EXEEXT) \
+	test_Helper$(EXEEXT) test_SU3$(EXEEXT) test_newQCDpt$(EXEEXT) \
+	test_PtTypes$(EXEEXT)
 TESTS = $(bin_PROGRAMS)
 subdir = testing
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	AUTHORS COPYING ChangeLog INSTALL NEWS config.guess config.sub \
-	depcomp install-sh ltmain.sh missing
+	AUTHORS COPYING ChangeLog INSTALL NEWS config.sub depcomp \
+	install-sh ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -89,9 +91,28 @@ lib_libgtest_main_la_DEPENDENCIES = lib/libgtest.la
 am_lib_libgtest_main_la_OBJECTS = gtest_main.lo
 lib_libgtest_main_la_OBJECTS = $(am_lib_libgtest_main_la_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
+am_test_Bgfield_OBJECTS = test_Bgfield.$(OBJEXT) MyRand.$(OBJEXT) \
+	MyMath.$(OBJEXT) Background.$(OBJEXT)
+test_Bgfield_OBJECTS = $(am_test_Bgfield_OBJECTS)
+test_Bgfield_DEPENDENCIES = lib/libgtest_main.la
 am_test_Geometry_OBJECTS = test_Geometry.$(OBJEXT)
 test_Geometry_OBJECTS = $(am_test_Geometry_OBJECTS)
 test_Geometry_DEPENDENCIES = lib/libgtest_main.la
+am_test_Helper_OBJECTS = test_Helper.$(OBJEXT) MyRand.$(OBJEXT)
+test_Helper_OBJECTS = $(am_test_Helper_OBJECTS)
+test_Helper_DEPENDENCIES = lib/libgtest_main.la
+am_test_PtTypes_OBJECTS = test_PtTypes.$(OBJEXT) MyMath.$(OBJEXT) \
+	MyRand.$(OBJEXT)
+test_PtTypes_OBJECTS = $(am_test_PtTypes_OBJECTS)
+test_PtTypes_DEPENDENCIES = lib/libgtest_main.la
+am_test_SU3_OBJECTS = test_SU3.$(OBJEXT) MyMath.$(OBJEXT) \
+	MyRand.$(OBJEXT)
+test_SU3_OBJECTS = $(am_test_SU3_OBJECTS)
+test_SU3_DEPENDENCIES = lib/libgtest_main.la
+am_test_newQCDpt_OBJECTS = test_newQCDpt.$(OBJEXT) MyMath.$(OBJEXT) \
+	MyRand.$(OBJEXT) newQCDpt.$(OBJEXT) Background.$(OBJEXT)
+test_newQCDpt_OBJECTS = $(am_test_newQCDpt_OBJECTS)
+test_newQCDpt_DEPENDENCIES = lib/libgtest.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -106,9 +127,14 @@ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(lib_libgtest_la_SOURCES) $(lib_libgtest_main_la_SOURCES) \
-	$(test_Geometry_SOURCES)
+	$(test_Bgfield_SOURCES) $(test_Geometry_SOURCES) \
+	$(test_Helper_SOURCES) $(test_PtTypes_SOURCES) \
+	$(test_SU3_SOURCES) $(test_newQCDpt_SOURCES)
 DIST_SOURCES = $(lib_libgtest_la_SOURCES) \
-	$(lib_libgtest_main_la_SOURCES) $(test_Geometry_SOURCES)
+	$(lib_libgtest_main_la_SOURCES) $(test_Bgfield_SOURCES) \
+	$(test_Geometry_SOURCES) $(test_Helper_SOURCES) \
+	$(test_PtTypes_SOURCES) $(test_SU3_SOURCES) \
+	$(test_newQCDpt_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -248,6 +274,20 @@ lib_libgtest_main_la_SOURCES = ${GTEST_SRC}/src/gtest_main.cc
 lib_libgtest_main_la_LIBADD = lib/libgtest.la
 test_Geometry_SOURCES = test_Geometry.cc
 test_Geometry_LDADD = lib/libgtest_main.la
+test_Bgfield_SOURCES = test_Bgfield.cc ../MyRand.cc \
+		       ../MyMath.cc ../Background.cc
+
+test_Bgfield_LDADD = lib/libgtest_main.la
+test_Helper_SOURCES = test_Helper.cc ../MyRand.cc
+test_Helper_LDADD = lib/libgtest_main.la
+test_SU3_SOURCES = test_SU3.cc ../MyMath.cc ../MyRand.cc
+test_SU3_LDADD = lib/libgtest_main.la
+test_newQCDpt_SOURCES = test_newQCDpt.cc ../MyMath.cc ../MyRand.cc \
+	../newQCDpt.cc ../Background.cc
+
+test_newQCDpt_LDADD = lib/libgtest.la
+test_PtTypes_SOURCES = test_PtTypes.cc ../MyMath.cc ../MyRand.cc
+test_PtTypes_LDADD = lib/libgtest_main.la
 all: all-am
 
 .SUFFIXES:
@@ -363,9 +403,24 @@ clean-binPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+test_Bgfield$(EXEEXT): $(test_Bgfield_OBJECTS) $(test_Bgfield_DEPENDENCIES) 
+	@rm -f test_Bgfield$(EXEEXT)
+	$(CXXLINK) $(test_Bgfield_OBJECTS) $(test_Bgfield_LDADD) $(LIBS)
 test_Geometry$(EXEEXT): $(test_Geometry_OBJECTS) $(test_Geometry_DEPENDENCIES) 
 	@rm -f test_Geometry$(EXEEXT)
 	$(CXXLINK) $(test_Geometry_OBJECTS) $(test_Geometry_LDADD) $(LIBS)
+test_Helper$(EXEEXT): $(test_Helper_OBJECTS) $(test_Helper_DEPENDENCIES) 
+	@rm -f test_Helper$(EXEEXT)
+	$(CXXLINK) $(test_Helper_OBJECTS) $(test_Helper_LDADD) $(LIBS)
+test_PtTypes$(EXEEXT): $(test_PtTypes_OBJECTS) $(test_PtTypes_DEPENDENCIES) 
+	@rm -f test_PtTypes$(EXEEXT)
+	$(CXXLINK) $(test_PtTypes_OBJECTS) $(test_PtTypes_LDADD) $(LIBS)
+test_SU3$(EXEEXT): $(test_SU3_OBJECTS) $(test_SU3_DEPENDENCIES) 
+	@rm -f test_SU3$(EXEEXT)
+	$(CXXLINK) $(test_SU3_OBJECTS) $(test_SU3_LDADD) $(LIBS)
+test_newQCDpt$(EXEEXT): $(test_newQCDpt_OBJECTS) $(test_newQCDpt_DEPENDENCIES) 
+	@rm -f test_newQCDpt$(EXEEXT)
+	$(CXXLINK) $(test_newQCDpt_OBJECTS) $(test_newQCDpt_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -373,9 +428,18 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Background.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MyMath.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MyRand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtest-all.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gtest_main.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/newQCDpt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Bgfield.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Geometry.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Helper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_PtTypes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_SU3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_newQCDpt.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -411,6 +475,62 @@ gtest_main.lo: ${GTEST_SRC}/src/gtest_main.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='${GTEST_SRC}/src/gtest_main.cc' object='gtest_main.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o gtest_main.lo `test -f '${GTEST_SRC}/src/gtest_main.cc' || echo '$(srcdir)/'`${GTEST_SRC}/src/gtest_main.cc
+
+MyRand.o: ../MyRand.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MyRand.o -MD -MP -MF $(DEPDIR)/MyRand.Tpo -c -o MyRand.o `test -f '../MyRand.cc' || echo '$(srcdir)/'`../MyRand.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/MyRand.Tpo $(DEPDIR)/MyRand.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../MyRand.cc' object='MyRand.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MyRand.o `test -f '../MyRand.cc' || echo '$(srcdir)/'`../MyRand.cc
+
+MyRand.obj: ../MyRand.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MyRand.obj -MD -MP -MF $(DEPDIR)/MyRand.Tpo -c -o MyRand.obj `if test -f '../MyRand.cc'; then $(CYGPATH_W) '../MyRand.cc'; else $(CYGPATH_W) '$(srcdir)/../MyRand.cc'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/MyRand.Tpo $(DEPDIR)/MyRand.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../MyRand.cc' object='MyRand.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MyRand.obj `if test -f '../MyRand.cc'; then $(CYGPATH_W) '../MyRand.cc'; else $(CYGPATH_W) '$(srcdir)/../MyRand.cc'; fi`
+
+MyMath.o: ../MyMath.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MyMath.o -MD -MP -MF $(DEPDIR)/MyMath.Tpo -c -o MyMath.o `test -f '../MyMath.cc' || echo '$(srcdir)/'`../MyMath.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/MyMath.Tpo $(DEPDIR)/MyMath.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../MyMath.cc' object='MyMath.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MyMath.o `test -f '../MyMath.cc' || echo '$(srcdir)/'`../MyMath.cc
+
+MyMath.obj: ../MyMath.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MyMath.obj -MD -MP -MF $(DEPDIR)/MyMath.Tpo -c -o MyMath.obj `if test -f '../MyMath.cc'; then $(CYGPATH_W) '../MyMath.cc'; else $(CYGPATH_W) '$(srcdir)/../MyMath.cc'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/MyMath.Tpo $(DEPDIR)/MyMath.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../MyMath.cc' object='MyMath.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MyMath.obj `if test -f '../MyMath.cc'; then $(CYGPATH_W) '../MyMath.cc'; else $(CYGPATH_W) '$(srcdir)/../MyMath.cc'; fi`
+
+Background.o: ../Background.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Background.o -MD -MP -MF $(DEPDIR)/Background.Tpo -c -o Background.o `test -f '../Background.cc' || echo '$(srcdir)/'`../Background.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/Background.Tpo $(DEPDIR)/Background.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../Background.cc' object='Background.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Background.o `test -f '../Background.cc' || echo '$(srcdir)/'`../Background.cc
+
+Background.obj: ../Background.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Background.obj -MD -MP -MF $(DEPDIR)/Background.Tpo -c -o Background.obj `if test -f '../Background.cc'; then $(CYGPATH_W) '../Background.cc'; else $(CYGPATH_W) '$(srcdir)/../Background.cc'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/Background.Tpo $(DEPDIR)/Background.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../Background.cc' object='Background.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Background.obj `if test -f '../Background.cc'; then $(CYGPATH_W) '../Background.cc'; else $(CYGPATH_W) '$(srcdir)/../Background.cc'; fi`
+
+newQCDpt.o: ../newQCDpt.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT newQCDpt.o -MD -MP -MF $(DEPDIR)/newQCDpt.Tpo -c -o newQCDpt.o `test -f '../newQCDpt.cc' || echo '$(srcdir)/'`../newQCDpt.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/newQCDpt.Tpo $(DEPDIR)/newQCDpt.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../newQCDpt.cc' object='newQCDpt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o newQCDpt.o `test -f '../newQCDpt.cc' || echo '$(srcdir)/'`../newQCDpt.cc
+
+newQCDpt.obj: ../newQCDpt.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT newQCDpt.obj -MD -MP -MF $(DEPDIR)/newQCDpt.Tpo -c -o newQCDpt.obj `if test -f '../newQCDpt.cc'; then $(CYGPATH_W) '../newQCDpt.cc'; else $(CYGPATH_W) '$(srcdir)/../newQCDpt.cc'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/newQCDpt.Tpo $(DEPDIR)/newQCDpt.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../newQCDpt.cc' object='newQCDpt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o newQCDpt.obj `if test -f '../newQCDpt.cc'; then $(CYGPATH_W) '../newQCDpt.cc'; else $(CYGPATH_W) '$(srcdir)/../newQCDpt.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
