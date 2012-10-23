@@ -38,6 +38,8 @@ namespace ptt {
     typedef typename su3_array_t::iterator iterator;
     typedef typename su3_array_t::const_iterator const_iterator;
 
+
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
@@ -63,7 +65,78 @@ namespace ptt {
     const_iterator end() const { return array_.end(); }
     iterator begin() { return array_.begin(); }
     iterator end() { return array_.end(); }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Number of doubles requred to store the PtMatrix in a double
+    ///  buffer (needed for MPI).
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:46:27 2012
+
+    static const int storage_size = N*9*2;
+
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Buffering.
+    ///
+    ///  Write the contents to a vector of doubles.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:47:32 2012
+    
+    std::vector<double>::iterator &
+    buffer(std::vector<double>::iterator & i) const {
+      for (const_iterator n = begin(); n!= end(); ++n)
+        for (int j = 0; j < 9; ++j){
+          *i = (*n)[j].re; ++i;
+          *i = (*n)[j].im; ++i;
+        }
+      return i;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Write to a file.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Fri May 25 16:33:38 2012
+
+    template <class Writer_t>
+    void write(Writer_t& o) const {
+      for (const_iterator n = begin(); n!= end(); ++n)
+        for (int j = 0; j < 9; ++j)
+          o.write((*n)[j]);
+    }
+
+    template <class Reader_t>
+    void read(Reader_t& o) {
+      for (iterator n = begin(); n!= end(); ++n)
+        for (int j = 0; j < 9; ++j)
+          o.read((*n)[j]);
+    }
   
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Read from buffer.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Mar 26 16:45:23 2012
+
+    std::vector<double>::const_iterator &
+    unbuffer(std::vector<double>::const_iterator & i){
+      for (iterator n = begin(); n!= end(); ++n)
+        for (int j = 0; j < 9; ++j){
+          (*n)[j].re = *i; ++i;
+          (*n)[j].im = *i; ++i;
+        }
+      return i;
+    }    
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -96,6 +169,15 @@ namespace ptt {
       return result -= other;
     }
   
+
+    
+    // Here, we only want to implement the *= and /= operators for
+    // scalar types, where the operation is trivial. Hence, we have to
+    // make a small detour through a separate implementation function,
+    // whose second argument determines if we have a scalar
+    // multiplication. For which types T this is the case, the
+    // class template member ScalarMultiplyable<T>::type decides for us.
+
     template <typename T> self_t& operator*=(const T& other) {
       return mul_assign_impl(other, typename ScalarMultiplyable<T>::type());
     }
@@ -124,6 +206,9 @@ namespace ptt {
 
   private:
     su3_array_t array_;
+
+    // implementation of *= and /=. For an explaination c.f. above.
+
     template <typename T> self_t& mul_assign_impl(const T& other, True){
       std::for_each(begin(), end(), pta::mul(other));
       return *this;
@@ -133,6 +218,19 @@ namespace ptt {
       return *this;
     }
   };
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///
+///  reH call, keeping the matrix constant
+///
+///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+///  \date Tue Apr 24 15:10:50 2012
+
+  template <int N> PtMatrix<N> reH(const PtMatrix<N> &A){
+    PtMatrix<N> result(A);
+    return result.reH();
+  }
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

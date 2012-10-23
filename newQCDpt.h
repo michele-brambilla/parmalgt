@@ -1,7 +1,6 @@
 #ifndef _MY_QCD_H_
 #define _MY_QCD_H_
 
-#include "MyQCD.h"
 #include <algorithm>
 #include <numeric>
 #include <MyRand.h>
@@ -70,7 +69,11 @@ template <class B> struct IsZero<true, B> {
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 ///
-///  BGptSU3 represents a series  V + g U^(1) + g^2 U^(2) + ...
+///  BGptSU3<B, ORD> represents a series 
+///
+///       V + g U^(1) + g^2 U^(2) + ... + g^ORD U^(ORD),
+///
+///  where V is a background field of type B.
 ///
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Tue Jan 24 16:55:46 2012
@@ -87,6 +90,65 @@ public:
   typedef typename pt_matrix_t::const_iterator const_iterator;
   // 3x3 matrix type
   typedef typename pt_matrix_t::SU3_t SU3_t;
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Number of doubles needed to store the object.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Sun Mar 25 14:52:42 2012
+  static const int storage_size = 
+    B::storage_size + pt_matrix_t::storage_size;
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Write everything to a double vector.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Sun Mar 25 14:52:57 2012
+
+  std::vector<double>::iterator &
+    buffer(std::vector<double>::iterator & i) const {
+    bgf_.buffer(i);
+    ptU_.buffer(i);
+    return i;
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Write to file.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Fri May 25 16:36:27 2012
+
+  template <class Writer_t>
+    void write(Writer_t& o) const {
+    bgf_.write(o);
+    ptU_.write(o);
+  }
+  template <class Reader_t>
+    void read(Reader_t& i) {
+    bgf_.read(i);
+    ptU_.read(i);
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Read from buffer
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Mon Mar 26 16:44:30 2012
+
+  std::vector<double>::const_iterator &
+  unbuffer(std::vector<double>::const_iterator & i){
+    bgf_.unbuffer(i);
+    ptU_.unbuffer(i);
+    return i;
+  }
 
   explicit BGptSU3(const B& bgf) : bgf_(bgf) { }
   BGptSU3(const B& bgf, const pt_matrix_t& ptU) : 
@@ -109,6 +171,21 @@ public:
   const_iterator end() const { return ptU_.end(); }
   iterator begin() { return ptU_.begin(); }
   iterator end() { return ptU_.end(); }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Norm
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Tue Apr 24 16:09:19 2012
+
+  std::vector<double> Norm() const {
+    std::vector<double> result(ORD + 1, bgf_.Norm());
+    for (int i = 0; i < ORD; ++i)
+      result[i+1] = ptU_[i].Norm();
+    return result;
+  }
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -207,6 +284,7 @@ public:
 
   void randomize() {
     static MyRand r(1235431);
+    bgf_ = bgf::random();
     for (int i = 0; i < ORD; ++i)
       for (int j = 0; j < 3; ++j)
         for (int k = 0; k < 3; ++k)
@@ -226,6 +304,13 @@ public:
     for(int i = 0; i < ORD; i++)
       tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
     tt[0] = bgf_.Tr();
+  }
+  std::vector<Cplx> trace() const {
+    std::vector<Cplx> tt(ORD+1);
+    for(int i = 0; i < ORD; i++)
+      tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
+    tt[0] = bgf_.Tr();
+    return tt;
   }
   /// Make traceless
   void Trless(){
@@ -397,7 +482,7 @@ inline BGptSU3<B, ORD> exp(const ptt::PtMatrix<ORD>& q){
   BGptSU3<B, ORD> result(bgf::unit<B>(), q);
   // result = 1 + q 
   ptt::PtMatrix<ORD> tmp(q);
-  for ( int i = 2; i < ORD; ++i){
+  for ( int i = 2; i <= ORD; ++i){
     tmp *= q;
     tmp /= i;
     result.ptU() += tmp;
@@ -467,6 +552,9 @@ public:
   typedef BGptGluon self_t;
   typedef typename array_t::iterator iterator;
   typedef typename array_t::const_iterator const_iterator;
+
+  static const int storage_size = DIM*pt_su3_t::storage_size + BGF::storage_size;
+ 
   // access
   pt_su3_t& operator[](const int& i){ return U_[i]; }
   const pt_su3_t& operator[](const int& i) const { return U_[i]; }
@@ -475,6 +563,55 @@ public:
   const_iterator begin() const {return U_.begin();}
   iterator end(){return U_.end();}
   const_iterator end() const {return U_.end();}
+
+  // norm
+  std::vector<double> Norm() const {
+    std::vector<double> norm(ORD + 1); 
+    for (const_iterator i = begin(), e = end(); i != e; ++i){
+      for (int j = 0; j <= ORD; ++j)
+        norm[j] += i->Norm()[j] * i->Norm()[j];
+    }
+    for (int j = 0; j <= ORD; ++j)
+      norm[j] = sqrt(norm[j]);
+    return norm;
+  }
+
+
+  // buffer
+  std::vector<double>::iterator&
+  buffer (  std::vector<double>::iterator& j ) const {
+    for (const_iterator i = begin(); i != end(); ++i)
+      i->buffer(j);
+    return j;
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Write to file.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Fri May 25 16:39:34 2012
+
+  template <class Writer_t>
+  void write(Writer_t& o) const {
+    for (const_iterator i = begin(); i != end(); ++i)
+      i->write(o);
+  }
+
+  // unbuffer
+  std::vector<double>::const_iterator&
+  unbuffer (  std::vector<double>::const_iterator& j ) {
+    for (iterator i = begin(); i != end(); ++i)
+      i->unbuffer(j);
+    return j;
+  }
+
+
+  void randomize() {
+    for (iterator i = begin(); i != end(); ++i)
+      i->randomize();
+  }
 
   template <class C>
   self_t& operator*=(const C& other){
@@ -514,6 +651,21 @@ public:
   iterator end() { return v_.end(); }
   const_iterator begin() const { return v_.begin(); }
   const_iterator end() const { return v_.end(); }
+
+  // buffer
+  std::vector<double>::iterator&
+  buffer (  std::vector<double>::iterator& j ) const {
+    for (const_iterator i = begin(); i != end(); ++i)
+      i->buffer(j);
+    return j;
+  }
+  // unbuffer
+  std::vector<double>::const_iterator&
+  unbuffer (  std::vector<double>::const_iterator& j ) {
+    for (iterator i = begin(); i != end(); ++i)
+      i->unbuffer(j);
+    return j;
+  }
 
   /// Access operators
   CVector& operator[](const int& i){ return v_[i]; }
@@ -653,8 +805,8 @@ public:
       *psi_mu = *this_mu* *U_mu;
     return result;
   }
-  void uno_p_gmu(SpinColor&, int, int);
-  void uno_m_gmu(SpinColor&, int, int);
+  //void uno_p_gmu(SpinColor&, int, int);
+  //void uno_m_gmu(SpinColor&, int, int);
 
 private:
   vec_t psi_;

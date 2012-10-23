@@ -2,7 +2,7 @@
 #include "QCDpt.h"
 #else
 #include "newQCDpt.h"
-//const int ORD = 6;
+const int ORD = 6;
 typedef BGptSU3<bgf::AbelianBgf, ORD> ptSU3;
 typedef ptt::PtMatrix<ORD> ptsu3;
 typedef BGptCVector<ORD> ptCVector;

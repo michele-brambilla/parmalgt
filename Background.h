@@ -303,6 +303,69 @@ namespace bgf {
       return result;
     }
 
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Number of doubles needed to store the object.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:50:37 2012
+
+    static const int storage_size = 6;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Buffer to a vector of doubles.
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Sun Mar 25 14:50:53 2012
+
+    std::vector<double>::iterator &
+    buffer(std::vector<double>::iterator & i) const {
+      for (const_iterator n = begin(); n!= end(); ++n){
+        *i = n->re; ++i;
+        *i = n->im; ++i;
+      }
+      return i;
+    }
+  
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Write to a file
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Fri May 25 16:02:33 2012
+
+    template <class Writer_t>
+    void write(Writer_t& o) const {
+      for (const_iterator n = begin(); n!= end(); ++n)
+        o.write(*n);
+    }
+    template <class Reader_t>
+    void read(Reader_t& o) {
+      for (iterator n = begin(); n!= end(); ++n)
+        o.read(*n);
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Read from a buffer
+    ///
+    ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+    ///  \date Mon Mar 26 16:43:22 2012
+
+    std::vector<double>::const_iterator &
+    unbuffer(std::vector<double>::const_iterator & i){
+      for (iterator n = begin(); n!= end(); ++n){
+        n->re = *i; ++i;
+        n->im = *i; ++i;
+      }
+      return i;
+    }
+
   private:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -405,19 +468,22 @@ namespace bgf {
       Cp(2,2) = -eta * ( nu - 0.5) + 2.*pi/3;
       C *= Cplx(0, 1./L);
       Cp *= Cplx(0, 1./L);
-      // Values for the diagonals of V at t = 0, T
-      for (int k = 0; k < 3; ++k){
-        Vt_[0][k] = exp( C(k,k) ) * ct;
-        Vt_[T][k] = exp( Cp(k,k) ) * ct;
-      }
-      Cplx i = Cplx(0,1);
-      for (int t = 1; t < T; ++t){
-        Vt_[t][0] = exp(-2. * f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
-                        * (C(0,0) + Cp(0,0)));
-        for (int k = 1; k < 3; ++k)
-          Vt_[t][k] = exp(f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
-                          * (C(k,k) + Cp(k,k)));
-      }
+      for (int t = 0; t <= T; ++t)
+        for (int k = 0; k < 3; ++k)
+          Vt_[t][k] = exp((t * Cp(k,k) + (L - t)*C(k,k))/L);
+      //// Values for the diagonals of V at t = 0, T
+      //for (int k = 0; k < 3; ++k){
+      //  Vt_[0][k] = exp( C(k,k) ); * ct;
+      //  Vt_[T][k] = exp( Cp(k,k) ); * ct;
+      //}
+      //Cplx i = Cplx(0,1);
+      //for (int t = 1; t < T; ++t){
+      //  Vt_[t][0] = exp(-2. * f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
+      //                  * (C(0,0) + Cp(0,0)));
+      //  for (int k = 1; k < 3; ++k)
+      //    Vt_[t][k] = exp(    f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
+      //                    * (C(k,k) + Cp(k,k)));
+      //}
     };
     const three_vec_t& get(int t){ return Vt_.at(t); }
   private:

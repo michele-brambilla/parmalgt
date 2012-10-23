@@ -1,16 +1,25 @@
-AM_CPPFLAGS = -DSF -DSFBC -D__PARALLEL_OMP__ -DDSFMT_MEXP=19937 \
-  -DHAVE_TR1
+AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 
 
+ACLOCAL_AMFLAGS = -I m4
 noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
   QCDenvNODEpt.h QCDenvNODE.h Point.hpp newQCDpt.h lattice.h \
   PtTypes.hpp MyMath.h MyQCD.h MyRand.h Types.h dSFMT/dSFMT.h \
-  choices.h PtAlgo.hpp GammaStuff.h
+  choices.h PtAlgo.hpp GammaStuff.h LocalField.hpp Geometry.hpp \
+  Kernels.hpp uparam.hpp IO.hpp
 
-dist_data_DATA = damocle.dag Quench.cfg run.sh
+dist_data_DATA = input run.sh
 
-bin_PROGRAMS = Quenched
+bin_PROGRAMS = LocalQuench
 
-Quenched_SOURCES = Quenched.cc MyMath.cc MyRand.cc nspt.cc \
-  newQCDpt.cc MyQCD.cc Point.cc Background.cc
-Quenched_LDADD = -lfftw3
-Quenched_CXXFLAGS = -fopenmp
+#ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
+  newQCDpt.cc Point.cc Background.cc
+
+LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
+  newQCDpt.cc Point.cc Background.cc IO.cc
+
+.PHONY: docs
+
+docs:
+	mkdir -p ./docs/doxygen
+	doxygen Doxyfile
+

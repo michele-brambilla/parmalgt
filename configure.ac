@@ -7,6 +7,9 @@ AM_INIT_AUTOMAKE([1.11])
 AC_CONFIG_SRCDIR([Background.h])
 AC_CONFIG_HEADERS([config.h])
 
+# Prevent autoconf from trying to regenerate configure
+AM_MAINTAINER_MODE
+
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CXX
@@ -16,7 +19,7 @@ AC_LANG_CPLUSPLUS
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lfftw3':
-AC_CHECK_LIB([fftw3], [main])
+#AC_CHECK_LIB([fftw3], [main])
 # FIXME: Replace `main' with a function in `-lgsl':
 # AC_CHECK_LIB([gsl], [main])
 # FIXME: Replace `main' with a function in `-lgslcblas':
@@ -24,6 +27,11 @@ AC_CHECK_LIB([fftw3], [main])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fenv.h inttypes.h limits.h stdlib.h string.h sys/time.h unistd.h])
+
+AC_ARG_WITH([gtest-srcdir], [AS_HELP_STRING([--with-gtest-srcdir=DIR],
+ [Path to Googletest.])], [], [])
+
+AC_SUBST([gtest_srcdir],["$with_gtest_srcdir"])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -34,9 +42,9 @@ AC_TYPE_UINT32_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([bzero clock_gettime gettimeofday memset pow sqrt])
+AC_CONFIG_MACRO_DIR([m4])
 
-
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile Doxyfile])
 # AC_CONFIG_FILES([SU2/makefile
 #                  dSFMT/Makefile
 #                  makefile
@@ -44,6 +52,5 @@ AC_CONFIG_FILES([Makefile])
 #                  renorm/makefile
 #                  spectr/makefile
 #                  tools/makefile])
-# AC_CONFIG_SUBDIRS([gtest
-#                    testing])
+#AC_CONFIG_SUBDIRS([testing])
 AC_OUTPUT
