@@ -430,8 +430,8 @@ namespace bgf {
     ///
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Tue Sep 27 10:46:16 2011
-    AbelianBgfFactory(const int &T, const int& L, const int& s = 0) 
-      : Vt_(T+1){
+    AbelianBgfFactory(const int &T_in, const int& L, const int& s = 0) 
+      : Vt_(T_in+1), T(T_in){
       if (T < 0)
         throw std::exception();
       //if (!s) {
@@ -468,27 +468,40 @@ namespace bgf {
       Cp(2,2) = -eta * ( nu - 0.5) + 2.*pi/3;
       C *= Cplx(0, 1./L);
       Cp *= Cplx(0, 1./L);
-      for (int t = 0; t <= T; ++t)
-        for (int k = 0; k < 3; ++k)
-          Vt_[t][k] = exp((t * Cp(k,k) + (L - t)*C(k,k))/L);
-      //// Values for the diagonals of V at t = 0, T
-      //for (int k = 0; k < 3; ++k){
-      //  Vt_[0][k] = exp( C(k,k) ); * ct;
-      //  Vt_[T][k] = exp( Cp(k,k) ); * ct;
-      //}
-      //Cplx i = Cplx(0,1);
-      //for (int t = 1; t < T; ++t){
-      //  Vt_[t][0] = exp(-2. * f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
-      //                  * (C(0,0) + Cp(0,0)));
-      //  for (int k = 1; k < 3; ++k)
-      //    Vt_[t][k] = exp(    f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
-      //                    * (C(k,k) + Cp(k,k)));
-      //}
+      //for (int t = 0; t <= T; ++t)
+      //  for (int k = 0; k < 3; ++k)
+      //    Vt_[t][k] = exp((t * Cp(k,k) + (L - t)*C(k,k))/L);
+      // Values for the diagonals of V at t = 0, T
+      for (int k = 0; k < 3; ++k){
+        Vt_[0][k] = exp( C(k,k) ) * ct;
+        Vt_[T][k] = exp( Cp(k,k) ) * ct;
+      }
+      Cplx i = Cplx(0,1);
+      for (int t = 1; t < T; ++t){
+        Vt_[t][0] = exp(-2. * f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
+                        * (C(0,0) + Cp(0,0)));
+        for (int k = 1; k < 3; ++k)
+          Vt_[t][k] = exp(    f[s+1][L/2 - 2] * (t - 0.5*T) * i + 0.5 
+                          * (C(k,k) + Cp(k,k)));
+      }
     };
-    const three_vec_t& get(int t){ return Vt_.at(t); }
+    // spatial components, V_k
+    const three_vec_t& get(int t){ return Vt_.at(t); } 
+    // temporal, V_0, set V_0(t = T) to 0, such that one can exploit
+    // the periodicity of the lattice for e.g. LW improved gauge
+    // actions.
+    const three_vec_t& get_temporal(int t) const {
+      static three_vec_t one = {1,1,1};
+      static three_vec_t zero = {0,0,0};
+      if (t == T)
+	return zero;
+      else
+	return one;
+    }
   private:
     std::vector <three_vec_t> Vt_;
     static const double f[3][31];
+    int T;
   };
 
   /// Returns V_\mu(t)
@@ -498,9 +511,9 @@ namespace bgf {
                                     const int& L = 0,
                                     const int& s = 0){
     static AbelianBgfFactory factory(T, L, s);
-    static three_vec_t one = {1,1,1};
+
     if (!mu)
-      return AbelianBgf(one);
+      return AbelianBgf(factory.get_temporal(t));
     else
       return AbelianBgf(factory.get(t));
   };

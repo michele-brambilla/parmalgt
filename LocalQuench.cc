@@ -73,9 +73,12 @@ typedef GluonField::neighbors_t nt;
 //
 
 // ... for the gauge update/fixing ...
-typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM> GaugeUpdateKernel;
+typedef kernels::StapleSqKernel<Bgf_t, ORD, DIM> StapleKernel;
+typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PreProcKernel;
+typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM, StapleKernel, PreProcKernel> GaugeUpdateKernel;
 typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
 typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
+
 
 // ... to set the background field ...
 typedef kernels::SetBgfKernel<Bgf_t, ORD, DIM> SetBgfKernel;
@@ -175,6 +178,7 @@ std::string to_string(const T& x){
 
 
 int main(int argc, char *argv[]) {
+  StapleKernel::weights[0] = 1.;
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);

@@ -27,6 +27,173 @@ namespace kernels {
 
 namespace kernels {
   
+    
+  template <class BGF, int ORD,int DIM>
+  struct StapleSqKernel {
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
+    typedef typename array_t<double, 1>::Type weight_array_t;    
+
+    ptsu3_array_t val;
+    Direction mu;
+    static weight_array_t weights;
+
+    StapleSqKernel(const Direction& nu) : mu(nu) {  }
+
+    void operator()(GluonField& U, const Point& n) {      
+      // std::cout << val[0][0] << "\n";
+      val[0].zero();
+      // std::cout << val[0][0] << "\n";
+      for(Direction nu; nu.is_good(); ++nu)
+        if(nu != mu)
+          val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
+            + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+      // Close the staple
+      val[0] = U[n][mu] * val[0] ;
+      
+      // std::cout << val[0][0] << "\n";
+      // std::cout << "\n";
+    }
+    
+    ptSU3& reduce() { 
+      // std::cout << "Reduce:\n";
+      // std::cout << val[0][0] << "\n";
+      return val[0]; 
+    }
+
+  };
+  template <class BGF, int ORD,int DIM>
+  typename StapleSqKernel<BGF,ORD,DIM>::weight_array_t StapleSqKernel<BGF,ORD,DIM>::weights;
+
+
+
+  template <class BGF, int ORD,int DIM>
+  struct StapleReKernel {
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    typedef typename array_t<ptSU3, 2>::Type ptsu3_array_t;    
+    typedef typename array_t<double, 2>::Type weight_array_t;    
+
+    ptsu3_array_t val;
+    Direction mu;
+    static weight_array_t weights;
+    
+    StapleReKernel(const Direction& nu) : mu(nu) {  }
+
+    void operator()(GluonField& U, const Point& n) {      
+
+      // is it better to use a foreach ?
+      for( int i = 0; i < val.size(); ++i) {
+	val[i].zero();
+      }
+
+      for(Direction nu; nu.is_good(); ++nu)
+        if(nu != mu) {
+	  // 1x1 contribution
+	  val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
+	    + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+	  // 2x1 contribution
+	  val[1] += U[n + mu][mu] * U[n + mu + mu][nu] * dag(U[n][nu] * U[n+nu][mu] * U[n+nu+mu][mu])
+	    + U[n+mu][mu] * dag( U[n-nu][mu] * U[n+mu-nu][mu] * U[n+mu+mu-nu][nu] ) * U[n-nu][nu]
+	    + U[n + mu][nu] * U[n+mu+nu][nu] * dag(U[n][nu] * U[n+nu][nu] * U[n+nu+nu][mu]) 
+	    + dag( U[n-nu-nu][mu] * U[n-nu-nu+mu][nu] * U[n-nu+mu][nu] ) * U[n-nu-nu][nu] * U[n-nu][nu]
+	    + U[n+mu][nu] * dag( U[n-mu][nu] * U[n-mu+nu][mu] * U[n+nu][mu] ) * U[n-mu][mu]
+	    + dag( U[n-nu-mu][mu] * U[n-nu][mu] * U[n-nu+mu][nu] ) * U[n-nu-mu][nu] * U[n-mu][mu];
+	}
+      
+      // Close the staple
+      for( int i = 0; i < val.size(); ++i) {
+	val[i] = U[n][mu] * val[i] ;
+      }
+
+    }
+    ptSU3& reduce() { 
+      val[0] *= (1. - 8.*weights[0]);
+      for( int i = 1; i < val.size(); ++i) val[0] += weights[i]*val[i] ;
+      return val[0]; 
+    }
+
+  };
+
+  template <class BGF, int ORD,int DIM>
+  typename StapleReKernel<BGF,ORD,DIM>::weight_array_t StapleReKernel<BGF,ORD,DIM>::weights;
+
+  template <class BGF, int ORD,int DIM>
+  struct TrivialPreProcess {
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    static void pre_process (GluonField& U, const Point& n) { }
+    static void post_process (GluonField& U, const Point& n) { }
+  };
+
+  // To be used at x with x_0 = a.
+  // This modifies the background field, such that O(a) improvement
+  // holds at tree level.
+  template <class BGF, int ORD,int DIM>
+  struct LWProcessA {
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    static void pre_process (GluonField& U, const Point& n, Direction k) { 
+      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
+	StapleSqKernel<BGF, ORD, DIM>::weights[0]; 
+      static Direction t(0);
+      U[n - t][t] *= c; // ...
+      U[n - t + k + k][t] /= c;
+    }
+    static void post_process (GluonField& U, const Point& n, Direction k) { 
+      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
+	StapleSqKernel<BGF, ORD, DIM>::weights[0];
+      static Direction t(0);
+      U[n - t][t] /= c; // ...
+      U[n - t + k + k][t] *= c;
+    }
+  };
+
+  // To be used at x with x_0 = T - a.
+  // This modifies the background field, such that O(a) improvement
+  // holds at tree level.
+  template
+  <class BGF, int ORD,int DIM>
+  struct LWProcessB {
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    static void pre_process (GluonField& U, const Point& n, Direction k) { 
+      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
+	StapleSqKernel<BGF, ORD, DIM>::weights[0];
+      static Direction t(0);
+      U[n][t] *= c; // ...
+      U[n + k + k][t] /= c;
+    }
+    static void post_process (GluonField& U, const Point& n, Direction k) { 
+      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
+	StapleSqKernel<BGF, ORD, DIM>::weights[0];
+      static Direction t(0);
+      U[n - t][t] /= c; // ...
+      U[n - t + k + k][t] *= c;
+    }
+  };
+
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -39,57 +206,90 @@ namespace kernels {
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:47:43 2012
 
-  template <class BGF, int ORD,int DIM>
+  template <class BGF, int ORD,int DIM, 
+	    class StapleK_t, class Process >
   struct GaugeUpdateKernel {
+
     typedef BGptSU3<BGF, ORD> ptSU3;
     typedef ptt::PtMatrix<ORD> ptsu3;
     typedef BGptGluon<BGF, ORD, DIM> ptGluon;
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
+    typedef std::vector<Cplx>::iterator cpx_vec_it;
+    typedef std::vector<std::vector<Cplx> >::iterator outer_cvec_it;
 
-   
     // for testing, c.f. below
     static std::vector<MyRand> rands;
     //static MyRand Rand;
     Direction mu;
+#ifndef SF
     std::vector<ptsu3> M; // zero momentum contribution
+#endif
     
     double taug, stau;
 
+    // on-the-fly plaquette measure
+    std::vector<std::vector<Cplx> > plaq, pp;
+
     GaugeUpdateKernel(const Direction& nu, const double& t) :
-      mu(nu), M(omp_get_max_threads()), taug(t), stau(sqrt(t)) { }
-    
+      mu(nu), 
+#ifndef SF
+      M(omp_get_max_threads()), 
+#endif
+      taug(t), stau(sqrt(t)), 
+      plaq(omp_get_max_threads(), std::vector<Cplx>(ORD+1)), 
+      pp(omp_get_max_threads(), std::vector<Cplx>(ORD+1)) { }
+
     void operator()(GluonField& U, const Point& n) {
       ptSU3 W;
-      W.zero();
-      for(Direction nu; nu.is_good(); ++nu)
-        if(nu != mu)
-          W += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
-            + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
-      // Close the staple
-      W = U[n][mu] * W;
+
+      // We wants this static, but it fails ... field grows bigger and bigger ...
+
+      // Make a Kernel to calculate and store the plaquette(s)
+      StapleK_t st(mu); // maye make a vector of this a class member
+      Process::pre_process(U,n);
+      st(U,n);
+      Process::post_process(U,n);
+      pp[omp_get_thread_num()] = (st.val[0].trace()); // Save the 1x1 plaquette
+
+      for(cpx_vec_it k = plaq[omp_get_thread_num()].begin(), 
+	    j = pp[omp_get_thread_num()].begin(),
+	    e = plaq[omp_get_thread_num()].end(); 
+	  k != e; ++k, ++j) *k += *j;
+
+      ptsu3 tmp  = st.reduce().reH() * -taug;
+
       // DH Feb. 6, 2012
-      ptsu3 tmp  = W.reH() * -taug; // take to the algebra
+      // ptsu3 tmp  = W.reH() * -taug; // take to the algebra
       //tmp[0] -= stau*SU3rand(Rand); // add noise
       // use this to check if the multithreaded version gives 
       // identical results to the single threaded one
       tmp[0] -= stau*SU3rand(rands.at(n));
-      U[n][mu] = exp<bgf::AbelianBgf, ORD>(tmp)*U[n][mu]; // back to SU3
+      U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       //#pragma omp critical // TODO maybe one can use a reduce or so here
-      //M[omp_get_thread_num()] += get_q(U[n][mu]); 
-                                       // zero momentum contribution
+#ifndef SF
+      M[omp_get_thread_num()] += get_q(U[n][mu]); // zero momentum contribution
+#endif
     }
     
-    //void reduce(){
-    //  typename std::vector<ptsu3>::iterator j = M.begin();
-    //  if (++j != M.end())
-    //    for (; j != M.end(); ++j)
-    //      M[0] += *j;
-    //}
+    void reduce(){
+      outer_cvec_it i = plaq.begin();
+      outer_cvec_it pe = plaq.end();
+      if (++i != plaq.end())
+	for (; i != pe; ++i)
+	  plaq[0] += *i;
+#ifndef SF
+      typename std::vector<ptsu3>::iterator j = M.begin();
+      if (++j != M.end())
+        for (; j != M.end(); ++j)
+          M[0] += *j;
+#endif
+    }
+    
   };
-  template <class C, int N, int M> std::vector<MyRand> 
-    kernels::GaugeUpdateKernel<C,N,M>::rands;
+  template <class C, int N, int M, class P, class Q> std::vector<MyRand> 
+  kernels::GaugeUpdateKernel<C,N,M,P,Q>::rands;
 
 
   //////////////////////////////////////////////////////////////////////
