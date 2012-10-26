@@ -279,6 +279,7 @@ int main(int argc, char *argv[]) {
     std::vector<GUK<PrTK>::type> gut;
     for (Direction mu; mu.is_good(); ++mu)
       gut.push_back(GUK<PrTK>::type(mu, taug));
+    timings["Gauge Update"].start();
     // 1) Use 'special' GU kernels for spatial plaquettes at t=1 and
     //    T-1, re reason for this is that the rectangular plaquettes
     //    with two links on the boundary have a weight of 3/2 c_1.
@@ -296,6 +297,7 @@ int main(int argc, char *argv[]) {
     U.apply_on_timeslice(gut[0], 0);
     U.apply_on_timeslice(gut[0], 1);
     U.apply_on_timeslice(gut[0], T-1);
+    timings["Gauge Update"].stop();
 #else
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)

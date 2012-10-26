@@ -684,6 +684,104 @@ private:
     
   };
 
+#ifdef IMP_ACT
+  // Measure Gamma at t = 0
+  template <class BGF, int ORD,int DIM>
+  struct GammaLowerKernel {
+
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    
+    ptSU3 val;
+    // \tilde C = - [d_eta C]
+    // at the t = 0 side, we have dagger(e^C) and hence an insertion
+    // of \tilde C, since C itself is purely imaginary
+    BGF Ctilde;
+    explicit GammaLowerKernel (int L) : val(bgf::zero<bgf::AbelianBgf>()) { 
+      Cplx ioL(0, 1./L);
+      Ctilde[0] = -ioL;
+      Ctilde[1] = ioL/2.;
+      Ctilde[2] = ioL/2.;
+    }
+    void operator()(GluonField& U, const Point& n){
+      Direction t(0);
+      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      for (Direction k(1); k.is_good(); ++k){
+        // the 1x1 contribution
+        tmp += (Ctilde * dag(U[n][k]) * U[n][t] * 
+                U[n + t][k] * dag( U[n + k][t] )) * (5./3);
+        // the 2x1 contribution w\ two links @ the boundary
+        // we actually have two contributions to the derivative form
+        // each boundary link. However, we do not care because the
+        // insertion of \tilde C commutes with the links. Hence, we
+        // just multiply the weight with two, 
+        //  w = 2 * (3/2) * c_1 = 3*(-1/12) = -1/4
+        tmp += (Ctilde * dag(U[n][k]) * dag(U[n-k][k]) 
+                * U[n-k][t] * U[n + t - k][k]
+                * U[n + t][k] * dag( U[n + k][t] )) * (-1./4);
+        // the 1x2 contribution, with usual weight c_1
+        tmp += (Ctilde * dag(U[n][k]) * U[n][t] 
+                * U[n+t][t] * U[n+t+t][k] 
+                * dag(U[n + k + t][t]) * dag(U[n + k][t])) * (-1./12);
+      }
+#pragma omp critical
+      val += tmp;
+    }
+  };
+
+  // Measure Gamma at t = T - a
+  template <class BGF, int ORD,int DIM>
+  struct GammaUpperKernel {
+
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    
+    ptSU3 val;
+    // here, we need [d_eta C'], which is equal to -[d_eta C], hence
+    // we can use Ctilde as above
+    BGF Ctilde;
+    explicit GammaUpperKernel (int L) : val(bgf::zero<bgf::AbelianBgf>()) { 
+      Cplx ioL(0, 1./L);
+      Ctilde[0] = -ioL;
+      Ctilde[1] = ioL/2.;
+      Ctilde[2] = ioL/2.;
+    }
+    void operator()(GluonField& U, const Point& n){
+      Direction t(0);
+      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      for (Direction k(1); k.is_good(); ++k){
+        // the 1x1 contribution
+        tmp += (Ctilde * U[n + t][k] * dag(U[n + k][t])
+                * dag(U[n][k]) * U[n][t]) * (5./3);
+        // the 2x1 contribution w\ two links @ the boundary
+        // we actually have two contributions to the derivative form
+        // each boundary link. However, we do not care because the
+        // insertion of \tilde C commutes with the links. Hence, we
+        // just multiply the weight with two, 
+        //  w = 2 * (3/2) * c_1 = 3*(-1/12) = -1/4
+        tmp += (Ctilde * U[n + t][k] * U[n + t + k][k]
+                * dag(U[n + k + k][t]) * dag(U[n + k][k])
+                * dag(U[n][k]) * U[n][t]) * (1./4);
+        // the 1x2 contribution, with usual weight c_1
+        tmp += (Ctilde * U[n + t][k] * dag(U[n + k][t])
+                * dag(U[n + k - t][t]) * dag(U[n-t][k]) 
+                * U[n - t][t] * U[n][t]) * (-1./12);
+      }
+#pragma omp critical
+      val += tmp;
+    }
+  };
+
+
+#else
   // Measure Gamma at t = 0
   template <class BGF, int ORD,int DIM>
   struct GammaLowerKernel {
@@ -717,6 +815,7 @@ private:
     }
     
   };
+
   // Measure Gamma at t = T - a
   template <class BGF, int ORD,int DIM>
   struct GammaUpperKernel {
@@ -747,8 +846,8 @@ private:
 #pragma omp critical
       val += tmp;
     }
-    
-};
+  };
+#endif
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
