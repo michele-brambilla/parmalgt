@@ -68,7 +68,8 @@ namespace kernels {
 
   };
   template <class BGF, int ORD,int DIM>
-  typename StapleSqKernel<BGF,ORD,DIM>::weight_array_t StapleSqKernel<BGF,ORD,DIM>::weights;
+  typename StapleSqKernel<BGF,ORD,DIM>::weight_array_t 
+  StapleSqKernel<BGF,ORD,DIM>::weights;
 
 
 
@@ -90,6 +91,27 @@ namespace kernels {
     
     StapleReKernel(const Direction& nu) : mu(nu) {  }
 
+    ptSU3 two_by_one(GluonField& U, const Point& n, const Direction& nu){
+      return U[n + mu][mu] * U[n + mu + mu][nu] * 
+             dag(U[n][nu] * U[n+nu][mu] * U[n+nu+mu][mu])
+           + U[n+mu][mu] * dag( U[n-nu][mu] * 
+             U[n+mu-nu][mu] * U[n+mu+mu-nu][nu] ) * U[n-nu][nu]
+           + U[n+mu][nu] * dag( U[n-mu][nu] * 
+             U[n-mu+nu][mu] * U[n+nu][mu] ) * U[n-mu][mu]
+           + dag( U[n-nu-mu][mu] * U[n-nu][mu] * U[n-nu+mu][nu] ) * 
+             U[n-nu-mu][nu] * U[n-mu][mu];
+    }
+    ptSU3 one_by_two(GluonField& U, const Point& n, const Direction& nu){
+      return U[n + mu][nu] * U[n+mu+nu][nu] * 
+             dag(U[n][nu] * U[n+nu][nu] * U[n+nu+nu][mu]) 
+           + dag( U[n-nu-nu][mu] * U[n-nu-nu+mu][nu] * U[n-nu+mu][nu] ) * 
+             U[n-nu-nu][nu] * U[n-nu][nu];
+    }
+    ptSU3 one_by_one(GluonField& U, const Point& n, const Direction& nu){
+       return U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
+	    + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+    }
+    
     void operator()(GluonField& U, const Point& n) {      
 
       // is it better to use a foreach ?
@@ -101,15 +123,9 @@ namespace kernels {
       for(Direction nu; nu.is_good(); ++nu)
         if(nu != mu) {
 	  // 1x1 contribution
-	  val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
-	    + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+	  val[0] += one_by_one(U, n, nu);
 	  // 2x1 contribution
-	  val[1] += U[n + mu][mu] * U[n + mu + mu][nu] * dag(U[n][nu] * U[n+nu][mu] * U[n+nu+mu][mu])
-	    + U[n+mu][mu] * dag( U[n-nu][mu] * U[n+mu-nu][mu] * U[n+mu+mu-nu][nu] ) * U[n-nu][nu]
-	    + U[n + mu][nu] * U[n+mu+nu][nu] * dag(U[n][nu] * U[n+nu][nu] * U[n+nu+nu][mu]) 
-	    + dag( U[n-nu-nu][mu] * U[n-nu-nu+mu][nu] * U[n-nu+mu][nu] ) * U[n-nu-nu][nu] * U[n-nu][nu]
-	    + U[n+mu][nu] * dag( U[n-mu][nu] * U[n-mu+nu][mu] * U[n+nu][mu] ) * U[n-mu][mu]
-	    + dag( U[n-nu-mu][mu] * U[n-nu][mu] * U[n-nu+mu][nu] ) * U[n-nu-mu][nu] * U[n-mu][mu];
+	  val[1] += two_by_one(U, n, nu) + one_by_two(U, n, nu);
 	}
       
       // Close the staple
