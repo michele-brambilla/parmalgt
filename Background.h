@@ -493,7 +493,7 @@ namespace bgf {
     const three_vec_t& get_temporal(int t) const {
       static three_vec_t one = {1,1,1};
       static three_vec_t zero = {0,0,0};
-      if (t == T)
+      if (t >= T)
 	return zero;
       else
 	return one;
