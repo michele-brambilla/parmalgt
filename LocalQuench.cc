@@ -73,9 +73,25 @@ typedef GluonField::neighbors_t nt;
 //
 
 // ... for the gauge update/fixing ...
-typedef kernels::StapleSqKernel<Bgf_t, ORD, DIM> StapleKernel;
-typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PreProcKernel;
-typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM, StapleKernel, PreProcKernel> GaugeUpdateKernel;
+
+#ifdef IMP_ACT // do we want an improved aciton?
+// 1x1, and 2x1 staples
+typedef kernels::StapleReKernel<Bgf_t, ORD, DIM> StK;
+// we need these to implement the imrovement at the boundary
+// NOTE however, that they have to be applied at t=1 and T=t-1
+typedef kernels::LWProcessA<Bgf_t, ORD, DIM> PrAK;
+typedef kernels::LWProcessB<Bgf_t, ORD, DIM> PrBK;
+typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PrTK;
+// workaround for template typedef
+template <class PR> struct GUK {
+  typedef  kernels::GaugeUpdateKernel <Bgf_t, ORD, DIM, StK, PR> type;
+};
+#else
+typedef kernels::StapleSqKernel<Bgf_t, ORD, DIM> StK;
+typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PrK;
+typedef kernels::GaugeUpdateKernel <Bgf_t, ORD, DIM, StK, PrK> 
+        GaugeUpdateKernel;
+#endif
 typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
 typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
 
@@ -112,32 +128,11 @@ void measure(GluonField &U, const std::string& rep_str){
   ptSU3 tmp = Gu.val + Gl.val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Gp" + rep_str + ".bindat");
   
-  // Nore of the GF
+  // Norm of the Gauge Field
   MeasureNormKernel m;
   U.apply_everywhere(m);
   m.reduce();
   io::write_file(m.norm[0], "Norm" + rep_str + ".bindat");
-      
-
-//  UdagUKernel udu;
-//  for (int t = 0; t < T; ++t)
-//    U.apply_on_timeslice(udu, t);
-//  io::write_file<ptSU3, ORD>(udu.val, udu.val.bgf().Tr() , "UdagU.bindat");
-//
-//  TemporalPlaqKernel pt;
-//  U.apply_on_timeslice(pt, 0);
-//  io::write_file<ptSU3, ORD>(pt.val/L/L/L, 
-//			     pt.val.bgf().Tr()/L/L/L , "p_temproal_0.bindat");
-//
-//  TemporalPlaqKernel ptt;
-//  U.apply_on_timeslice(ptt, 2);
-//  io::write_file<ptSU3, ORD>(ptt.val/L/L/L, 
-//			     ptt.val.bgf().Tr()/L/L/L , "p_temproal_2.bindat");
-//
-//  PlaqKernel p;
-//  for (int t = 0; t < T; ++t)
-//    U.apply_on_timeslice(p, t);
-//  io::write_file<ptSU3, ORD>(p.val/L/L/L/T, p.val.bgf().Tr()/L/L/L/T , "S.bindat");
 
 }
 
@@ -178,7 +173,13 @@ std::string to_string(const T& x){
 
 
 int main(int argc, char *argv[]) {
-  StapleKernel::weights[0] = 1.;
+#ifdef IMP_ACT
+  //TODO: CROSS CHECK THESE
+  StK::weights[0] = 5./3;
+  StK::weights[1] = -1./12;
+#else
+  StK::weights[0] = 1.;
+#endif
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);
@@ -220,9 +221,20 @@ int main(int argc, char *argv[]) {
   //
   // random number generators
   srand(atoi(p["seed"].c_str()));
+#ifdef IMP_ACT
+  GUK<PrAK>::type::rands.resize(L*L*L*(T+1));
+  GUK<PrBK>::type::rands.resize(L*L*L*(T+1));
+  GUK<PrTK>::type::rands.resize(L*L*L*(T+1));
+  for (int i = 0; i < L*L*L*(T+1); ++i){
+    GUK<PrAK>::type::rands[i].init(rand());
+    GUK<PrBK>::type::rands[i].init(rand());
+    GUK<PrTK>::type::rands[i].init(rand());
+  }
+#else
   GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
   for (int i = 0; i < L*L*L*(T+1); ++i)
     GaugeUpdateKernel::rands[i].init(rand());
+#endif
   ////////////////////////////////////////////////////////////////////
   //
   // lattice setup
@@ -260,6 +272,36 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////////
     //
     //  gauge update
+#ifdef IMP_ACT
+    // make vector of 'tirvially' pre-processed gauge update kernels
+    std::vector<GUK<PrTK>::type> gut;
+    for (Direction mu; mu.is_good(); ++mu)
+      gut.push_back(GUK<PrTK>::type(mu, taug));
+    // 1) temporal links at t=0 and t = T -1
+    //    - modify c_0 -> c_0 + 2c_1
+    StK::weights[0] += 2*StK::weights[1];
+    //    - apply 'tirvially' pre-processed gauge update kernel
+    U.apply_on_timeslice(gut[0], 0);
+    U.apply_on_timeslice(gut[0], T-1);
+    //    - set c_0 back to proper value
+    StK::weights[0] = 5./3;
+    // 2) Use 'special' GU kernels for spatial plaquettes at t=1 and T-1
+    for (Direction k(1); k.is_good(); ++k){
+      GUK<PrAK>::type gua (k, taug);
+      GUK<PrBK>::type gub (k, taug);
+      // There's a bug here
+      // comment the next four lines if you don't want the program to crash!
+      U.apply_on_timeslice(gua, 1); // <- CRASH HERE
+      U.apply_on_timeslice(gub, 1);
+      U.apply_on_timeslice(gua, T-1);
+      U.apply_on_timeslice(gub, T-1);
+    }
+    // 3) Business as usual for t = 2,...,T-2, all directions and t = 1, mu = 0
+    for (int t = 2; t <= T-2; ++t)
+      for (Direction mu; mu.is_good(); ++mu)
+        U.apply_on_timeslice(gut[mu], t);
+    U.apply_on_timeslice(gut[0], 1);
+#else
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
       gu.push_back(GaugeUpdateKernel(mu, taug));
@@ -270,9 +312,8 @@ int main(int argc, char *argv[]) {
     for (int t = 1; t < T; ++t)
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu[mu], t);
-
     timings["Gauge Update"].stop();
-
+#endif
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
