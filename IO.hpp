@@ -176,8 +176,15 @@ namespace io {
       for (uparam::Param::const_iterator i = param.begin(); i!=
              param.end(); ++i){
         if (i->first == "md5" || i->first == "read" 
-            || i->first == "write" || i->first == "seed")
+            || i->first == "write" || i->first == "NRUN")
           continue;
+        if ( i->first == "seed" && i->second == p[i->first]){
+          std::cout << "Change your seed! " << std::endl;
+          std::cout << "   in .info file : " << i->second 
+                    << ", in current simulation " 
+                    << p[i->first] << std::endl;
+          throw IoError();
+	}
         if (i->second != p[i->first]){
           std::cout << "Parameter mismatch: "<< i->first << std::endl;
           std::cout << "   in .info file : " << i->second 
