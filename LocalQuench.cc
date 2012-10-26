@@ -273,32 +273,29 @@ int main(int argc, char *argv[]) {
     //
     //  gauge update
 #ifdef IMP_ACT
+    // In the case of an improved gauge action, we proceed with the
+    // update according to choice "B" in Aoki et al., hep-lat/9808007
     // make vector of 'tirvially' pre-processed gauge update kernels
     std::vector<GUK<PrTK>::type> gut;
     for (Direction mu; mu.is_good(); ++mu)
       gut.push_back(GUK<PrTK>::type(mu, taug));
-    // 1) temporal links at t=0 and t = T -1
-    //    - modify c_0 -> c_0 + 2c_1
-    StK::weights[0] += 2*StK::weights[1];
-    //    - apply 'tirvially' pre-processed gauge update kernel
-    U.apply_on_timeslice(gut[0], 0);
-    U.apply_on_timeslice(gut[0], T-1);
-    //    - set c_0 back to proper value
-    StK::weights[0] = 5./3;
-    // 2) Use 'special' GU kernels for spatial plaquettes at t=1 and T-1
+    // 1) Use 'special' GU kernels for spatial plaquettes at t=1 and
+    //    T-1, re reason for this is that the rectangular plaquettes
+    //    with two links on the boundary have a weight of 3/2 c_1.
     for (Direction k(1); k.is_good(); ++k){
       GUK<PrAK>::type gua (k, taug);
       GUK<PrBK>::type gub (k, taug);
-      // There's a bug here
-      // comment the next four lines if you don't want the program to crash!
-      U.apply_on_timeslice(gua, 1); // <- CRASH HERE
+      U.apply_on_timeslice(gua, 1);
       U.apply_on_timeslice(gub, T-1);
     }
-    // 3) Business as usual for t = 2,...,T-2, all directions and t = 1, mu = 0
+    // 2) Business as usual for t = 2,...,T-2, all directions and 
+    //    t = 0,1 and T-1 for mu = 0
     for (int t = 2; t <= T-2; ++t)
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gut[mu], t);
+    U.apply_on_timeslice(gut[0], 0);
     U.apply_on_timeslice(gut[0], 1);
+    U.apply_on_timeslice(gut[0], T-1);
 #else
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
