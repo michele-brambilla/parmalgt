@@ -179,17 +179,16 @@ namespace kernels {
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
-    static const double c = 3./2;
 
     static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
       static Direction t(0);
-      U[n - t + k + k][t] *= c;
-      U[n - t - k][t] *= c;
+      U[n - t + k + k][t] *= 1.5;
+      U[n - t - k][t] *= 1.5;
     }
     static void post_process (GluonField& U, const Point& n, const Direction& k) { 
       static Direction t(0);
-      U[n - t + k + k][t] /= c;
-      U[n - t - k][t] /= c;
+      U[n - t + k + k][t] /= 1.5;
+      U[n - t - k][t] /= 1.5;
     }
   };
 
@@ -205,17 +204,16 @@ namespace kernels {
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
-    static const double c = 3./2;
     
     static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
       static Direction t(0);
-      U[n - k][t] *= 3./2; // ...
-      U[n + k + k][t] *= 3./2;
+      U[n - k][t] *= 1.5; // ...
+      U[n + k + k][t] *= 1.5;
     }
     static void post_process (GluonField& U, const Point& n, const Direction& k) { 
       static Direction t(0);
-      U[n - k][t] /= 3./2; // ...
-      U[n + k + k][t] /= 3./2;
+      U[n - k][t] /= 1.5; // ...
+      U[n + k + k][t] /= 1.5;
     }
   };
 
