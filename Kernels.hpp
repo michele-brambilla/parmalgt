@@ -94,6 +94,7 @@ namespace kernels {
 
       // is it better to use a foreach ?
       for( int i = 0; i < val.size(); ++i) {
+	val[i].bgf() *= 0;
 	val[i].zero();
       }
 
@@ -118,7 +119,7 @@ namespace kernels {
 
     }
     ptSU3& reduce() { 
-      val[0] *= (1. - 8.*weights[0]);
+      val[0] *= weights[0];
       for( int i = 1; i < val.size(); ++i) val[0] += weights[i]*val[i] ;
       return val[0]; 
     }
@@ -134,9 +135,10 @@ namespace kernels {
     typedef ptt::PtMatrix<ORD> ptsu3;
     typedef BGptGluon<BGF, ORD, DIM> ptGluon;
     typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
-    static void pre_process (GluonField& U, const Point& n) { }
-    static void post_process (GluonField& U, const Point& n) { }
+    static void pre_process (GluonField& , const Point&, const Direction&) { }
+    static void post_process (GluonField& , const Point&, const Direction& ) { }
   };
 
   // To be used at x with x_0 = a.
@@ -150,16 +152,14 @@ namespace kernels {
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
-    static void pre_process (GluonField& U, const Point& n, Direction k) { 
-      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
-	StapleSqKernel<BGF, ORD, DIM>::weights[0]; 
+    static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
+      const double c = 9./10;
       static Direction t(0);
       U[n - t][t] *= c; // ...
       U[n - t + k + k][t] /= c;
     }
-    static void post_process (GluonField& U, const Point& n, Direction k) { 
-      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
-	StapleSqKernel<BGF, ORD, DIM>::weights[0];
+    static void post_process (GluonField& U, const Point& n, const Direction& k) { 
+      const double c = 9./10;
       static Direction t(0);
       U[n - t][t] /= c; // ...
       U[n - t + k + k][t] *= c;
@@ -178,19 +178,17 @@ namespace kernels {
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
-    static void pre_process (GluonField& U, const Point& n, Direction k) { 
-      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
-	StapleSqKernel<BGF, ORD, DIM>::weights[0];
+    static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
+      const double c = 9./10;
       static Direction t(0);
       U[n][t] *= c; // ...
       U[n + k + k][t] /= c;
     }
-    static void post_process (GluonField& U, const Point& n, Direction k) { 
-      double c = 1 + 2.*StapleSqKernel<BGF, ORD, DIM>::weights[1]/
-	StapleSqKernel<BGF, ORD, DIM>::weights[0];
+    static void post_process (GluonField& U, const Point& n, const Direction& k) { 
+      const double c = 9./10;
       static Direction t(0);
-      U[n - t][t] /= c; // ...
-      U[n - t + k + k][t] *= c;
+      U[n][t] /= c; // ...
+      U[n + k + k][t] *= c;
     }
   };
 
@@ -248,9 +246,9 @@ namespace kernels {
 
       // Make a Kernel to calculate and store the plaquette(s)
       StapleK_t st(mu); // maye make a vector of this a class member
-      Process::pre_process(U,n);
+      //Process::pre_process(U,n,mu);
       st(U,n);
-      Process::post_process(U,n);
+      //Process::post_process(U,n,mu);
       pp[omp_get_thread_num()] = (st.val[0].trace()); // Save the 1x1 plaquette
 
       for(cpx_vec_it k = plaq[omp_get_thread_num()].begin(), 
