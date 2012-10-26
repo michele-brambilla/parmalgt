@@ -55,14 +55,9 @@ namespace kernels {
             + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
       // Close the staple
       val[0] = U[n][mu] * val[0] ;
-      
-      // std::cout << val[0][0] << "\n";
-      // std::cout << "\n";
     }
     
     ptSU3& reduce() { 
-      // std::cout << "Reduce:\n";
-      // std::cout << val[0][0] << "\n";
       return val[0]; 
     }
 
@@ -71,7 +66,23 @@ namespace kernels {
   typename StapleSqKernel<BGF,ORD,DIM>::weight_array_t 
   StapleSqKernel<BGF,ORD,DIM>::weights;
 
-
+  
+  ////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////
+  ///
+  /// Kernel to measure the staples for e.g. LW or Iwasaki aciton.
+  ///
+  /// Be careful when you use this to perform a gauge update. As was
+  /// pointed out by Aoki et al. in hep-lat/9808007, generally the
+  /// e.o.m do not hold if one naively uses the rectangular
+  /// plaquettes. For a perturbative calculation, the weights of the
+  /// rectangular loops at the boundary should be adjusted according
+  /// to choice 'B' in the paper, c.f. eqns. (2.17) and (2.18).
+  ///
+  /// This is implemented in the pre- and post-processing kernels
+  /// LWProcessA and LWProcessB.
+  ///
+  /// Commenty by D.H., Oct. 26, 2012
 
   template <class BGF, int ORD,int DIM>
   struct StapleReKernel {
@@ -159,7 +170,7 @@ namespace kernels {
 
   // To be used at x with x_0 = a.
   // This modifies the background field, such that O(a) improvement
-  // holds at tree level.
+  // and the equations of motion hold at tree level.
   template <class BGF, int ORD,int DIM>
   struct LWProcessA {
     typedef BGptSU3<BGF, ORD> ptSU3;
@@ -168,23 +179,23 @@ namespace kernels {
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
+    static const double c = 3./2;
+
     static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
-      const double c = 9./10;
       static Direction t(0);
-      U[n - t][t] *= c; // ...
-      U[n - t + k + k][t] /= c;
+      U[n - t + k + k][t] *= c;
+      U[n - t - k][t] *= c;
     }
     static void post_process (GluonField& U, const Point& n, const Direction& k) { 
-      const double c = 9./10;
       static Direction t(0);
-      U[n - t][t] /= c; // ...
-      U[n - t + k + k][t] *= c;
+      U[n - t + k + k][t] /= c;
+      U[n - t - k][t] /= c;
     }
   };
 
   // To be used at x with x_0 = T - a.
   // This modifies the background field, such that O(a) improvement
-  // holds at tree level.
+  // and the equations of motion hold at tree level.
   template
   <class BGF, int ORD,int DIM>
   struct LWProcessB {
@@ -194,17 +205,17 @@ namespace kernels {
     typedef pt::Point<DIM> Point;
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
+    static const double c = 3./2;
+    
     static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
-      const double c = 9./10;
       static Direction t(0);
-      U[n][t] *= c; // ...
-      U[n + k + k][t] /= c;
+      U[n - k][t] *= 3./2; // ...
+      U[n + k + k][t] *= 3./2;
     }
     static void post_process (GluonField& U, const Point& n, const Direction& k) { 
-      const double c = 9./10;
       static Direction t(0);
-      U[n][t] /= c; // ...
-      U[n + k + k][t] *= c;
+      U[n - k][t] /= 3./2; // ...
+      U[n + k + k][t] /= 3./2;
     }
   };
 
@@ -262,9 +273,9 @@ namespace kernels {
 
       // Make a Kernel to calculate and store the plaquette(s)
       StapleK_t st(mu); // maye make a vector of this a class member
-      //Process::pre_process(U,n,mu);
+      Process::pre_process(U,n,mu);
       st(U,n);
-      //Process::post_process(U,n,mu);
+      Process::post_process(U,n,mu);
       pp[omp_get_thread_num()] = (st.val[0].trace()); // Save the 1x1 plaquette
 
       for(cpx_vec_it k = plaq[omp_get_thread_num()].begin(), 
