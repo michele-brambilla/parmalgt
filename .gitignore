@@ -38,3 +38,14 @@ config.h
 result/*
 *.nor
 *.trU
+aclocal.m4
+autom4te.cache
+*.in
+config.sub
+depcomp
+install-sh
+ltmain.sh
+m4
+*~
+config.guess
+Doxyfile

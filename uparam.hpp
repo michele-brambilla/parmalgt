@@ -8,7 +8,8 @@
 namespace io {
   template <typename T>
   inline void pretty_print(const std::string& s, const T& d, 
-                           const std::string& unit = "");
+                           const std::string& unit = "",
+			   std::ostream& os = std::cout);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -52,9 +53,9 @@ namespace uparam {
     std::string& operator[](const std::string& s){
       return params[s];
     }
-    void print() const {
+    void print(std::ostream& os = std::cout) const {
       for (const_iterator i = begin(); i != end(); ++i)
-        io::pretty_print(i->first, i->second);
+        io::pretty_print(i->first, i->second, "", os);
     }
   private:
     map_t params;

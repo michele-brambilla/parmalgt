@@ -176,8 +176,19 @@ namespace io {
       for (uparam::Param::const_iterator i = param.begin(); i!=
              param.end(); ++i){
         if (i->first == "md5" || i->first == "read" 
-            || i->first == "write" || i->first == "seed")
+            || i->first == "write" || i->first == "NRUN")
           continue;
+        if ( i->first == "seed" ) {
+	  if( i->second == p[i->first] ) {
+	    std::cout << "Change your seed! " << std::endl;
+	    std::cout << "   in .info file : " << i->second 
+		      << ", in current simulation " 
+		      << p[i->first] << std::endl;
+	    throw IoError();
+	  }
+	  else 
+	    continue;
+	}
         if (i->second != p[i->first]){
           std::cout << "Parameter mismatch: "<< i->first << std::endl;
           std::cout << "   in .info file : " << i->second 
@@ -223,16 +234,35 @@ namespace io {
       to_bin_file(of, U[i].Tr());
     of.close();
   }
+<<<<<<< HEAD
+=======
+  template <class CONT>
+  inline void write_file(const CONT& c, const std::string& fname){
+    std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+    for (typename CONT::const_iterator i = c.begin(), j = c.end(); i != j; ++i)
+      of.write(reinterpret_cast<const char*>(&(*i)), sizeof(double));
+    of.close();
+  }
+>>>>>>> SF
   
   ////////////////////////////////////////////////////////////
   // formated cout for the timings/parameters
   template <typename T>
   inline void pretty_print(const std::string& s, const T& d,
+<<<<<<< HEAD
                            const std::string& unit = ""){
     std::cout.width(25); 
     std::cout << s; 
     std::cout.width(0);
     std::cout << ": " << d << unit << std::endl;
+=======
+                           const std::string& unit = "",
+			   std::ostream& os = std::cout){
+    os.width(25); 
+    os << s; 
+    os.width(0);
+    os << ": " << d << unit << std::endl;
+>>>>>>> SF
   };
 
 

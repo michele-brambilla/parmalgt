@@ -17,6 +17,11 @@
 #endif
 #include <signal.h>
 
+#ifdef USE_MPI
+#include <mpi.h>
+#include <sstream>
+#endif
+
 bool soft_kill = false;
 int got_signal = 100;
 void kill_handler(int s){
@@ -45,7 +50,7 @@ int NRUN;
 // frequency of measurements
 int MEAS_FREQ;
 // testing gauge fixing option -- DO NOT TOUCH!
-const int GF_MODE = 3;
+const int GF_MODE = 1;
 // integration step and gauge fixing parameter
 double taug;
 double alpha;
@@ -68,9 +73,27 @@ typedef GluonField::neighbors_t nt;
 //
 
 // ... for the gauge update/fixing ...
-typedef kernels::GaugeUpdateKernel<Bgf_t, ORD, DIM> GaugeUpdateKernel;
+#ifdef IMP_ACT // do we want an improved aciton?
+// 1x1, and 2x1 staples
+typedef kernels::StapleReKernel<Bgf_t, ORD, DIM> StK;
+// we need these to implement the imrovement at the boundary
+// NOTE however, that they have to be applied at t=1 and T=t-1
+typedef kernels::LWProcessA<Bgf_t, ORD, DIM> PrAK;
+typedef kernels::LWProcessB<Bgf_t, ORD, DIM> PrBK;
+typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PrTK;
+// workaround for template typedef
+template <class PR> struct GUK {
+  typedef  kernels::GaugeUpdateKernel <Bgf_t, ORD, DIM, StK, PR> type;
+};
+#else
+typedef kernels::StapleSqKernel<Bgf_t, ORD, DIM> StK;
+typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PrK;
+typedef kernels::GaugeUpdateKernel <Bgf_t, ORD, DIM, StK, PrK> 
+        GaugeUpdateKernel;
+#endif
 typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
 typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
+
 
 // ... to set the background field ...
 typedef kernels::SetBgfKernel<Bgf_t, ORD, DIM> SetBgfKernel;
@@ -80,68 +103,36 @@ typedef kernels::PlaqLowerKernel<Bgf_t, ORD, DIM> PlaqLowerKernel;
 typedef kernels::PlaqUpperKernel<Bgf_t, ORD, DIM> PlaqUpperKernel;
 typedef kernels::PlaqSpatialKernel<Bgf_t, ORD, DIM> PlaqSpatialKernel;
 typedef kernels::MeasureNormKernel<Bgf_t, ORD, DIM> MeasureNormKernel;
+typedef kernels::GammaUpperKernel<Bgf_t, ORD, DIM> GammaUpperKernel;
+typedef kernels::GammaLowerKernel<Bgf_t, ORD, DIM> GammaLowerKernel;
+typedef kernels::UdagUKernel<Bgf_t, ORD, DIM> UdagUKernel;
+typedef kernels::TemporalPlaqKernel<Bgf_t, ORD, DIM> TemporalPlaqKernel;
+typedef kernels::PlaqKernel<Bgf_t, ORD, DIM> PlaqKernel;
+typedef kernels::GFMeasKernel<Bgf_t, ORD, DIM> GFMeasKernel;
+typedef kernels::GFApplyKernel<Bgf_t, ORD, DIM> GFApplyKernel;
 
 // ... and for the checkpointing.
 typedef kernels::FileWriterKernel<Bgf_t, ORD, DIM> FileWriterKernel;
 typedef kernels::FileReaderKernel<Bgf_t, ORD, DIM> FileReaderKernel;
 
 // Our measurement
-void measure(GluonField &U){
-  std::vector<double> nor(ORD*2*3 + 2);
-  SU3 dC; // derivative of C w.r.t. eta
-  dC(0,0) = Cplx(0, -2./L);
-  dC(1,1) = Cplx(0, 1./L);
-  dC(2,2) = Cplx(0, 1./L);
-  SU3 d_dC; // derivative of C w.r.t. eta and nu
-  d_dC(0,0) = Cplx(0, 0);
-  d_dC(1,1) = Cplx(0, 2./L);
-  d_dC(2,2) = Cplx(0, -2./L);
+void measure(GluonField &U, const std::string& rep_str){
 
-  // shorthand for V3
-  int V3 = L*L*L;
+  GammaUpperKernel Gu(L);
+  GammaLowerKernel Gl(L);
+  U.apply_on_timeslice(Gu, T-1);
+  U.apply_on_timeslice(Gl, 0);
+  
+  // Evaluate Gamma'a
+  ptSU3 tmp = Gu.val + Gl.val;
+  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Gp" + rep_str + ".bindat");
+  
+  // Norm of the Gauge Field
+  MeasureNormKernel m;
+  U.apply_everywhere(m);
+  m.reduce();
+  io::write_file(m.norm[0], "Norm" + rep_str + ".bindat");
 
-  PlaqLowerKernel Pl; // Plaquettes U_{0,k} at t = 0
-  PlaqUpperKernel Pu; // Plaquettes U_{0,k} at t = T - 1
-  U.apply_on_slice_with_bnd(Pl, Direction(0), 0);
-  U.apply_on_slice_with_bnd(Pu, Direction(0), T-1);
-  //meas_on_timeslice(U, 0, Pl);
-  //meas_on_timeslice(U, T - 1, Pu);
-  PlaqUpperKernel Pm; // Plaquettes U_{0,k} at t = 1, ..., T - 2
-  for (int t = 1; t < T - 1; ++t)
-    U.apply_on_slice_with_bnd(Pm, Direction(0), t);
-    //meas_on_timeslice(U, t, Pm);
-
-  PlaqSpatialKernel Ps; // Spatial plaq. at t = 1, ..., T-1
-  for (int t = 1; t < T; ++t)
-    U.apply_on_slice_with_bnd(Ps, Direction(0), t);
-    //meas_on_timeslice(U, t, Ps);
-
-  // Evaluate Gamma'
-  ptSU3 tmp = Pl.val + Pu.val;
-  std::for_each(tmp.begin(), tmp.end(), pta::mul(dC));
-  Cplx tree = tmp.bgf().ApplyFromLeft(dC).Tr();
-  io::write_file<ptSU3, ORD>(tmp, tree, "Gp.bindat");
-
-  // Evaluate v
-  tmp = Pl.val + Pu.val;
-  std::for_each(tmp.begin(), tmp.end(), pta::mul(d_dC));
-  tree = tmp.bgf().ApplyFromLeft(d_dC).Tr();
-  io::write_file<ptSU3, ORD>(tmp, tree, "v.bindat");
-
-  // Evaluate bd_plaq (nomenclature as in MILC code)
-  tmp = (Pl.val + Pu.val) / 6 / V3;
-  tree = tmp.bgf().Tr();
-  io::write_file<ptSU3, ORD>(tmp, tree, "bd_plaq.bindat");
-
-  // Evaluate st_plaq
-  tmp = (Pl.val + Pu.val + Pm.val) / 3 / V3 / T;
-  tree = tmp.bgf().Tr();
-  io::write_file<ptSU3, ORD>(tmp, tree, "st_plaq.bindat");
-
-  // Eval. ss_plaq
-  tmp = Ps.val / 3 / V3 / (T-1);
-  tree = tmp.bgf().Tr();
-  io::write_file<ptSU3, ORD>(tmp, tree, "ss_plaq.bindat");
 }
 
 // timing
@@ -181,15 +172,32 @@ std::string to_string(const T& x){
 
 
 int main(int argc, char *argv[]) {
+#ifdef IMP_ACT
+  //TODO: CROSS CHECK THESE
+  StK::weights[0] = 5./3;
+  StK::weights[1] = -1./12;
+#else
+  StK::weights[0] = 1.;
+#endif
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);
+  int rank;
+#ifdef USE_MPI
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  std::string rank_str = "." + to_string(rank);
+#else
+  std::string rank_str = "";
+#endif
   ////////////////////////////////////////////////////////////////////
   // read the parameters
   uparam::Param p;
-  p.read("input");
-  std::cout << "INPUT PARAMETERS:\n";
-  p.print();
+  p.read("input" + rank_str);
+  std::ofstream of(("run.info"+rank_str).c_str(), std::ios::app);
+  of << "INPUT PARAMETERS:\n";
+  p.print(of);
+  of.close();
   L = atof(p["L"].c_str());
   s = atoi(p["s"].c_str());
   alpha = atof(p["alpha"].c_str());
@@ -212,9 +220,20 @@ int main(int argc, char *argv[]) {
   //
   // random number generators
   srand(atoi(p["seed"].c_str()));
+#ifdef IMP_ACT
+  GUK<PrAK>::type::rands.resize(L*L*L*(T+1));
+  GUK<PrBK>::type::rands.resize(L*L*L*(T+1));
+  GUK<PrTK>::type::rands.resize(L*L*L*(T+1));
+  for (int i = 0; i < L*L*L*(T+1); ++i){
+    GUK<PrAK>::type::rands[i].init(rand());
+    GUK<PrBK>::type::rands[i].init(rand());
+    GUK<PrTK>::type::rands[i].init(rand());
+  }
+#else
   GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
   for (int i = 0; i < L*L*L*(T+1); ++i)
     GaugeUpdateKernel::rands[i].init(rand());
+#endif
   ////////////////////////////////////////////////////////////////////
   //
   // lattice setup
@@ -238,26 +257,48 @@ int main(int argc, char *argv[]) {
     }
   else {
     FileReaderKernel fr(p);
-    U.apply_everywhere(fr);
+    U.apply_everywhere_serial(fr);
   }
   ////////////////////////////////////////////////////////////////////
   //
   // start the simulation
   for (int i_ = 1; i_ <= NRUN && !soft_kill; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
-      std::cout << i_;
-      MeasureNormKernel m(ORD + 1);
-      U.apply_everywhere(m);
-      for (int i = 0 ; i < m.norm.size(); ++i)
-        std::cout << " " << m.norm[i];
-      std::cout << "\n";
       timings["measurements"].start();
-      measure(U);
+      measure(U, rank_str);
       timings["measurements"].stop();
     }
     ////////////////////////////////////////////////////////
     //
     //  gauge update
+
+#ifdef IMP_ACT
+    // In the case of an improved gauge action, we proceed with the
+    // update according to choice "B" in Aoki et al., hep-lat/9808007
+    // make vector of 'tirvially' pre-processed gauge update kernels
+    std::vector<GUK<PrTK>::type> gut;
+    for (Direction mu; mu.is_good(); ++mu)
+      gut.push_back(GUK<PrTK>::type(mu, taug));
+    timings["Gauge Update"].start();
+    // 1) Use 'special' GU kernels for spatial plaquettes at t=1 and
+    //    T-1, re reason for this is that the rectangular plaquettes
+    //    with two links on the boundary have a weight of 3/2 c_1.
+    for (Direction k(1); k.is_good(); ++k){
+      GUK<PrAK>::type gua (k, taug);
+      GUK<PrBK>::type gub (k, taug);
+      U.apply_on_timeslice(gua, 1);
+      U.apply_on_timeslice(gub, T-1);
+    }
+    // 2) Business as usual for t = 2,...,T-2, all directions and 
+    //    t = 0,1 and T-1 for mu = 0
+    for (int t = 2; t <= T-2; ++t)
+      for (Direction mu; mu.is_good(); ++mu)
+        U.apply_on_timeslice(gut[mu], t);
+    U.apply_on_timeslice(gut[0], 0);
+    U.apply_on_timeslice(gut[0], 1);
+    U.apply_on_timeslice(gut[0], T-1);
+    timings["Gauge Update"].stop();
+#else
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
       gu.push_back(GaugeUpdateKernel(mu, taug));
@@ -268,46 +309,38 @@ int main(int argc, char *argv[]) {
     for (int t = 1; t < T; ++t)
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu[mu], t);
-
     timings["Gauge Update"].stop();
-    ////////////////////////////////////////////////////////
-    //
-    //  zero mode subtraction
-    std::vector<ZeroModeSubtractionKernel> z;
-    double vinv = 1./L/L/L/L; // inverse volume
-    for (Direction mu; mu.is_good(); ++mu){
-      gu[mu].reduce();
-      z.push_back(ZeroModeSubtractionKernel(mu, gu[mu].M[0]*vinv));
-    }
-    // for x_0 = 0 update the temporal direction only (as above)
-    timings["Zero Mode Subtraction"].start();
-    U.apply_on_timeslice(z[0], 0);
-    // for x_0 != 0 update all directions (as above)
-    for (int t = 1; t < T; ++t)
-      for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_timeslice(z[mu], t);
-    timings["Zero Mode Subtraction"].stop();
-
+#endif
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
     GaugeFixingKernel gf(alpha);
     timings["Gauge Fixing"].start();
+
+    GFMeasKernel gfm;
+    U.apply_on_timeslice(gfm, 0);
+    GFApplyKernel gfa(gfm.val, alpha, L);
+    U.apply_on_timeslice(gfa, 0);
+
     for (int t = 1; t < T; ++t)
       U.apply_on_timeslice(gf, t);
     timings["Gauge Fixing"].stop();
+
   } // end main for loop
   // write the gauge configuration
   if ( p["write"] != "none"){
     FileWriterKernel fw(p);
-    U.apply_everywhere(fw);
+    U.apply_everywhere_serial(fw);
   }
   // write out timings
-  std::cout << "Timings:\n";
+  of.open(("run.info"+rank_str).c_str(), std::ios::app);
+  of << "Timings:\n";
   for (tmap::const_iterator i = timings.begin(); i != timings.end();
        ++i){
-    io::pretty_print(i->first, i->second.t, "s");
+    io::pretty_print(i->first, i->second.t, "s", of);
   }
-  io::pretty_print("TOTAL", Timer::t_tot, "s");
+  io::pretty_print("TOTAL", Timer::t_tot, "s", of);
+  of.close();
+
   return 0;
 }

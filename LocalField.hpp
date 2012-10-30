@@ -85,6 +85,10 @@ namespace fields {
       for (typename rep_t::iterator U = rep.begin(); U != rep.end(); ++U)
         U->randomize();
     }
+
+    int extent(const int& i) const {
+      return g[i];
+    }
     
     data_t& operator[](const pt::Point<DIM> &n){
       return n.template deref<data_t>(rep);
@@ -156,6 +160,15 @@ namespace fields {
     }
     template <class M>
     void apply_everywhere(M& f){
+      for (int t = 0; t < g[0]; ++t)
+        apply_on_timeslice(f, t);
+    }
+    template <class M>
+    void apply_everywhere_serial(M& f){
+      // doesn't work because bind1st makes a copy
+      // we don't want that because of local data members
+      // such as the fstreams in the disk reader/writer
+      //std::for_each(g.begin(), g.end(), std::bind1st(f, *this));
       for(pt::Point<DIM> n = g.begin(), e = g.end(); n != e; ++n)
         f(*this, n);
     }
