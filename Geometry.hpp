@@ -103,6 +103,9 @@ namespace geometry {
     pt::Point<DIM> mk_point(const raw_pt_t &n) const {
       return pt::Point<DIM>(mk_label(n), neighbors.begin());
     }
+    raw_pt_t coords(const pt::Point<DIM>) const {
+      
+    }
     pt::Point<DIM> begin() const {
       return pt::Point<DIM>(0, neighbors.begin());
     }
@@ -142,6 +145,15 @@ namespace geometry {
         vol *= extents[i];
       }
       return label;
+    }
+    /// Get the coordinates from a given label
+    raw_pt_t reverse_label(const int& n) const {
+      int vol = 1;
+      raw_pt_t x;
+      for (int i = 0; i < DIM; ++i){
+        x[i] = (n / vol) % extents[i];
+        vol *= extents[i];
+      }
     }
     /// helper function to recursively fill neighbors
     void fill_neighbors (const int& n = DIM - 1, raw_pt_t x = raw_pt_t()){
