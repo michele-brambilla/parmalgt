@@ -30,7 +30,6 @@ TEST(Geometry, Neighbors){
 };
 
 TEST(Geometry, ManualVsDirectionAccess){
-
   geometry::Geometry<DIM>::extents_t e;
   std::fill(e.begin(), e.end(), SIZE);
   geometry::Geometry<DIM> g(e);
@@ -61,4 +60,22 @@ TEST(Geometry, Periodicity){
      for (; n[2] < SIZE; ++n[2], x += pt::Direction<DIM>(2))
        for (; n[3] < SIZE; ++n[3], x += pt::Direction<DIM>(3)) ;
   ASSERT_EQ(x, x_0);
+}
+
+/// Check if the reverse label lookup works
+TEST(Geometry, ReverseLabelFn){
+  geometry::Geometry<DIM>::extents_t e;
+  std::fill(e.begin(), e.end(), SIZE);
+  // make a funny looking lattice
+  e[0] += 1;
+  e[2] += 2;
+  e[3] += 5;
+  geometry::Geometry<DIM> g(e);
+  geometry::Geometry<DIM>::raw_pt_t n, m;
+  std::fill(n.begin(), n.end(), 0);
+  for (; n[0] < SIZE; ++n[0])
+    for (; n[1] < SIZE; ++n[1])
+      for (; n[2] < SIZE; ++n[2])
+        for (; n[3] < SIZE; ++n[3])
+          ASSERT_EQ(n, g.coords(g.mk_point(n)));
 }

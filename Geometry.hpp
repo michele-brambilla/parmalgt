@@ -154,6 +154,7 @@ namespace geometry {
         x[i] = (n / vol) % extents[i];
         vol *= extents[i];
       }
+      return x;
     }
     /// helper function to recursively fill neighbors
     void fill_neighbors (const int& n = DIM - 1, raw_pt_t x = raw_pt_t()){
