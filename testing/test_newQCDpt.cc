@@ -218,7 +218,7 @@ TEST(BGptSU3Test, inverse){
   ptSU3 unit = Z*W;
   ASSERT_TRUE( unit.bgf() == bgf::unit<bgf::AbelianBgf>() );
   for (int i = 0; i < MYORD; ++i)
-    ASSERT_TRUE( SU3Cmp( unit[i], SU3() )(1e-13) ) << i;
+    ASSERT_TRUE( SU3Cmp( unit[i], SU3() )(1e-12) ) << i;
 }
 
 TEST(BGptSU3Test, expUnitMore){
@@ -263,6 +263,7 @@ TEST(BGptSU3Test, logThrows){
 TEST(BGptSU3Test, log){
   ptSU3 A(bgf::unit<bgf::AbelianBgf>());
   A.randomize();
+  A.bgf().set_to_one();
   // this assumes A has unit background field
   ptsu3 B = log(A);
   // one loop
@@ -280,9 +281,9 @@ TEST(BGptSU3Test, log){
 TEST(BGptSU3Test, logexp){
   ptt::PtMatrix<MYORD> A = ptt::get_random_pt_matrix<MYORD>(), B;
   B = log(exp<bgf::AbelianBgf,MYORD>(A));
-
   ptSU3 C(bgf::unit<bgf::AbelianBgf>()), D;
   C.randomize();
+  C.bgf().set_to_one();
   D = exp<bgf::AbelianBgf,MYORD>(log(C));
   // higher orders
   // a quick and dirty estimate gives that the round-off error should

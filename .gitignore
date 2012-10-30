@@ -49,3 +49,6 @@ m4
 *~
 config.guess
 Doxyfile
+COPYING
+configure
+missing

@@ -103,7 +103,7 @@ namespace geometry {
     pt::Point<DIM> mk_point(const raw_pt_t &n) const {
       return pt::Point<DIM>(mk_label(n), neighbors.begin());
     }
-    raw_pt_t coords(const pt::Point<DIM> p&) const {
+    raw_pt_t coords(const pt::Point<DIM>& p) const {
       return reverse_label(p);
     }
     pt::Point<DIM> begin() const {

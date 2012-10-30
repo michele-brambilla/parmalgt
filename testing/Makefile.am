@@ -6,8 +6,8 @@ AM_CPPFLAGS = -I${GTEST_DIR}/include -I${GTEST_DIR} -I..\
 # gtest stuff
 
 lib_LTLIBRARIES = lib/libgtest.la lib/libgtest_main.la
-lib_libgtest_la_SOURCES = ${GTEST_SRC}/src/gtest-all.cc
-lib_libgtest_main_la_SOURCES = ${GTEST_SRC}/src/gtest_main.cc
+lib_libgtest_la_SOURCES = ${GTEST_DIR}/src/gtest-all.cc
+lib_libgtest_main_la_SOURCES = ${GTEST_DIR}/src/gtest_main.cc
 lib_libgtest_main_la_LIBADD = lib/libgtest.la
 
 # test programs we want to build
@@ -19,7 +19,7 @@ bin_PROGRAMS = test_Geometry test_Bgfield test_Helper test_SU3 test_newQCDpt \
 	test_PtTypes #test_Point
 
 test_Geometry_SOURCES = test_Geometry.cc
-test_Geometry_LDADD = lib/libgtest_main.la
+test_Geometry_LDADD = lib/libgtest_main.la -lpthread
 
 
 test_Bgfield_SOURCES = test_Bgfield.cc ../MyRand.cc \
@@ -38,13 +38,5 @@ test_newQCDpt_LDADD = lib/libgtest.la -lpthread
 
 test_PtTypes_SOURCES = test_PtTypes.cc ../MyMath.cc ../MyRand.cc
 test_PtTypes_LDADD = lib/libgtest_main.la -lpthread
-
-<<<<<<< HEAD
-#test_Point_SOURCES = test_Point.cc
-#test_Point_LDADD = lib/libgtest_main.la
-=======
-test_Point_SOURCES = test_Point.cc
-test_Point_LDADD = lib/libgtest_main.la -lpthread
->>>>>>> SF
 
 TESTS = ${bin_PROGRAMS}
