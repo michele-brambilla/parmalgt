@@ -31,7 +31,7 @@ AC_CHECK_HEADERS([fenv.h inttypes.h limits.h stdlib.h string.h sys/time.h unistd
 AC_ARG_WITH([gtest-srcdir], [AS_HELP_STRING([--with-gtest-srcdir=DIR],
  [Path to Googletest.])], [], [])
 
-AC_SUBST([gtest_srcdir],["$with_gtest_srcdir"])
+AC_SUBST([GTEST_DIR],["$with_gtest_srcdir"])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -44,7 +44,7 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([bzero clock_gettime gettimeofday memset pow sqrt])
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_CONFIG_FILES([Makefile Doxyfile])
+AC_CONFIG_FILES([Makefile Doxyfile testing/Makefile])
 # AC_CONFIG_FILES([SU2/makefile
 #                  dSFMT/Makefile
 #                  makefile

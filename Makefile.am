@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 
+AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 -I.
 
 ACLOCAL_AMFLAGS = -I m4
 noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
@@ -16,6 +16,8 @@ bin_PROGRAMS = LocalQuench
 
 LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc
+
+SUBDIRS = testing
 
 .PHONY: docs
 
