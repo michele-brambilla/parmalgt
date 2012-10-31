@@ -56,7 +56,7 @@ namespace fields {
   public:
     typedef F data_t;
     typedef std::vector< data_t > rep_t;
-
+    typedef pt::Point<DIM> Point;
     typedef typename array_t<std::pair<int,int>, DIM>::Type neighbors_t;
     LocalField (const typename
                      geometry::Geometry<DIM>::extents_t& e,
@@ -136,27 +136,51 @@ namespace fields {
 
     void apply_on_timeslice(M& f, const int& t){
       // parallelize with a simple checker-board scheme ...
-      int size = g.bnd_vol(0), sizeh = size/2, i = 0;
+      typedef typename geometry::CheckerBoard<DIM>::slice slice;
+      typedef typename geometry::CheckerBoard<DIM>::bin bin;
+#ifdef IMP_ACT
+      const int CHECKER_BOARD_SIZE = 2;
+#else
+      const int CHECKER_BOARD_SIZE = 1;
+#endif
+      static geometry::CheckerBoard<DIM> cb(g, CHECKER_BOARD_SIZE);
+      for (typename slice::const_iterator s = cb[t].begin();
+           s != cb[t].end(); ++s){
+        // here, we have to do a nasty workaround
+        // parallel for does not like lists, which is what I used in
+        // the CheckerBoard class. This is e.g. great for the test
+        // case of the CB class and foremost for the case that we have
+        // some overlap at the edges (i.e. if CHECKER_BOARD_SIZE % L
+        // != 0). Here, however a vector would be nice. Let's see...
+        // FIXME: This is nasty!!
+        std::vector<pt::Point<DIM> > v(s->begin(), s->end());
+        int N = v.size();
+#pragma omp parallel for
+        for (int i = 0; i < N; ++i)
+          f(*this, v[i]);
+   }
+
+      //int size = g.bnd_vol(0), sizeh = size/2, i = 0;
       // use this to remember the points
-      static std::vector<std::vector<pt::Point<DIM> > > pts(g[0] + 1);
-      if (pts[t].size() == 0){
-        geometry::SliceIterator<DIM, 0> iter =
-          g.template mk_slice_iterator<0>(pt::Direction<DIM>(0), t, 0);
-
-        pts[t].resize(size, g.begin());
-        while (iter.is_good()){
-          pts[t][i] = iter.yield();
-          pts[t][sizeh + i] = iter.yield();
-          ++i;
-        }
-      }
-
-#pragma omp parallel for default(none) shared(f, t, size, pts, sizeh)
-      for (int i = 0; i < sizeh; ++i)
-        f(*this, pts[t][i]);
-#pragma omp parallel for default(none) shared(f, t, size, pts, sizeh)
-      for (int i = sizeh; i < size; ++i)
-        f(*this, pts[t][i]);
+//      static std::vector<std::vector<pt::Point<DIM> > > pts(g[0] + 1);
+//      if (pts[t].size() == 0){
+//        geometry::SliceIterator<DIM, 0> iter =
+//          g.template mk_slice_iterator<0>(pt::Direction<DIM>(0), t, 0);
+//
+//        pts[t].resize(size, g.begin());
+//        while (iter.is_good()){
+//          pts[t][i] = iter.yield();
+//          pts[t][sizeh + i] = iter.yield();
+//          ++i;
+//        }
+//      }
+//
+//#pragma omp parallel for default(none) shared(f, t, size, pts, sizeh)
+//      for (int i = 0; i < sizeh; ++i)
+//        f(*this, pts[t][i]);
+//#pragma omp parallel for default(none) shared(f, t, size, pts, sizeh)
+//      for (int i = sizeh; i < size; ++i)
+//        f(*this, pts[t][i]);
     }
     template <class M>
     void apply_everywhere(M& f){

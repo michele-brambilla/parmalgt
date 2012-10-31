@@ -45,7 +45,7 @@ TEST(Geometry, ManualVsDirectionAccess){
 };
 
 
-TEST(Geometry, CheckerBoard){
+TEST(Geometry, BinFunction){
   geometry::Geometry<DIM>::extents_t e;
   std::fill(e.begin(), e.end(), SIZE);
   e[1] += 10;
@@ -71,7 +71,48 @@ TEST(Geometry, CheckerBoard){
           }
         }
 }
-
+TEST(Geometry, CheckerBoard){
+  geometry::Geometry<DIM>::extents_t e;
+  std::fill(e.begin(), e.end(), SIZE);
+  e[1] += 10;
+  e[2] += 5;
+  e[3] += 12;
+  geometry::Geometry<DIM> g(e);
+  typedef geometry::CheckerBoard<DIM> cb_t;
+  cb_t cb[3] = {cb_t(g, 1), cb_t(g, 2), cb_t(g, 3)};
+  typedef geometry::CheckerBoard<DIM>::slice slice;
+  typedef geometry::CheckerBoard<DIM>::bin bin;
+  geometry::Geometry<DIM>::raw_pt_t n;
+  std::fill(n.begin(), n.end(), 0);
+  for (n[0] = 0; n[0] < e[0]; ++n[0])
+    for (n[1] = 0; n[1] < e[1]; ++n[1])
+      for (n[2] = 0; n[2] < e[2]; ++n[2])
+        for (n[3] = 0; n[3] < e[3]; ++n[3]){
+          pt::Point<DIM> x = g.mk_point(n);
+          for (int k = 0; k < 3; ++k){
+            bool found = false;
+            // note: use nca instead of operator[] below for
+            // non-constant access which we will use to erase the found
+            // elements to assure we don't have duplicates or somehting
+            // the like (which would be very strange!)
+            for (slice::iterator i = cb[k].nca(n[0]).begin();
+                 i != cb[k].nca(n[0]).end() && !found; ++i){
+              bin::iterator f = std::find(i->begin(), i->end(), x);
+              if (f != i->end()){
+                found = true;
+                i->erase(f);
+              }
+            }
+            ASSERT_EQ(found, true);
+          }
+        }
+  for (int k = 0; k < 3; ++k)
+    for (int t = 0; t < g[0]; ++t)
+      for (slice::const_iterator i = cb[k][t].begin();
+           i != cb[k][t].end(); ++i)
+        ASSERT_TRUE(i->empty());
+  
+}
 TEST(Geometry, Periodicity){
   geometry::Geometry<DIM>::extents_t e;
   std::fill(e.begin(), e.end(), SIZE);

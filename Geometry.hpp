@@ -5,6 +5,7 @@
 #include <Types.h>
 #include <Point.hpp>
 #include <math.h>
+#include <list>
 
 namespace geometry {
 
@@ -77,7 +78,7 @@ namespace geometry {
     template <int N>
     SliceIterator<DIM, N> mk_slice_iterator (const pt::Direction<DIM> mu,
                                              const int& xi,
-                                             const int& x_start = 0){
+                                             const int& x_start = 0) const {
       raw_pt_t n;
       std::fill(n.begin(), n.end(), x_start);
       n[mu] = xi;
@@ -141,7 +142,7 @@ namespace geometry {
       // A) is p in a black (0) or a white (1) block?
       int A = 0;
       for (int i = 0; i < DIM; ++i)
-        A += int(floor(n[i]/N)) % 2;
+        A = (A + (int(floor(n[i]/N)) % 2)) % 2;
       // B) which position within the block does p have?
       int vol = 1, B = 0;
       for (int i = 0; i < DIM; ++i, vol *= N)
@@ -217,7 +218,6 @@ namespace geometry {
     }
   };
 
-  
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -286,6 +286,37 @@ namespace geometry {
     typename array_t<int, DIM>::Type counters;
     bool good_flag;
     int step;
+  };
+
+  template <int D>
+  class CheckerBoard {
+  public:
+    typedef pt::Point<D> Point; // single point
+    typedef std::list<Point> bin; // one bin
+    typedef std::vector<bin> slice; // bins in a time slice
+    typedef std::vector<slice> lattice; // all time slices
+    CheckerBoard (const Geometry<D>& g, const int& N) :
+      lat(g[0] + 1, slice(g.n_bins(N))){
+      for (int t = 0; t <= g[0]; ++t){
+        geometry::SliceIterator<D, 0> iter =
+          g.template mk_slice_iterator<0>(pt::Direction<D>(0), t, 0);
+        while (iter.is_good()){
+          Point p = iter.yield();
+          lat[t].at(g.bin(p, N)).push_back(p);
+        }
+      }
+    }
+    const slice& operator[](const int& i) const {
+      return lat[i];
+    }
+    // as operator[] just for non-const access. this is for testing
+    // purposes only and should not be used 'in the wild' use the
+    // constant operator above instead.
+    slice& nca(const int& i){
+      return lat[i];
+    }
+  private:
+    lattice lat;
   };
 }
 
