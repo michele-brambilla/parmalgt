@@ -62,8 +62,11 @@ TEST(Geometry, CheckerBoard){
           for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
             ASSERT_NE(g.bin(x,1), g.bin(x + mu, 1));
             ASSERT_EQ(g.bin(x,1), g.bin(x + mu + mu, 1));
-            ASSERT_NE(g.bin(x,2), g.bin(x + mu + mu, 2));
-            ASSERT_NE(g.bin(x,2), g.bin(x + mu + mu + mu, 2));
+            for (pt::Direction<DIM> nu; nu.is_good(); ++nu){
+              ASSERT_NE(g.bin(x,2), g.bin(x + mu + nu, 2));
+              for (pt::Direction<DIM> rho; rho.is_good(); ++rho)
+                ASSERT_NE(g.bin(x,2), g.bin(x + mu + nu + rho, 2));
+            }
             ASSERT_EQ(g.bin(x,2), g.bin(x + mu + mu + mu + mu, 2));
           }
         }
