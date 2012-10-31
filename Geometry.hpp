@@ -4,6 +4,7 @@
 #include <MyMath.h>
 #include <Types.h>
 #include <Point.hpp>
+#include <math.h>
 
 namespace geometry {
 
@@ -116,6 +117,43 @@ namespace geometry {
       return bnd_vols[dim];
     }
     int vol() const { return V; }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
+    ///  Checker board scheme bin numbers.
+    ///
+    ///  We implement a checker board scheme with cube size N. It
+    ///  consists of two steps.
+    ///  1) Divde the lattice in hypercubes of size N^D. Label these
+    ///     alternating (0) and (1).
+    ///  2) Within the cubes, number your elements consistently, and
+    ///     combine this witht he result from 1) into the final bin
+    ///     number. Thus, a point in a cube labeled with (0) and with
+    ///     number 8 within this hypercube will end up in bin (0)->8.
+    ///  Thus, in total we have 2*N^D bins. In the case N=1 this
+    ///  reduces to the usual checkerboard scheme.
+    ///
+    ///  added by DH, 31st Oct. 2012
+    
+    int bin(const pt::Point<DIM>& p, const int& N) const {
+      raw_pt_t n = coords(p);
+      // A) is p in a black (0) or a white (1) block?
+      int A = 0;
+      for (int i = 0; i < DIM; ++i)
+        A += int(floor(n[i]/N)) % 2;
+      // B) which position within the block does p have?
+      int vol = 1, B = 0;
+      for (int i = 0; i < DIM; ++i, vol *= N)
+        B += vol*(n[i] % N);
+      return A*pow(N, DIM) + B;
+    }
+
+    /// get the total number of bins with a checkerboard scheme of
+    /// cube size N
+    int n_bins(const int& N) const{
+      return 2*pow(N, DIM);
+    }
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
@@ -179,6 +217,7 @@ namespace geometry {
     }
   };
 
+  
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///

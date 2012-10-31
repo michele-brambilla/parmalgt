@@ -45,7 +45,29 @@ TEST(Geometry, ManualVsDirectionAccess){
 };
 
 
-
+TEST(Geometry, CheckerBoard){
+  geometry::Geometry<DIM>::extents_t e;
+  std::fill(e.begin(), e.end(), SIZE);
+  e[1] += 10;
+  e[2] += 5;
+  e[3] += 12;
+  geometry::Geometry<DIM> g(e);
+  geometry::Geometry<DIM>::raw_pt_t n;
+  std::fill(n.begin(), n.end(), 0);
+  pt::Point<DIM> x = g.mk_point(n);
+  for (; n[0] < SIZE; ++n[0], x += pt::Direction<DIM>(0))
+    for (; n[1] < SIZE; ++n[1], x += pt::Direction<DIM>(1))
+      for (; n[2] < SIZE; ++n[2], x += pt::Direction<DIM>(2))
+        for (; n[3] < SIZE; ++n[3], x += pt::Direction<DIM>(3)){
+          for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
+            ASSERT_NE(g.bin(x,1), g.bin(x + mu, 1));
+            ASSERT_EQ(g.bin(x,1), g.bin(x + mu + mu, 1));
+            ASSERT_NE(g.bin(x,2), g.bin(x + mu + mu, 2));
+            ASSERT_NE(g.bin(x,2), g.bin(x + mu + mu + mu, 2));
+            ASSERT_EQ(g.bin(x,2), g.bin(x + mu + mu + mu + mu, 2));
+          }
+        }
+}
 
 TEST(Geometry, Periodicity){
   geometry::Geometry<DIM>::extents_t e;
