@@ -81,6 +81,12 @@ namespace fields {
       }
     }
     
+    // copy constructor
+    LocalField ( const LocalField< F , DIM >& other ) :
+      g( other.g ), rep( other.rep ), n_th(other.n_th), pid(other.pid),
+      neighbors(other.neighbors) { }
+
+
     void randomize() {
       for (typename rep_t::iterator U = rep.begin(); U != rep.end(); ++U)
         U->randomize();
@@ -98,7 +104,7 @@ namespace fields {
     }
     
     pt::Point<DIM> mk_point(const typename geometry::Geometry<DIM>::raw_pt_t& n){
-      g.mk_point(n);
+      return g.mk_point(n);
     }
     geometry::SliceIterator<DIM, 0> mk_slice_iterator 
     (const pt::Direction<DIM> mu, const int& xi){
@@ -216,6 +222,61 @@ namespace fields {
                              rec_buffer[3].first);
     }
 #endif
+
+    // Added: MB on Fri 2, 2012
+    pt::Point<DIM> begin() { return g.begin(); }
+    pt::Point<DIM> end()   { return g.end(); }
+
+    LocalField<F, DIM>& operator=(LocalField<F, DIM>& other) {
+      std::copy( other.rep.begin(), other.rep.end(), rep.begin() );
+      return *this;
+    }
+
+    LocalField<F, DIM>& operator+=(LocalField<F, DIM>& other) {
+      for (typename rep_t::iterator U = rep.begin(), V = other.rep.begin(); U != rep.end(); ++U, ++V)
+	(*U) += (*V);
+      return *this;
+    }
+    LocalField<F, DIM>& operator-=(LocalField<F, DIM>& other) {
+      for (typename rep_t::iterator U = rep.begin(), V = other.rep.begin(); U != rep.end(); ++U, ++V)
+	(*U) -= (*V);
+      return *this;
+    }
+
+    LocalField<F, DIM> operator+(const LocalField<F, DIM>& other) {
+      LocalField<F, DIM> result(*this);
+      return result+=other;
+    }
+    LocalField<F, DIM> operator-(const LocalField<F, DIM>& other) {
+      LocalField<F, DIM> result(*this);
+      return result-=other;
+    }
+    Cplx operator*(LocalField<F, DIM>& other) {
+      Cplx result;
+
+      typename rep_t::iterator first = rep.begin();
+      typename rep_t::iterator last = rep.end();
+      typename rep_t::iterator first2 = other.rep.begin();
+      while (first != last) {
+	result += (*first++)*(*first2++);
+      }
+      return result;
+    }
+
+    template<class C>
+    LocalField<F, DIM>& operator*=(C& other) {
+      for (typename rep_t::iterator U = rep.begin(); U != rep.end(); ++U)
+	(*U) *= other;
+      return *this;
+    }
+    template<class C>
+    LocalField<F, DIM> operator*(const C& other) {
+      LocalField<F, DIM> result(*this);
+      return (result *= other);
+    }
+    
+
+
   private:
     geometry::Geometry<DIM> g;
     rep_t rep;

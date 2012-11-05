@@ -56,16 +56,23 @@ double taug;
 double alpha;
 
 // some shorthands
+// typedef bgf::ScalarBgf Bgf_t; // background field
 typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
 typedef ptt::PtMatrix<ORD> ptsu3; // algebra variables
-typedef BGptGluon<bgf::AbelianBgf, ORD, DIM> ptGluon; // gluon
+typedef BGptGluon<Bgf_t, ORD, DIM> ptGluon; // gluon
 typedef pt::Point<DIM> Point;
 typedef pt::Direction<DIM> Direction;
 
 // shorthand for gluon field
 typedef fields::LocalField<ptGluon, DIM> GluonField;
 typedef GluonField::neighbors_t nt;
+
+// shorthand for fermion field
+// shorthand for fermion field
+typedef SpinColor<4> Fermion;
+typedef fields::LocalField< Fermion , DIM> ScalarFermionField;
+typedef std::vector<ScalarFermionField> FermionField;
 
 
 //
