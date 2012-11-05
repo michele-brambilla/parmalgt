@@ -279,6 +279,18 @@ namespace ptt {
   }
 
   template <int N>
+  inline PtMatrix<N> operator*(const PtMatrix<N>& A, const bgf::ScalarBgf& bg){
+#ifdef HAVE_CXX0X
+    PtMatrix<N> result(A);
+    for (auto& e : result) { e = bg.ApplyFromRight(e); }
+#else
+    PtMatrix<N> result;
+    for (int i = 0; i < N; ++i)
+      result[i] = bg.ApplyFromRight(A[i]);
+#endif
+    return result;
+  }
+  template <int N>
   inline PtMatrix<N> operator*(const PtMatrix<N>& A, const PtMatrix<N>& B){
     PtMatrix<N> result;
     //for (int r = 0; r < ORD; ++r){
@@ -299,6 +311,18 @@ namespace ptt {
 
   template <int N>
   inline PtMatrix<N> operator*(const bgf::AbelianBgf& bg, const PtMatrix<N>& A){
+#ifdef HAVE_CXX0X
+    PtMatrix<N> result(A);
+    for (auto& e : result) { e = bg.ApplyFromLeft(e); }
+#else
+    PtMatrix<N> result;
+    for (int i = 0; i < N; ++i)
+      result[i] = bg.ApplyFromLeft(A[i]);
+#endif
+    return result;
+  }
+  template <int N>
+  inline PtMatrix<N> operator*(const bgf::ScalarBgf& bg, const PtMatrix<N>& A){
 #ifdef HAVE_CXX0X
     PtMatrix<N> result(A);
     for (auto& e : result) { e = bg.ApplyFromLeft(e); }

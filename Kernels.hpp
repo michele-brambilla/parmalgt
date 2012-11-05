@@ -4,6 +4,8 @@
 #include <LocalField.hpp>
 #include <PtTypes.hpp>
 #include <newQCDpt.h>
+#include "newMyQCD.h"
+
 #include <IO.hpp>
 #include <uparam.hpp>
 #include <Types.h>
@@ -15,6 +17,62 @@ namespace kernels {
   int omp_get_thread_num() { return 0; }
 }
 #endif
+
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///
+///  Gamma Matrices.
+///
+///  Indices and values of all the Dirac gamma and their products
+///
+///  \author Michele Brambilla <mib.mic@gmail.com>
+///  \date Fri Nov 02 12:06:15 2012
+///  
+
+namespace gamma{
+
+  int gmuind[15][4]  = {
+    {3,2,1,0}, //gm1
+    {3,2,1,0},
+    {2,3,0,1},
+    {2,3,0,1},
+    {0,1,2,3}, //gm5
+    {3,2,1,0}, //gm51
+    {3,2,1,0}, 
+    {2,3,0,1},
+    {2,3,0,1},
+    {0,1,2,3}, // gm12
+    {1,0,3,2},
+    {1,0,3,2},
+    {1,0,3,2},
+    {1,0,3,2},
+    {0,1,2,3},
+  };
+
+  Cplx gmuval[15][4] = {
+    {Cplx(0,-1),Cplx(0,-1),Cplx(0, 1),Cplx(0, 1)}, //gm1
+    {       -1 ,        1 ,        1 ,       -1 },
+    {Cplx(0,-1),Cplx(0, 1),Cplx(0, 1),Cplx(0,-1)},
+    {        1 ,        1 ,        1 ,        1 },
+    {        1 ,        1 ,       -1 ,       -1 }, // gm5
+    {Cplx(0, 1),Cplx(0, 1),Cplx(0, 1),Cplx(0, 1)}, //gm51
+    {        1 ,       -1 ,        1 ,       -1 },
+    {Cplx(0,1),Cplx(0, -1),Cplx(0, 1),Cplx(0,-1)},
+    {       -1 ,       -1 ,        1 ,        1 },
+    {Cplx(0,1),Cplx(0, -1),Cplx(0, 1),Cplx(0,-1)}, //gm12
+    {       -1 ,        1 ,       -1 ,        1 },
+    {Cplx(0,-1),Cplx(0,-1),Cplx(0, 1),Cplx(0, 1)},
+    {Cplx(0, 1),Cplx(0, 1),Cplx(0, 1),Cplx(0, 1)},
+    {       -1 ,        1 ,        1 ,       -1 },
+    {Cplx(0,-1),Cplx(0, 1),Cplx(0, 1),Cplx(0,-1)}
+  };
+
+
+}
+
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 ///
@@ -357,8 +415,8 @@ private:
     for (Direction mu; mu.is_good(); ++mu)
       omega += U[n][mu] - U[n - mu][mu];
     
-    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
-    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
+    ptSU3 Omega = exp<BGF, ORD>( alpha * omega.reH());
+    ptSU3 OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
     
     for (Direction mu; mu.is_good(); ++mu){
       U[n][mu] = Omega * U[n][mu];
@@ -372,8 +430,8 @@ private:
       omega += (U[n][mu] * dag(U[n][mu].bgf()) *
             dag( U[n - mu][mu] ) * U[n - mu][mu].bgf());
     }
-    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
-    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
+    ptSU3 Omega = exp<BGF, ORD>( alpha * omega.reH());
+    ptSU3 OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
     for (Direction mu; mu.is_good(); ++mu){
       U[n][mu] = Omega * U[n][mu];
       U[n - mu][mu] *= OmegaDag;
@@ -385,11 +443,11 @@ private:
     omega.zero();
     for (Direction mu; mu.is_good(); ++mu){
       ptSU3 Udag = dag(U[n - mu][mu]);
-      bgf::AbelianBgf Vdag = U[n][mu].bgf().dag(), V = Udag.bgf().dag();
+      BGF Vdag = U[n][mu].bgf().dag(), V = Udag.bgf().dag();
       omega += U[n][mu]*Vdag*Udag*V;
     }
-    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
-    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
+    ptSU3 Omega = exp<BGF, ORD>( -alpha * omega.reH());
+    ptSU3 OmegaDag = exp<BGF, ORD>( alpha * omega.reH());
     for (Direction mu; mu.is_good(); ++mu){
       U[n][mu] = Omega * U[n][mu];
       U[n - mu][mu] *= OmegaDag;
@@ -404,8 +462,8 @@ private:
       omega += U[n][mu]*dag(U[n][mu].bgf()) - 
         dag(U[n-mu][mu].bgf())*U[n - mu][mu];
     
-    ptSU3 Omega = exp<bgf::AbelianBgf, ORD>( alpha * omega.reH());
-    ptSU3 OmegaDag = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
+    ptSU3 Omega = exp<BGF, ORD>( alpha * omega.reH());
+    ptSU3 OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
     
     for (Direction mu; mu.is_good(); ++mu){
       U[n][mu] = Omega * U[n][mu];
@@ -451,7 +509,7 @@ private:
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Thu May 24 17:51:17 2012
   ZeroModeSubtractionKernel(const Direction& nu, const ptsu3& N) :
-    mu(nu), M(exp<bgf::AbelianBgf, ORD>(-1*reH(N))) { }
+    mu(nu), M(exp<BGF, ORD>(-1*reH(N))) { }
   void operator()(GluonField& U, const Point& n) {
     U[n][mu] = M * U[n][mu];
   }
@@ -480,7 +538,27 @@ private:
       for (Direction mu; mu.is_good(); ++mu)
         U[n][mu].bgf() =  bgf::get_abelian_bgf(t, mu);
     }
+
   };
+
+
+  // MiB
+  template <int ORD,int DIM>
+  struct SetBgfKernel<bgf::ScalarBgf, ORD, DIM> {
+
+    typedef BGptGluon<bgf::ScalarBgf, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    explicit SetBgfKernel(const int& t_in) { }
+
+    void operator()(GluonField & U, const Point& n) const { }
+
+  };
+
+
+
 
   
   //////////////////////////////////////////////////////////////////////
@@ -535,10 +613,10 @@ private:
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
     ptSU3 val;
-    PlaqLowerKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
+    PlaqLowerKernel () : val(bgf::zero<BGF>()) { }
     void operator()(GluonField& U, const Point& n){
       Direction t(0);
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
         tmp += U[n][k].bgf() * U[n + k][t] * 
           dag( U[n +t][k] ) * dag( U[n][t] );
@@ -558,9 +636,9 @@ private:
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
     ptSU3 val;
-    UdagUKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
+    UdagUKernel () : val(bgf::zero<BGF>()) { }
     void operator()(GluonField& U, const Point& n){
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction mu; mu.is_good(); ++mu)
         tmp += dag(U[n][mu]) * U[n][mu];
 #pragma omp critical
@@ -586,11 +664,11 @@ private:
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
 
-    TemporalPlaqKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
+    TemporalPlaqKernel () : val(bgf::zero<BGF>()) { }
     
     void operator()(GluonField& U, const Point& n){
       Direction t(0);
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
         tmp += U[n][t] * U[n + t][k] * 
 	  dag( U[n][k] * U[n + k][t] );
@@ -643,8 +721,8 @@ private:
               omega[r](i,j) = 0;
       
       omega /= L*L*L;
-      Omega = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
-      //OmegaDag = exp<bgf::AbelianBgf, ORD>( -alpha * omega.reH());
+      Omega = exp<BGF, ORD>( -alpha * omega.reH());
+      //OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
     }
 
     void operator()(GluonField& U, const Point& n){
@@ -673,10 +751,10 @@ private:
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
 
-    PlaqKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
+    PlaqKernel () : val(bgf::zero<BGF>()) { }
     
     void operator()(GluonField& U, const Point& n){
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction mu; mu.is_good(); ++mu)
 	for (Direction nu(mu + 1); nu.is_good(); ++nu)
 	  tmp += U[n][mu] * U[n + mu][nu] * 
@@ -704,7 +782,7 @@ private:
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
-    explicit GammaLowerKernel (int L) : val(bgf::zero<bgf::AbelianBgf>()) { 
+    explicit GammaLowerKernel (int L) : val(bgf::zero<BGF>()) { 
       Cplx ioL(0, 1./L);
       Ctilde[0] = -ioL;
       Ctilde[1] = ioL/2.;
@@ -712,7 +790,7 @@ private:
     }
     void operator()(GluonField& U, const Point& n){
       Direction t(0);
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k){
         // the 1x1 contribution
         tmp += (Ctilde * dag(U[n][k]) * U[n][t] * 
@@ -751,7 +829,7 @@ private:
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
     BGF Ctilde;
-    explicit GammaUpperKernel (int L) : val(bgf::zero<bgf::AbelianBgf>()) { 
+    explicit GammaUpperKernel (int L) : val(bgf::zero<BGF>()) { 
       Cplx ioL(0, 1./L);
       Ctilde[0] = -ioL;
       Ctilde[1] = ioL/2.;
@@ -759,7 +837,7 @@ private:
     }
     void operator()(GluonField& U, const Point& n){
       Direction t(0);
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k){
         // the 1x1 contribution
         tmp += (Ctilde * U[n + t][k] * dag(U[n + k][t])
@@ -801,7 +879,7 @@ private:
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
-    explicit GammaLowerKernel (int L) : val(bgf::zero<bgf::AbelianBgf>()) { 
+    explicit GammaLowerKernel (int L) : val(bgf::zero<BGF>()) { 
       Cplx ioL(0, 1./L);
       Ctilde[0] = -ioL;
       Ctilde[1] = ioL/2.;
@@ -809,7 +887,7 @@ private:
     }
     void operator()(GluonField& U, const Point& n){
       Direction t(0);
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
         tmp += Ctilde * dag(U[n][k]) * U[n][t] * 
           U[n + t][k] * dag( U[n + k][t] );
@@ -834,7 +912,7 @@ private:
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
     BGF Ctilde;
-    explicit GammaUpperKernel (int L) : val(bgf::zero<bgf::AbelianBgf>()) { 
+    explicit GammaUpperKernel (int L) : val(bgf::zero<BGF>()) { 
       Cplx ioL(0, 1./L);
       Ctilde[0] = -ioL;
       Ctilde[1] = ioL/2.;
@@ -842,7 +920,7 @@ private:
     }
     void operator()(GluonField& U, const Point& n){
       Direction t(0);
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
         tmp += Ctilde * U[n + t][k] * dag(U[n + k][t])
           * dag(U[n][k]) * U[n][t];
@@ -851,6 +929,38 @@ private:
     }
   };
 #endif
+
+
+  // MB: these makes no sense in case of ScalarBgf
+  template <int ORD,int DIM>
+  struct GammaLowerKernel<bgf::ScalarBgf, ORD, DIM> {
+    
+    typedef BGptSU3<bgf::ScalarBgf, ORD> ptSU3;
+    typedef BGptGluon<bgf::ScalarBgf, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    
+    ptSU3 val;
+
+    explicit GammaLowerKernel (int L) { }
+    void operator()(GluonField& U, const Point& n) { }
+  };
+
+  template <int ORD,int DIM>
+  struct GammaUpperKernel<bgf::ScalarBgf, ORD, DIM> {
+    
+    typedef BGptSU3<bgf::ScalarBgf, ORD> ptSU3;
+    typedef BGptGluon<bgf::ScalarBgf, ORD, DIM> ptGluon;
+    typedef pt::Point<DIM> Point;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    
+    ptSU3 val;
+
+    explicit GammaUpperKernel (int L) { }
+    void operator()(GluonField& U, const Point& n) { }
+  };
+
+
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -872,10 +982,10 @@ private:
     typedef fields::LocalField<ptGluon, DIM> GluonField;
 
   ptSU3 val;
-  PlaqUpperKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
+  PlaqUpperKernel () : val(bgf::zero<BGF>()) { }
   void operator()(GluonField& U, const Point& n){
     Direction t(0);
-    ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+    ptSU3 tmp(bgf::zero<BGF>());
     for (Direction k(1); k.is_good(); ++k)
       tmp += dag( U [n + t][k].bgf() ) * dag( U[n][t] ) *
               U[n][k] * U[n + k][t];
@@ -902,9 +1012,9 @@ private:
     typedef pt::Direction<DIM> Direction;
     typedef fields::LocalField<ptGluon, DIM> GluonField;
     ptSU3 val;
-    PlaqSpatialKernel () : val(bgf::zero<bgf::AbelianBgf>()) { }
+    PlaqSpatialKernel () : val(bgf::zero<BGF>()) { }
     void operator()(GluonField& U, const Point& n){
-      ptSU3 tmp(bgf::zero<bgf::AbelianBgf>());
+      ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
         for (Direction l(k + 1); l.is_good(); ++l)
           tmp += U[n][k] * U[n + k][l]
@@ -973,6 +1083,280 @@ private:
     io::CheckedIn i;
   };
 
+
+
+  /*
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Perturbative application of the Wilson dirac operator
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Fri Nov 02 16:24:21 2012
+
+
+  template <class BGF, int ORD,int DIM>
+  struct WilsonPTKernel {
+
+    // geometry
+    typedef typename pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+
+    // gauge
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // fermion
+    typedef SpinColor<4> Fermion;
+    typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
+    typedef std::vector<ScalarFermionField> FermionField;
+    typedef typename array_t<double, DIM>::Type double_array_t;    
+    typedef typename array_t<double, ORD>::Type ptarray_t;    
+    
+    WilsonPTKernel(GluonField& G, FermionField& X, ptarray_t& m ) : U(G), src(X), mass(m), ord_(0) { };
+    
+
+    void operator() ( ScalarFermionField& dest, Point& n) {
+
+      for( int kord = 0; kord < ord_; ++kord ) {
+	// DEBUG
+	// if( n == 0 )
+	//   std::cout << "F[" << ord_      << "] += "
+	// 	    << "U[" << ord_-kord << "]*"
+	// 	    << "f[" << kord      << "]"
+	// 	    << "\n";
+
+	dest[n] += (src[kord][n] * mass[ord_-kord]);
+	Fermion Xi1, Xi2;
+	
+	// Time direction
+	Point dn = n-Direction(0);
+	Point up = n+Direction(0);
+	// (1 +(-) \gamma_\mu)\psi
+	for( Direction nu(0); nu.is_good(); ++nu )
+	  {
+	    Xi1[nu] = ( src[kord][dn][nu] + gamma::gmuval[0][nu] * src[kord][dn][gamma::gmuind[0][nu]] );
+	    Xi2[nu] = ( src[kord][up][nu] - gamma::gmuval[0][nu] * src[kord][up][gamma::gmuind[0][nu]] );
+	  }
+	// sign takes care of (anti)periodic (or others) boundary conditions
+	dest[n] -= ( dag(U[dn][Direction(0)][ord_-kord-1]) * Xi1 * sign[0] + 
+		         U[n ][Direction(0)][ord_-kord-1]  * Xi2 * sign[1]) * .5;
+	
+	// Spatial directions
+	for( Direction mu(1); mu.is_good(); ++mu )
+	  {
+	    
+	    Point dn = n-Direction(mu);
+	    Point up = n+Direction(mu);
+	    // (1 +(-) \gamma_\mu)\psi
+	    for( Direction nu(0); nu.is_good(); ++nu )
+	      {
+		Xi1[nu] = ( src[kord][dn][nu] + gamma::gmuval[mu][nu] * src[kord][dn][gamma::gmuind[mu][nu]] );
+		Xi2[nu] = ( src[kord][up][nu] - gamma::gmuval[mu][nu] * src[kord][up][gamma::gmuind[mu][nu]] );
+	      }
+	    
+	    dest[n] -= (  dag(U[dn][Direction(0)][ord_-kord-1]) * Xi1 + 
+			      U[n ][Direction(0)][ord_-kord-1]  * Xi2 ) * .5;
+	  } // mu
+
+      } // kord
+
+    }
+
+
+
+  
+    void bulk()  { sign[0] = Cplx( 1,0); sign[1] = Cplx( 1,0); }
+    void lower() { sign[0] = Cplx(-1,0); sign[1] = Cplx( 1,0); }
+    void upper() { sign[0] = Cplx( 1,0); sign[1] = Cplx(-1,0); }
+
+
+    inline int& ord() { return ord_; }
+    void operator++() { ++ord_; }
+
+  private:
+    int ord_;
+    ptarray_t mass;
+    array_t<Cplx, 2>::Type sign;
+    GluonField& U;
+    FermionField& src;
+
+  };
+
+
+
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  TreeLevel ( U = bgf() ) application of the Wilson dirac operator
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Fri Nov 02 16:23:58 2012
+
+
+  template <class BGF, int ORD,int DIM>
+  struct WilsonTreeLevelKernel {
+
+    // geometry
+    typedef typename pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+
+    // gauge
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // fermion
+    typedef SpinColor<4> Fermion;
+    typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
+    typedef std::vector<ScalarFermionField> FermionField;
+    typedef typename array_t<double, DIM>::Type double_array_t;    
+    typedef typename array_t<double, ORD>::Type ptarray_t;    
+    
+    WilsonTreeLevelKernel(GluonField& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
+    
+    void operator() ( ScalarFermionField& dest, Point& n) {
+
+      dest[n] = (src[n] * mass);
+      Fermion Xi1, Xi2;
+      
+      // Time direction
+      Point dn = n-Direction(0);
+      Point up = n+Direction(0);
+      // (1 +(-) \gamma_\mu)\psi
+      for( Direction nu(0); nu.is_good(); ++nu )
+	{
+	  Xi1[nu] = ( src[dn][nu] + gamma::gmuval[0][nu] * src[dn][gamma::gmuind[0][nu]] );
+	  Xi2[nu] = ( src[up][nu] - gamma::gmuval[0][nu] * src[up][gamma::gmuind[0][nu]] );
+	}
+      // sign takes care of (anti)periodic (or others) boundary conditions
+      dest[n] -= ( dag(U[dn][Direction(0)].bgf()) * Xi1 * sign[0] + 
+		       U[n ][Direction(0)].bgf()  * Xi2 * sign[1]) * .5;
+      
+      // Spatial directions
+      for( Direction mu(1); mu.is_good(); ++mu )
+	{
+	  
+	  Point dn = n-Direction(mu);
+	  Point up = n+Direction(mu);
+	  // (1 +(-) \gamma_\mu)\psi
+	  for( Direction nu(0); nu.is_good(); ++nu )
+	    {
+	      Xi1[nu] =  ( src[dn][nu] + gamma::gmuval[mu][nu] * src[dn][gamma::gmuind[mu][nu]] );
+	      Xi2[nu] =  ( src[up][nu] - gamma::gmuval[mu][nu] * src[up][gamma::gmuind[mu][nu]] );
+	    }
+	  
+	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
+		           U[n ][mu].bgf()  * Xi2 ) * .5;
+	} // mu
+      
+    }
+      
+    void bulk()  { sign[0] = Cplx( 1,0); sign[1] = Cplx( 1,0); }
+    void lower() { sign[0] = Cplx(-1,0); sign[1] = Cplx( 1,0); }
+    void upper() { sign[0] = Cplx( 1,0); sign[1] = Cplx(-1,0); }
+
+
+    inline int& ord() { return kord; }
+    
+  private:
+    int kord;
+    double mass;
+    array_t<Cplx, 2>::Type sign;
+    GluonField& U;
+    ScalarFermionField& src;
+
+  };
+
+
+
+
+  
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Perturbative application of the staggered dirac operator
+  ///  
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Fri Nov 02 16:23:46 2012
+
+
+  template <class BGF, int ORD,int DIM>
+  struct StaggeredPTKernel {
+
+    // geometry
+    typedef pt::Point<DIM> Point;
+    typedef pt::Direction<DIM> Direction;
+
+    // gauge
+    typedef BGptSU3<BGF, ORD> ptSU3;
+    typedef ptt::PtMatrix<ORD> ptsu3;
+    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
+    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // fermion
+    typedef SpinColor<1> Fermion;
+    typedef fields::LocalField<Fermion, DIM> FermionField;
+    typedef typename array_t<double, DIM>::Type double_array_t;    
+    
+    StaggeredPTKernel( GluonField& G, FermionField& X, const double& m ) : U(G), src(X), mass(m) { Uorder = 0; std::cout << "Fix eta definition!!!!!\n";};
+    
+    void eta(const Point& n, double_array_t& phase) {
+
+    }
+    
+    void next_Uorder() { Uorder++; }
+    void reset_Uorder() { Uorder = 0; }
+
+    void operator()( FermionField& dest, Point& n) {
+      eta(n, phase);
+      for( Direction nu(0); nu.is_good(); ++nu )
+	dest[n][0] += .5*phase[(int)nu] * ( U[n][nu][Uorder] * src[n+nu][0] - U[n-nu][nu][Uorder] * src[n-nu][0] );
+      //      mass
+      dest[n][0] += mass * src[n][0];
+
+    }
+
+  private:
+    int Uorder;
+    double mass;
+    double_array_t phase;
+    GluonField& U;
+    FermionField& src;
+
+  };
+
+
+  /*
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Tree-level application of the staggered dirac operator
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Fri Nov 02 16:23:16 2012
+
+
+  template <class BGF, int ORD,int DIM>
+  struct StaggeredTreeLevelKernel {
+
+    // TODO
+    // ok, let's fix staggered before ..
+
+  };
+  */
+
+
+
 }
 
 #endif
+
+
+
+

@@ -1124,6 +1124,9 @@ public:
     whr[2] = V.whr[2];
   }
 
+  // Added: MB on Nov 02 2012
+  static const int storage_size = 6;
+
   int write(FILE *filept) {
     if(fwrite(&whr, SZ_DB*2, 3, filept)){
       return 0;
