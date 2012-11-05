@@ -55,6 +55,7 @@ namespace fields {
   class LocalField {
   public:
     typedef F data_t;
+    static const int dim = DIM;
     typedef std::vector< data_t > rep_t;
     typedef pt::Point<DIM> Point;
     typedef typename array_t<std::pair<int,int>, DIM>::Type neighbors_t;

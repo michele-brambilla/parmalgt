@@ -85,14 +85,33 @@ namespace dirac {
 
 namespace kernels {
   
-  template <class BGF, int ORD,int DIM>
-  struct StapleSqKernel {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+  /// struct to extract information on the field from the field type.
+  template <class Field_t> 
+  struct std_types {
+    typedef typename Field_t::data_t ptGluon_t;
+    typedef typename ptGluon_t::pt_su3_t ptSU3_t;
+    typedef typename ptSU3_t::pt_matrix_t ptsu3_t;
+    typedef typename ptGluon_t::bgf_t bgf_t;
+    static const int order = ptGluon_t::order;
+    static const int n_dim = Field_t::dim;
+    typedef pt::Point<n_dim> point_t;
+    typedef pt::Direction<n_dim> direction_t;
+
+  };
+
+  template <class Field_t>
+  struct StapleSqKernel : public std_types<Field_t> {
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
     typedef typename array_t<double, 1>::Type weight_array_t;    
 
@@ -102,7 +121,7 @@ namespace kernels {
 
     StapleSqKernel(const Direction& nu) : mu(nu) {  }
 
-    void operator()(GluonField& U, const Point& n) {      
+    void operator()(Field_t& U, const Point& n) {      
       // std::cout << val[0][0] << "\n";
       val[0].zero();
       // std::cout << val[0][0] << "\n";
@@ -119,9 +138,9 @@ namespace kernels {
     }
 
   };
-  template <class BGF, int ORD,int DIM>
-  typename StapleSqKernel<BGF,ORD,DIM>::weight_array_t 
-  StapleSqKernel<BGF,ORD,DIM>::weights;
+  template <class Field_t>
+  typename StapleSqKernel<Field_t>::weight_array_t 
+  StapleSqKernel<Field_t>::weights;
 
   
   ////////////////////////////////////////////////////////////
@@ -141,14 +160,18 @@ namespace kernels {
   ///
   /// Commenty by D.H., Oct. 26, 2012
 
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct StapleReKernel {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
 
     typedef typename array_t<ptSU3, 2>::Type ptsu3_array_t;    
     typedef typename array_t<double, 2>::Type weight_array_t;    
@@ -159,7 +182,7 @@ namespace kernels {
     
     StapleReKernel(const Direction& nu) : mu(nu) {  }
 
-    ptSU3 two_by_one(GluonField& U, const Point& n, const Direction& nu){
+    ptSU3 two_by_one(Field_t& U, const Point& n, const Direction& nu){
       return U[n + mu][mu] * U[n + mu + mu][nu] * 
              dag(U[n][nu] * U[n+nu][mu] * U[n+nu+mu][mu])
            + U[n+mu][mu] * dag( U[n-nu][mu] * 
@@ -169,18 +192,18 @@ namespace kernels {
            + dag( U[n-nu-mu][mu] * U[n-nu][mu] * U[n-nu+mu][nu] ) * 
              U[n-nu-mu][nu] * U[n-mu][mu];
     }
-    ptSU3 one_by_two(GluonField& U, const Point& n, const Direction& nu){
+    ptSU3 one_by_two(Field_t& U, const Point& n, const Direction& nu){
       return U[n + mu][nu] * U[n+mu+nu][nu] * 
              dag(U[n][nu] * U[n+nu][nu] * U[n+nu+nu][mu]) 
            + dag( U[n-nu-nu][mu] * U[n-nu-nu+mu][nu] * U[n-nu+mu][nu] ) * 
              U[n-nu-nu][nu] * U[n-nu][nu];
     }
-    ptSU3 one_by_one(GluonField& U, const Point& n, const Direction& nu){
+    ptSU3 one_by_one(Field_t& U, const Point& n, const Direction& nu){
        return U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
 	    + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
     }
     
-    void operator()(GluonField& U, const Point& n) {      
+    void operator()(Field_t& U, const Point& n) {      
 
       // is it better to use a foreach ?
       for( int i = 0; i < val.size(); ++i) {
@@ -210,40 +233,34 @@ namespace kernels {
 
   };
 
-  template <class BGF, int ORD,int DIM>
-  typename StapleReKernel<BGF,ORD,DIM>::weight_array_t StapleReKernel<BGF,ORD,DIM>::weights;
+  template <class F>
+  typename StapleReKernel<F>::weight_array_t StapleReKernel<F>::weights;
 
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct TrivialPreProcess {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    static void pre_process (GluonField& , const Point&, const Direction&) { }
-    static void post_process (GluonField& , const Point&, const Direction& ) { }
+    static const int DIM = Field_t::dim;
+    typedef typename std_types<Field_t>::point_t Point_t;
+    typedef typename std_types<Field_t>::direction_t Direction_t;
+    static void pre_process (Field_t& , const Point_t&, const Direction_t&) { }
+    static void post_process (Field_t& , const Point_t&, const Direction_t& ) { }
   };
 
   // To be used at x with x_0 = a.
   // This modifies the background field, such that O(a) improvement
   // and the equations of motion hold at tree level.
-  template <class BGF, int ORD,int DIM>
-  struct LWProcessA {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
 
-    static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
-      static Direction t(0);
+  template <class Field_t>
+  struct LWProcessA {
+    static const int DIM = Field_t::dim;
+    typedef typename std_types<Field_t>::point_t Point_t;
+    typedef typename std_types<Field_t>::direction_t Direction_t;
+    static void pre_process (Field_t& U, const Point_t& n, const Direction_t& k) { 
+      static Direction_t t(0);
       U[n - t + k + k][t] *= 1.5;
       U[n - t - k][t] *= 1.5;
     }
-    static void post_process (GluonField& U, const Point& n, const Direction& k) { 
-      static Direction t(0);
+    static void post_process (Field_t& U, const Point_t& n, const Direction_t& k) { 
+      static Direction_t t(0);
       U[n - t + k + k][t] /= 1.5;
       U[n - t - k][t] /= 1.5;
     }
@@ -252,23 +269,18 @@ namespace kernels {
   // To be used at x with x_0 = T - a.
   // This modifies the background field, such that O(a) improvement
   // and the equations of motion hold at tree level.
-  template
-  <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct LWProcessB {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
-    static void pre_process (GluonField& U, const Point& n, const Direction& k) { 
-      static Direction t(0);
+    static const int DIM = Field_t::dim;
+    typedef typename std_types<Field_t>::point_t Point_t;
+    typedef typename std_types<Field_t>::direction_t Direction_t;
+    static void pre_process (Field_t& U, const Point_t& n, const Direction_t& k) { 
+      static Direction_t t(0);
       U[n - k][t] *= 1.5; // ...
       U[n + k + k][t] *= 1.5;
     }
-    static void post_process (GluonField& U, const Point& n, const Direction& k) { 
-      static Direction t(0);
+    static void post_process (Field_t& U, const Point_t& n, const Direction_t& k) { 
+      static Direction_t t(0);
       U[n - k][t] /= 1.5; // ...
       U[n + k + k][t] /= 1.5;
     }
@@ -280,23 +292,32 @@ namespace kernels {
   ///
   ///  Kernel for the gauge update.
   ///
-  ///  \tparam BGF Background field to use.
-  ///  \tparam ORD Perturbative order.
-  ///  \tparam DIN Number of space-time dimensions.
+  ///  \tparam Field_t The type of field (I guess usually some sort of
+  ///  gluon field) that the gauge update should be applied to.
+  ///  \tparam StapleK_t The type of staple to use. This is employed
+  ///  to implement e.g. improved gluon actions.
+  ///  \tparam Process This must be a class that has two methods,
+  ///  called pre_process and post_process. They are applied before
+  ///  and after the gauge update is performed to be able to do things
+  ///  like adjusting the weights of plaquettes at the boundary for
+  ///  improved actions.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:47:43 2012
 
-  template <class BGF, int ORD,int DIM, 
+  template <class Field_t, 
 	    class StapleK_t, class Process >
   struct GaugeUpdateKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+  // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
 
     typedef std::vector<Cplx>::iterator cpx_vec_it;
     typedef std::vector<std::vector<Cplx> >::iterator outer_cvec_it;
@@ -324,7 +345,7 @@ namespace kernels {
       plaq(omp_get_max_threads(), std::vector<Cplx>(ORD+1)), 
       pp(omp_get_max_threads(), std::vector<Cplx>(ORD+1)) { }
 
-    void operator()(GluonField& U, const Point& n) {
+    void operator()(Field_t& U, const Point& n) {
       ptSU3 W;
 
       // We wants this static, but it fails ... field grows bigger and bigger ...
@@ -371,8 +392,8 @@ namespace kernels {
     }
     
   };
-  template <class C, int N, int M, class P, class Q> std::vector<MyRand> 
-  kernels::GaugeUpdateKernel<C,N,M,P,Q>::rands;
+  template <class C, class P, class Q> std::vector<MyRand> 
+  kernels::GaugeUpdateKernel<C,P,Q>::rands;
 
 
   //////////////////////////////////////////////////////////////////////
@@ -383,32 +404,36 @@ namespace kernels {
   ///  Note I implemented three different methods of which only the
   ///  third one seems to work fine at the moment.
   ///
-  ///  \tparam N   Gauge fixing mode. WARNING: Only mode 3 works!
-  ///  \tparam BGF Background field to use.
-  ///  \tparam ORD Perturbative order.
-  ///  \tparam DIN Number of space-time dimensions.
+  ///  \tparam METHOD  Gauge fixing mode. WARNING: Only mode 1 and 3
+  ///  are tested and only 1 is fully trusted!
+  ///  \tparam Field_t The kind of field to be used.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:49:09 2012
   ///
 
-  template <int N, class BGF, int ORD,int DIM>
+  template <int METHOD, class Field_t>
   class GaugeFixingKernel {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
   public:
     explicit GaugeFixingKernel (const double& a) : alpha (a) { }
-    void operator()(GluonField& U, const Point& n) const { 
-    do_it(U, n, mode_selektor<N>());
+    void operator()(Field_t& U, const Point& n) const { 
+    do_it(U, n, mode_selektor<METHOD>());
     }
 private:
     double alpha;
   template <int M> struct mode_selektor { };
-  void do_it(GluonField& U, const Point& n, 
+  void do_it(Field_t& U, const Point& n, 
              const mode_selektor<1>&) const {
     // exp version
     ptSU3 omega;
@@ -423,7 +448,7 @@ private:
       U[n - mu][mu] *= OmegaDag;
     }
   }
-  void do_it(GluonField& U, const Point& n,
+  void do_it(Field_t& U, const Point& n,
              const mode_selektor<2>&) const {
     ptSU3 omega;
     for (Direction mu; mu.is_good(); ++mu){
@@ -437,7 +462,7 @@ private:
       U[n - mu][mu] *= OmegaDag;
     }
   }
-  void do_it(GluonField& U, const Point& n,
+  void do_it(Field_t& U, const Point& n,
              const mode_selektor<3>&) const {
     ptSU3 omega;
     omega.zero();
@@ -454,7 +479,7 @@ private:
     }
   }
 
-  void do_it(GluonField& U, const Point& n, 
+  void do_it(Field_t& U, const Point& n, 
              const mode_selektor<4>&) const {
     // exp version
     ptSU3 omega;
@@ -486,15 +511,20 @@ private:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:50:47 2012
 
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct ZeroModeSubtractionKernel
   {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
   Direction mu;
   ptSU3 M; // zero momentum contribution
     //////////////////////////////////////////////////////////////////////
@@ -510,7 +540,7 @@ private:
     ///  \date Thu May 24 17:51:17 2012
   ZeroModeSubtractionKernel(const Direction& nu, const ptsu3& N) :
     mu(nu), M(exp<BGF, ORD>(-1*reH(N))) { }
-  void operator()(GluonField& U, const Point& n) {
+  void operator()(Field_t& U, const Point& n) {
     U[n][mu] = M * U[n][mu];
   }
 };
@@ -523,44 +553,36 @@ private:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:52:27 2012
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct SetBgfKernel {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
 
     explicit SetBgfKernel(const int& t_in) : t(t_in) { }
     int t;
-    void operator()(GluonField& U, const Point& n) const {
+    void operator()(Field_t& U, const Point& n) const {
+      impl(U, n, BGF());
+    }
+
+    void impl(Field_t& U, const Point& n, const bgf::AbelianBgf&) const {
       for (Direction mu; mu.is_good(); ++mu)
         U[n][mu].bgf() =  bgf::get_abelian_bgf(t, mu);
     }
 
-  };
-
-
-  // MiB
-  template <int ORD,int DIM>
-  struct SetBgfKernel<bgf::ScalarBgf, ORD, DIM> {
-
-    typedef BGptGluon<bgf::ScalarBgf, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-
-    explicit SetBgfKernel(const int& t_in) { }
-
-    void operator()(GluonField & U, const Point& n) const { }
+    void impl(Field_t& U, const Point& n, const bgf::ScalarBgf&)
+    const { }
 
   };
 
 
-
-
-  
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -568,18 +590,22 @@ private:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:52:56 2012
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct MeasureNormKernel {
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
 
     std::vector<typename array_t<double, ORD+1>::Type> norm;
     explicit MeasureNormKernel() : norm(omp_get_max_threads()) { }
-    void operator()(GluonField& U, const Point& n) {
+    void operator()(Field_t& U, const Point& n) {
       std::vector<double> tmp = U[n].Norm();
       int i = omp_get_thread_num();
       for (int k = 0; k < ORD+1; ++k)
@@ -603,18 +629,22 @@ private:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:53:07 2012
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct PlaqLowerKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     PlaqLowerKernel () : val(bgf::zero<BGF>()) { }
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
@@ -626,18 +656,22 @@ private:
   
   };
   // measures Udagger * U
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct UdagUKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     UdagUKernel () : val(bgf::zero<BGF>()) { }
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction mu; mu.is_good(); ++mu)
         tmp += dag(U[n][mu]) * U[n][mu];
@@ -648,16 +682,19 @@ private:
 };
   
   // Measure the temporal paquette
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct TemporalPlaqKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     // \tilde C = - [d_eta C]
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
@@ -666,7 +703,7 @@ private:
 
     TemporalPlaqKernel () : val(bgf::zero<BGF>()) { }
     
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
@@ -679,19 +716,22 @@ private:
   }; 
 
   // Kernel to construct the gauge fixing function at t = 0
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct GFMeasKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptsu3 val;
 
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
 #pragma omp critical
       val += get_q(U[n][Direction(0)]);
     }
@@ -700,16 +740,19 @@ private:
   // Kernel to execute the gauge fixing function at t = 0
   // (the one where we used U_0(\vec y, 0) to construct the gf 
   // function)
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct GFApplyKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 Omega, OmegaDag;
     
     GFApplyKernel (ptsu3 omega, const double& alpha,
@@ -725,7 +768,7 @@ private:
       //OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
     }
 
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       //for (Direction mu; mu.is_good(); ++mu){
       static Direction t(0);
       U[n][t] = Omega * U[n][t];
@@ -735,16 +778,19 @@ private:
     
   };
   // Measure the paquette
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct PlaqKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     // \tilde C = - [d_eta C]
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
@@ -753,7 +799,7 @@ private:
 
     PlaqKernel () : val(bgf::zero<BGF>()) { }
     
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction mu; mu.is_good(); ++mu)
 	for (Direction nu(mu + 1); nu.is_good(); ++nu)
@@ -767,16 +813,19 @@ private:
 
 #ifdef IMP_ACT
   // Measure Gamma at t = 0
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct GammaLowerKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     // \tilde C = - [d_eta C]
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
@@ -788,7 +837,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k){
@@ -815,16 +864,19 @@ private:
   };
 
   // Measure Gamma at t = T - a
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct GammaUpperKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
@@ -835,7 +887,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k){
@@ -864,16 +916,19 @@ private:
 
 #else
   // Measure Gamma at t = 0
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct GammaLowerKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     // \tilde C = - [d_eta C]
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
@@ -885,7 +940,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
@@ -898,16 +953,19 @@ private:
   };
 
   // Measure Gamma at t = T - a
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct GammaUpperKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
@@ -918,7 +976,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
@@ -931,36 +989,6 @@ private:
 #endif
 
 
-  // MB: these makes no sense in case of ScalarBgf
-  template <int ORD,int DIM>
-  struct GammaLowerKernel<bgf::ScalarBgf, ORD, DIM> {
-    
-    typedef BGptSU3<bgf::ScalarBgf, ORD> ptSU3;
-    typedef BGptGluon<bgf::ScalarBgf, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
-    ptSU3 val;
-
-    explicit GammaLowerKernel (int L) { }
-    void operator()(GluonField& U, const Point& n) { }
-  };
-
-  template <int ORD,int DIM>
-  struct GammaUpperKernel<bgf::ScalarBgf, ORD, DIM> {
-    
-    typedef BGptSU3<bgf::ScalarBgf, ORD> ptSU3;
-    typedef BGptGluon<bgf::ScalarBgf, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-    
-    ptSU3 val;
-
-    explicit GammaUpperKernel (int L) { }
-    void operator()(GluonField& U, const Point& n) { }
-  };
-
-
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -971,19 +999,23 @@ private:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:53:07 2012
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct PlaqUpperKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
 
   ptSU3 val;
   PlaqUpperKernel () : val(bgf::zero<BGF>()) { }
-  void operator()(GluonField& U, const Point& n){
+  void operator()(Field_t& U, const Point& n){
     Direction t(0);
     ptSU3 tmp(bgf::zero<BGF>());
     for (Direction k(1); k.is_good(); ++k)
@@ -1002,18 +1034,22 @@ private:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Thu May 24 17:53:07 2012
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct PlaqSpatialKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
     ptSU3 val;
     PlaqSpatialKernel () : val(bgf::zero<BGF>()) { }
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
         for (Direction l(k + 1); l.is_good(); ++l)
@@ -1032,19 +1068,23 @@ private:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri May 25 15:59:06 2012
 
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct FileWriterKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
 
     explicit FileWriterKernel (uparam::Param& p) : o(p) { }
 
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       for (Direction mu(0); mu.is_good(); ++mu)
 #pragma omp critical
         U[n][mu].write(o);
@@ -1060,23 +1100,22 @@ private:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed May 30 18:37:03 2012
 
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct FileReaderKernel {
 
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-
-    typedef GluonField& first_argument_type;
-    typedef const Point& second_argument_type;
-    typedef void result_type;
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
 
     explicit FileReaderKernel (uparam::Param& p) : i(p) { }
 
-    void operator()(GluonField& U, const Point& n){
+    void operator()(Field_t& U, const Point& n){
       for (Direction mu(0); mu.is_good(); ++mu)
         U[n][mu].read(i);
     }

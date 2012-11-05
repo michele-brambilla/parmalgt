@@ -547,6 +547,8 @@ inline ptt::PtMatrix<ORD> get_q(const BGptSU3<B, ORD>& U){
 template <class BGF,  int ORD, int DIM>
 class BGptGluon {
 public:
+  typedef BGF bgf_t;
+  static const int order = ORD;
   typedef BGptSU3<BGF, ORD> pt_su3_t;
   typedef typename array_t<pt_su3_t, DIM>::Type array_t;
   typedef BGptGluon self_t;

@@ -82,45 +82,45 @@ typedef std::vector<ScalarFermionField> FermionField;
 // ... for the gauge update/fixing ...
 #ifdef IMP_ACT // do we want an improved aciton?
 // 1x1, and 2x1 staples
-typedef kernels::StapleReKernel<Bgf_t, ORD, DIM> StK;
+typedef kernels::StapleReKernel<GluonField> StK;
 // we need these to implement the imrovement at the boundary
 // NOTE however, that they have to be applied at t=1 and T=t-1
-typedef kernels::LWProcessA<Bgf_t, ORD, DIM> PrAK;
-typedef kernels::LWProcessB<Bgf_t, ORD, DIM> PrBK;
-typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PrTK;
+typedef kernels::LWProcessA<GluonField> PrAK;
+typedef kernels::LWProcessB<GluonField> PrBK;
+typedef kernels::TrivialPreProcess<GluonField> PrTK;
 // workaround for template typedef
 template <class PR> struct GUK {
-  typedef  kernels::GaugeUpdateKernel <Bgf_t, ORD, DIM, StK, PR> type;
+  typedef  kernels::GaugeUpdateKernel <GluonField, StK, PR> type;
 };
 #else
-typedef kernels::StapleSqKernel<Bgf_t, ORD, DIM> StK;
-typedef kernels::TrivialPreProcess<Bgf_t, ORD, DIM> PrK;
-typedef kernels::GaugeUpdateKernel <Bgf_t, ORD, DIM, StK, PrK> 
+typedef kernels::StapleSqKernel<GluonField> StK;
+typedef kernels::TrivialPreProcess<GluonField> PrK;
+typedef kernels::GaugeUpdateKernel <GluonField, StK, PrK> 
         GaugeUpdateKernel;
 #endif
-typedef kernels::ZeroModeSubtractionKernel<Bgf_t, ORD, DIM> ZeroModeSubtractionKernel;
-typedef kernels::GaugeFixingKernel<GF_MODE, Bgf_t, ORD, DIM> GaugeFixingKernel;
+typedef kernels::ZeroModeSubtractionKernel<GluonField> ZeroModeSubtractionKernel;
+typedef kernels::GaugeFixingKernel<GF_MODE, GluonField> GaugeFixingKernel;
 
 
 // ... to set the background field ...
-typedef kernels::SetBgfKernel<Bgf_t, ORD, DIM> SetBgfKernel;
+typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
 
 // ... and for the measurements ...
-typedef kernels::PlaqLowerKernel<Bgf_t, ORD, DIM> PlaqLowerKernel;
-typedef kernels::PlaqUpperKernel<Bgf_t, ORD, DIM> PlaqUpperKernel;
-typedef kernels::PlaqSpatialKernel<Bgf_t, ORD, DIM> PlaqSpatialKernel;
-typedef kernels::MeasureNormKernel<Bgf_t, ORD, DIM> MeasureNormKernel;
-typedef kernels::GammaUpperKernel<Bgf_t, ORD, DIM> GammaUpperKernel;
-typedef kernels::GammaLowerKernel<Bgf_t, ORD, DIM> GammaLowerKernel;
-typedef kernels::UdagUKernel<Bgf_t, ORD, DIM> UdagUKernel;
-typedef kernels::TemporalPlaqKernel<Bgf_t, ORD, DIM> TemporalPlaqKernel;
-typedef kernels::PlaqKernel<Bgf_t, ORD, DIM> PlaqKernel;
-typedef kernels::GFMeasKernel<Bgf_t, ORD, DIM> GFMeasKernel;
-typedef kernels::GFApplyKernel<Bgf_t, ORD, DIM> GFApplyKernel;
+typedef kernels::PlaqLowerKernel<GluonField> PlaqLowerKernel;
+typedef kernels::PlaqUpperKernel<GluonField> PlaqUpperKernel;
+typedef kernels::PlaqSpatialKernel<GluonField> PlaqSpatialKernel;
+typedef kernels::MeasureNormKernel<GluonField> MeasureNormKernel;
+typedef kernels::GammaUpperKernel<GluonField> GammaUpperKernel;
+typedef kernels::GammaLowerKernel<GluonField> GammaLowerKernel;
+typedef kernels::UdagUKernel<GluonField> UdagUKernel;
+typedef kernels::TemporalPlaqKernel<GluonField> TemporalPlaqKernel;
+typedef kernels::PlaqKernel<GluonField> PlaqKernel;
+typedef kernels::GFMeasKernel<GluonField> GFMeasKernel;
+typedef kernels::GFApplyKernel<GluonField> GFApplyKernel;
 
 // ... and for the checkpointing.
-typedef kernels::FileWriterKernel<Bgf_t, ORD, DIM> FileWriterKernel;
-typedef kernels::FileReaderKernel<Bgf_t, ORD, DIM> FileReaderKernel;
+typedef kernels::FileWriterKernel<GluonField> FileWriterKernel;
+typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
 
 // Our measurement
 void measure(GluonField &U, const std::string& rep_str){
