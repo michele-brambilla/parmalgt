@@ -47,7 +47,6 @@ public:
   double re,im;
 #endif
   
-
   Cplx (double r = 0., double i=0.) {
       re = r;
       im = i;
@@ -63,6 +62,10 @@ public:
     if (fread(&re, SZ_DB, 2, filept))
 	  return 1;
       return 0;
+  }
+
+  double abs() const {
+    return sqrt(re*re + im*im);
   }
 
   Cplx operator=(const Cplx& b) { re = b.re; im = b.im; return *this;}

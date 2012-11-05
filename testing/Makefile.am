@@ -1,7 +1,7 @@
 # global includes
 
 AM_CPPFLAGS = -I${GTEST_DIR}/include -I${GTEST_DIR} -I..\
-	-I${top_srcdir} -DHAVE_TR1 -DDSFMT_MEXP=19937 
+	-I${top_srcdir} -DHAVE_TR1 -DDSFMT_MEXP=19937  -I${BOOST_DIR}
 
 # gtest stuff
 
@@ -16,11 +16,13 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 # moment
 
 bin_PROGRAMS = test_Geometry test_Bgfield test_Helper test_SU3 test_newQCDpt \
-	test_PtTypes #test_Point
+	test_PtTypes test_Dirac
+
+test_Dirac_SOURCES = test_Dirac.cc ../MyMath.cc ../MyRand.cc
+test_Dirac_LDADD = lib/libgtest_main.la -lpthread
 
 test_Geometry_SOURCES = test_Geometry.cc
 test_Geometry_LDADD = lib/libgtest_main.la -lpthread
-
 
 test_Bgfield_SOURCES = test_Bgfield.cc ../MyRand.cc \
 		       ../MyMath.cc ../Background.cc

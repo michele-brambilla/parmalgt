@@ -33,6 +33,11 @@ AC_ARG_WITH([gtest-srcdir], [AS_HELP_STRING([--with-gtest-srcdir=DIR],
 
 AC_SUBST([GTEST_DIR],["$with_gtest_srcdir"])
 
+AC_ARG_WITH([boost-srcdir], [AS_HELP_STRING([--with-boost-srcdir=DIR],
+ [Path to Boost.])], [], [])
+
+AC_SUBST([BOOST_DIR],["$with_boost_srcdir"])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_INLINE
