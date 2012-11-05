@@ -16,7 +16,7 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 # moment
 
 bin_PROGRAMS = test_Geometry test_Bgfield test_Helper test_SU3 test_newQCDpt \
-	test_PtTypes test_Dirac
+	test_PtTypes test_Dirac #test_Fermi
 
 test_Dirac_SOURCES = test_Dirac.cc ../MyMath.cc ../MyRand.cc
 test_Dirac_LDADD = lib/libgtest_main.la -lpthread
@@ -40,5 +40,8 @@ test_newQCDpt_LDADD = lib/libgtest.la -lpthread
 
 test_PtTypes_SOURCES = test_PtTypes.cc ../MyMath.cc ../MyRand.cc
 test_PtTypes_LDADD = lib/libgtest_main.la -lpthread
+
+#test_Fermi_SOURCES = test_Fermi.cc MyMath.cc MyRand.cc \
+# newQCDpt.cc Point.cc Background.cc IO.cc
 
 TESTS = ${bin_PROGRAMS}
