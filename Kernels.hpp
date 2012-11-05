@@ -4,7 +4,7 @@
 #include <LocalField.hpp>
 #include <PtTypes.hpp>
 #include <newQCDpt.h>
-#include "newMyQCD.h"
+#include <newMyQCD.h>
 
 #include <IO.hpp>
 #include <uparam.hpp>
@@ -31,7 +31,7 @@ namespace kernels {
 ///  \date Fri Nov 02 12:06:15 2012
 ///  
 
-namespace gamma{
+namespace dirac {
 
   int gmuind[15][4]  = {
     {3,2,1,0}, //gm1
@@ -1084,7 +1084,6 @@ private:
   };
 
 
-
   /*
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -1137,8 +1136,8 @@ private:
 	// (1 +(-) \gamma_\mu)\psi
 	for( Direction nu(0); nu.is_good(); ++nu )
 	  {
-	    Xi1[nu] = ( src[kord][dn][nu] + gamma::gmuval[0][nu] * src[kord][dn][gamma::gmuind[0][nu]] );
-	    Xi2[nu] = ( src[kord][up][nu] - gamma::gmuval[0][nu] * src[kord][up][gamma::gmuind[0][nu]] );
+	    Xi1[nu] = ( src[kord][dn][nu] + dirac::gmuval[0][nu] * src[kord][dn][dirac::gmuind[0][nu]] );
+	    Xi2[nu] = ( src[kord][up][nu] - dirac::gmuval[0][nu] * src[kord][up][dirac::gmuind[0][nu]] );
 	  }
 	// sign takes care of (anti)periodic (or others) boundary conditions
 	dest[n] -= ( dag(U[dn][Direction(0)][ord_-kord-1]) * Xi1 * sign[0] + 
@@ -1153,8 +1152,8 @@ private:
 	    // (1 +(-) \gamma_\mu)\psi
 	    for( Direction nu(0); nu.is_good(); ++nu )
 	      {
-		Xi1[nu] = ( src[kord][dn][nu] + gamma::gmuval[mu][nu] * src[kord][dn][gamma::gmuind[mu][nu]] );
-		Xi2[nu] = ( src[kord][up][nu] - gamma::gmuval[mu][nu] * src[kord][up][gamma::gmuind[mu][nu]] );
+		Xi1[nu] = ( src[kord][dn][nu] + dirac::gmuval[mu][nu] * src[kord][dn][dirac::gmuind[mu][nu]] );
+		Xi2[nu] = ( src[kord][up][nu] - dirac::gmuval[mu][nu] * src[kord][up][dirac::gmuind[mu][nu]] );
 	      }
 	    
 	    dest[n] -= (  dag(U[dn][Direction(0)][ord_-kord-1]) * Xi1 + 
@@ -1230,8 +1229,8 @@ private:
       // (1 +(-) \gamma_\mu)\psi
       for( Direction nu(0); nu.is_good(); ++nu )
 	{
-	  Xi1[nu] = ( src[dn][nu] + gamma::gmuval[0][nu] * src[dn][gamma::gmuind[0][nu]] );
-	  Xi2[nu] = ( src[up][nu] - gamma::gmuval[0][nu] * src[up][gamma::gmuind[0][nu]] );
+	  Xi1[nu] = ( src[dn][nu] + dirac::gmuval[0][nu] * src[dn][dirac::gmuind[0][nu]] );
+	  Xi2[nu] = ( src[up][nu] - dirac::gmuval[0][nu] * src[up][dirac::gmuind[0][nu]] );
 	}
       // sign takes care of (anti)periodic (or others) boundary conditions
       dest[n] -= ( dag(U[dn][Direction(0)].bgf()) * Xi1 * sign[0] + 
@@ -1246,8 +1245,8 @@ private:
 	  // (1 +(-) \gamma_\mu)\psi
 	  for( Direction nu(0); nu.is_good(); ++nu )
 	    {
-	      Xi1[nu] =  ( src[dn][nu] + gamma::gmuval[mu][nu] * src[dn][gamma::gmuind[mu][nu]] );
-	      Xi2[nu] =  ( src[up][nu] - gamma::gmuval[mu][nu] * src[up][gamma::gmuind[mu][nu]] );
+	      Xi1[nu] =  ( src[dn][nu] + dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
+	      Xi2[nu] =  ( src[up][nu] - dirac::gmuval[mu][nu] * src[up][dirac::gmuind[mu][nu]] );
 	    }
 	  
 	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 

@@ -529,8 +529,14 @@ namespace bgf {
     template<int DIM>
     inline SpinColor<DIM> operator* (const SpinColor<DIM>& v ) const {
       SpinColor<DIM> result;
+#ifdef HAVE_CXX0X
       for( auto it = v.begin(), r = result.begin();
 	   it != v.end(); ++it, ++r) (*r) = a_ * (*it);
+#else
+      typename SpinColor<DIM>::const_iterator i = v.begin(), e = v.end();
+      typename SpinColor<DIM>::iterator r = result.begin();
+      for (; i != e; ++i, ++r) (*r) = a_ * (*i);
+#endif
       return result;
     }
 

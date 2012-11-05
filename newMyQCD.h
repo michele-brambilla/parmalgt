@@ -3,6 +3,8 @@
 
 #include <algorithm>
 #include <numeric>
+#include <vector>
+
 #include <MyRand.h>
 #include <iostream>
 #include <Types.h>
