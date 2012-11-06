@@ -88,7 +88,7 @@ namespace fields {
         result[omp_get_thread_num()] += F[n] * (*other)[n];
       }
 
-      Cplx reduce() {
+      Cplx reduce() const {
         return std::accumulate(result.begin(), result.end(), Cplx(0,0));
       }
     private:
@@ -208,7 +208,7 @@ namespace fields {
     }
 
     template <class M>
-    void apply_on_timeslice(M& f, const int& t){
+    M& apply_on_timeslice(M& f, const int& t){
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM>::slice slice;
       typedef typename geometry::CheckerBoard<DIM>::bin bin;
@@ -233,10 +233,10 @@ namespace fields {
         for (int i = 0; i < N; ++i)
           f(*this, v[i]);
       }
+      return f;
     }
-
     template <class M>
-    void apply_on_timeslice(const M& f, const int& t){
+    M& apply_on_timeslice(M& f, const int& t) const {
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM>::slice slice;
       typedef typename geometry::CheckerBoard<DIM>::bin bin;
@@ -261,16 +261,25 @@ namespace fields {
         for (int i = 0; i < N; ++i)
           f(*this, v[i]);
       }
+      return f;
     }
     template <class M>
-    void apply_everywhere(M& f){
+    M& apply_everywhere(M& f){
       for (int t = 0; t < g[0]; ++t)
         apply_on_timeslice(f, t);
+      return f;
     }
     template <class M>
-    void apply_everywhere(const M& f){
+    M& apply_everywhere(M& f) const {
       for (int t = 0; t < g[0]; ++t)
         apply_on_timeslice(f, t);
+      return f;
+    }
+    template <class M>
+    const M& apply_everywhere(const M& f){
+      for (int t = 0; t < g[0]; ++t)
+        apply_on_timeslice(f, t);
+      return f;
     }
     template <class M>
     void apply_everywhere_serial(M& f){
@@ -322,22 +331,20 @@ namespace fields {
       return result-=other;
     }
 
-    // DH: maybe call this prod instead?
-    Cplx operator*(LocalField& other) { 
-      detail::inner_prod<LocalField> p(other);
-      apply_everywhere(p);
-      return p.reduce();
-    }
-
     template<class C>
     LocalField& operator*=(C& other) {
       apply_everywhere(detail::inplace_smul<LocalField, C>(other));
       return *this;
     }
     template<class C>
-    LocalField operator*(const C& other) {
+    LocalField operator*(const C& other) const {
       LocalField result(*this);
       return (result *= other);
+    }
+    // DH: maybe call this prod instead?
+    Cplx operator*(const LocalField& other) const { 
+      detail::inner_prod<LocalField> p(other);
+      return apply_everywhere(p).reduce();
     }
     
   private:

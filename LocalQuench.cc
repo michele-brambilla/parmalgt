@@ -127,19 +127,16 @@ void measure(GluonField &U, const std::string& rep_str){
 
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
-  U.apply_on_timeslice(Gu, T-1);
-  U.apply_on_timeslice(Gl, 0);
-  
-  // Evaluate Gamma'a
-  ptSU3 tmp = Gu.val + Gl.val;
+
+  // Evaluate Gamma'
+  ptSU3 tmp = U.apply_on_timeslice(Gu, T-1).val
+    + U.apply_on_timeslice(Gl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Gp" + rep_str + ".bindat");
   
   // Norm of the Gauge Field
   MeasureNormKernel m;
-  U.apply_everywhere(m);
-  m.reduce();
-  io::write_file(m.norm[0], "Norm" + rep_str + ".bindat");
-
+  io::write_file(U.apply_everywhere(m).reduce(), 
+                 "Norm" + rep_str + ".bindat");
 }
 
 // timing

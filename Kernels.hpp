@@ -604,17 +604,20 @@ private:
     static const int DIM = std_types<Field_t>::n_dim;
 
     std::vector<typename array_t<double, ORD+1>::Type> norm;
+
     explicit MeasureNormKernel() : norm(omp_get_max_threads()) { }
-    void operator()(Field_t& U, const Point& n) {
+
+    void operator()(const Field_t& U, const Point& n) {
       std::vector<double> tmp = U[n].Norm();
       int i = omp_get_thread_num();
       for (int k = 0; k < ORD+1; ++k)
         norm[i][k] += tmp[k];
     }
-    void reduce(){
+    typename array_t<double, ORD+1>::Type reduce(){
       for (int i = 1, j = omp_get_max_threads(); i < j; ++i)
         for (int k = 0; k < ORD+1; ++k)
           norm[0][k] += norm[i][k];
+      return norm[0];
     }
   };
 
@@ -837,7 +840,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(Field_t& U, const Point& n){
+    void operator()(const Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k){
@@ -887,7 +890,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(Field_t& U, const Point& n){
+    void operator()(const Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k){
