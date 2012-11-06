@@ -49,4 +49,48 @@ struct SU3Cmp {
   }
   const SU3 &a, &b;
 };
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///
+///  Class to compare Complex types
+///
+///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+///  \date Thu Nov 6 2011
+struct Cmp {
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Constructor.
+  ///
+  ///  \param A First of the numbers to be compared
+  ///  \param B Second number
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Sep 21 19:12:29 2011
+  Cmp(const Cplx &A, const Cplx &B) : a(A), b(B) {}
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  Perform the Comparison
+  ///
+  ///  \param eps Accuracy to which we want to the matrices' entries
+  ///  to be compared. Default value is three machine accuracies.
+  ///
+  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  ///  \date Wed Sep 21 19:14:08 2011
+  ::testing::AssertionResult operator()
+  (const double& eps = std::numeric_limits<double>::epsilon()*3)
+    const {
+    if (fabs((a.re - b.re)/a.re) > eps ||
+        fabs((a.im - b.im)/a.im) > eps)
+        return ::testing::AssertionFailure() 
+          << "  ("  << a.re << ", " << a.im << 
+          ") !=\n  ("<< b.re << ", " << b.im << ")";
+    return  ::testing::AssertionSuccess();
+  }
+  const Cplx &a, &b;
+};
+
+
 #endif

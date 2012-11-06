@@ -72,18 +72,9 @@ namespace pt {
     }
     operator int() const {return n;}
     template <typename T>
-    const T& deref(T const * const f) const {
-      return f[n];
-    }
+    typename T::const_reference deref(const T& v) const { return v[n]; }
     template <typename T>
-    T& deref(T* const f) const {
-      return f[n];
-    }
-    template <typename T>
-    T& deref(std::vector<T>& v) const { return v[n];  }
-    template <typename T>
-    const T& deref(const std::vector<T>& v) const { return v[n];  }
-
+    typename T::reference deref(T& v) const { return v[n]; }
     bool operator==(const Point& other){
       return n == other.n && L_begin == other.L_begin;
     }
