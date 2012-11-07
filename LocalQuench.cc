@@ -55,7 +55,7 @@ const int GF_MODE = 1;
 double taug;
 double alpha;
 
-// some shorthands
+// some short-hands
 // typedef bgf::ScalarBgf Bgf_t; // background field
 typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
@@ -119,8 +119,18 @@ typedef kernels::GFApplyKernel<GluonField> GFApplyKernel;
 typedef kernels::FileWriterKernel<GluonField> FileWriterKernel;
 typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
 
-// Our measurement
-void measure(GluonField &U, const std::string& rep_str){
+// Our measurement...
+
+// Stuff we want to measure in any case
+void measure_common(GluonField &U, const std::string& rep_str){
+  // Norm of the Gauge Field
+  MeasureNormKernel m;
+  io::write_file(U.apply_everywhere(m).reduce(), 
+                 "Norm" + rep_str + ".bindat");
+}
+
+// Stuff that makes sense only for an Abelian background field.
+void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
 
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
@@ -130,10 +140,12 @@ void measure(GluonField &U, const std::string& rep_str){
     + U.apply_on_timeslice(Gl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Gp" + rep_str + ".bindat");
   
-  // Norm of the Gauge Field
-  MeasureNormKernel m;
-  io::write_file(U.apply_everywhere(m).reduce(), 
-                 "Norm" + rep_str + ".bindat");
+  measure_common(U, rep_str);
+}
+
+// Stuff that makes sense only for a scalar background field.
+void measure(GluonField &U, const std::string& rep_str, const bgf::ScalarBgf&){
+  measure_common(U, rep_str);
 }
 
 // timing
@@ -266,7 +278,7 @@ int main(int argc, char *argv[]) {
   for (int i_ = 1; i_ <= NRUN && !soft_kill; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
       timings["measurements"].start();
-      measure(U, rank_str);
+      measure(U, rank_str, Bgf_t());
       timings["measurements"].stop();
     }
     ////////////////////////////////////////////////////////
