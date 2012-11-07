@@ -3,6 +3,7 @@
 #include <Point.hpp>
 #include <LocalField.hpp>
 #include <PtTypes.hpp>
+#include <Background.h>
 #include <newQCDpt.h>
 #include <newMyQCD.h>
 
@@ -825,6 +826,17 @@ private:
     
   };
 
+  // helper class to get around compile errors during initialization
+  // of the kernels below ..
+  template <class B> void init_helper(const int&, B&){ }
+  template <> 
+  void init_helper<bgf::AbelianBgf>(const int& L, bgf::AbelianBgf& Ctilde){
+      Cplx ioL(0, 1./L);
+      Ctilde[0] = -ioL;
+      Ctilde[1] = ioL/2.;
+      Ctilde[2] = ioL/2.;
+  }
+
 #ifdef IMP_ACT
   // Measure Gamma at t = 0
   template <class Field_t>
@@ -849,11 +861,8 @@ private:
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
-    explicit GammaLowerKernel (int L) : val(bgf::zero<BGF>()) { 
-      Cplx ioL(0, 1./L);
-      Ctilde[0] = -ioL;
-      Ctilde[1] = ioL/2.;
-      Ctilde[2] = ioL/2.;
+    explicit GammaLowerKernel (const int& L) : val(bgf::zero<BGF>()) { 
+      init_helper<BGF>(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
@@ -903,11 +912,8 @@ private:
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
     BGF Ctilde;
-    explicit GammaUpperKernel (int L) : val(bgf::zero<BGF>()) { 
-      Cplx ioL(0, 1./L);
-      Ctilde[0] = -ioL;
-      Ctilde[1] = ioL/2.;
-      Ctilde[2] = ioL/2.;
+    explicit GammaUpperKernel (const int& L) : val(bgf::zero<BGF>()) { 
+      init_helper<BGF>(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
@@ -935,7 +941,6 @@ private:
     }
   };
 
-
 #else
   // Measure Gamma at t = 0
   template <class Field_t>
@@ -960,11 +965,8 @@ private:
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
-    explicit GammaLowerKernel (int L) : val(bgf::zero<BGF>()) { 
-      Cplx ioL(0, 1./L);
-      Ctilde[0] = -ioL;
-      Ctilde[1] = ioL/2.;
-      Ctilde[2] = ioL/2.;
+    explicit GammaLowerKernel (const int &L) : val(bgf::zero<BGF>()) { 
+      init_helper<BGF>(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
@@ -975,7 +977,6 @@ private:
 #pragma omp critical
       val += tmp;
     }
-    
   };
 
   // Measure Gamma at t = T - a
@@ -1000,11 +1001,8 @@ private:
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
     BGF Ctilde;
-    explicit GammaUpperKernel (int L) : val(bgf::zero<BGF>()) { 
-      Cplx ioL(0, 1./L);
-      Ctilde[0] = -ioL;
-      Ctilde[1] = ioL/2.;
-      Ctilde[2] = ioL/2.;
+    explicit GammaUpperKernel (const int& L) : val(bgf::zero<BGF>()) { 
+      init_helper<BGF>(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
