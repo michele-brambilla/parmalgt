@@ -213,8 +213,8 @@ namespace fields {
     template <class M>
     M& apply_on_timeslice(M& f, const int& t){
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::bin bin;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
       static geometry::CheckerBoard<DIM, M::n_cb> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
            s != cb[t].end(); ++s){
@@ -225,34 +225,26 @@ namespace fields {
         // some overlap at the edges (i.e. if CHECKER_BOARD_SIZE % L
         // != 0). Here, however a vector would be nice. Let's see...
         // FIXME: This is nasty!!
-        std::vector<pt::Point<DIM> > v(s->begin(), s->end());
-        int N = v.size();
+        //std::vector<pt::Point<DIM> > v(s->begin(), s->end());
+        int N = s->size();
 #pragma omp parallel for
         for (int i = 0; i < N; ++i)
-          f(*this, v[i]);
+          f(*this, (*s)[i]);
       }
       return f;
     }
     template <class M>
     M& apply_on_timeslice(M& f, const int& t) const {
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::bin bin;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
       static geometry::CheckerBoard<DIM, M::n_cb> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
            s != cb[t].end(); ++s){
-        // here, we have to do a nasty workaround
-        // parallel for does not like lists, which is what I used in
-        // the CheckerBoard class. This is e.g. great for the test
-        // case of the CB class and foremost for the case that we have
-        // some overlap at the edges (i.e. if CHECKER_BOARD_SIZE % L
-        // != 0). Here, however a vector would be nice. Let's see...
-        // FIXME: This is nasty!!
-        std::vector<pt::Point<DIM> > v(s->begin(), s->end());
-        int N = v.size();
+        int N = s->size();
 #pragma omp parallel for
         for (int i = 0; i < N; ++i)
-          f(*this, v[i]);
+          f(*this, (*s)[i]);
       }
       return f;
     }

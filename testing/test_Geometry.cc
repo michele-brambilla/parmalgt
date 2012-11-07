@@ -82,14 +82,14 @@ TEST(Geometry, CheckerBoard){
   geometry::CheckerBoard<DIM,1> cb1(g);
   geometry::CheckerBoard<DIM,2> cb2(g);
   geometry::CheckerBoard<DIM,3> cb3(g);
-  typedef geometry::CheckerBoard<DIM,0>::slice slice0;
-  typedef geometry::CheckerBoard<DIM,1>::slice slice1;
-  typedef geometry::CheckerBoard<DIM,2>::slice slice2;
-  typedef geometry::CheckerBoard<DIM,3>::slice slice3;
-  typedef geometry::CheckerBoard<DIM,0>::bin bin0;
-  typedef geometry::CheckerBoard<DIM,1>::bin bin1;
-  typedef geometry::CheckerBoard<DIM,2>::bin bin2;
-  typedef geometry::CheckerBoard<DIM,3>::bin bin3;
+  typedef geometry::CheckerBoard<DIM,0>::l_slice slice0;
+  typedef geometry::CheckerBoard<DIM,1>::l_slice slice1;
+  typedef geometry::CheckerBoard<DIM,2>::l_slice slice2;
+  typedef geometry::CheckerBoard<DIM,3>::l_slice slice3;
+  typedef geometry::CheckerBoard<DIM,0>::l_bin bin0;
+  typedef geometry::CheckerBoard<DIM,1>::l_bin bin1;
+  typedef geometry::CheckerBoard<DIM,2>::l_bin bin2;
+  typedef geometry::CheckerBoard<DIM,3>::l_bin bin3;
   geometry::Geometry<DIM>::raw_pt_t n;
   std::fill(n.begin(), n.end(), 0);
   for (n[0] = 0; n[0] < e[0]; ++n[0])
@@ -166,26 +166,26 @@ TEST(Geometry, CheckerBoard){
   ///////////////////////////////
   /// N = 0
   for (int t = 0; t < g[0]; ++t)
-    for (slice0::const_iterator i = cb0[t].begin();
-         i != cb0[t].end(); ++i)
+    for (slice0::iterator i = cb0.nca(t).begin();
+         i != cb0.nca(t).end(); ++i)
       ASSERT_TRUE(i->empty());
   ///////////////////////////////
   /// N = 1
   for (int t = 0; t < g[0]; ++t)
-    for (slice1::const_iterator i = cb1[t].begin();
-         i != cb1[t].end(); ++i)
+    for (slice1::iterator i = cb1.nca(t).begin();
+         i != cb1.nca(t).end(); ++i)
       ASSERT_TRUE(i->empty());
   ///////////////////////////////
   /// N = 2
   for (int t = 0; t < g[0]; ++t)
-    for (slice2::const_iterator i = cb2[t].begin();
-         i != cb2[t].end(); ++i)
+    for (slice2::iterator i = cb2.nca(t).begin();
+         i != cb2.nca(t).end(); ++i)
       ASSERT_TRUE(i->empty());
   ///////////////////////////////
   /// N = 3
   for (int t = 0; t < g[0]; ++t)
-    for (slice3::const_iterator i = cb3[t].begin();
-         i != cb3[t].end(); ++i)
+    for (slice3::iterator i = cb3.nca(t).begin();
+         i != cb3.nca(t).end(); ++i)
       ASSERT_TRUE(i->empty());
   
 }

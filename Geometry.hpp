@@ -298,15 +298,32 @@ namespace geometry {
     int step;
   };
 
+  /////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////
+  ///
+  ///  Checkerboard scheme for safe parallel application of operators
+  ///  etc. For the moment, I gave the class two copies of the lists
+  ///  of bins, one using c++ list, one using vectors. The list one is
+  ///  mainly for ease of construction and for use in the unit
+  ///  tests. The other one is to speed up the iteration at run-time
+  ///  in LocalField.
+  ///
+  ///  DH, 7th Nov. 2012
   template <int D, int N>
   class CheckerBoard {
   public:
     typedef pt::Point<D> Point; // single point
-    typedef std::list<Point> bin; // one bin
-    typedef std::vector<bin> slice; // bins in a time slice
-    typedef std::vector<slice> lattice; // all time slices
+    // first, we use a list for fast generation of the bins
+    typedef std::list<Point> l_bin; // one bin
+    typedef std::vector<l_bin> l_slice; // bins in a time slice
+    typedef std::vector<l_slice> l_lattice; // all time slices
+    // in a second step, we replace that by vectors for later
+    // convenience
+    typedef std::vector<Point> v_bin; // one bin
+    typedef std::vector<v_bin> v_slice; // bins in a time slice
+    typedef std::vector<v_slice> v_lattice; // all time slices
     explicit CheckerBoard (const Geometry<D>& g) :
-      lat(g[0] + 1, slice(g.template n_bins<N>())){
+      lat(g[0] + 1, l_slice(g.template n_bins<N>())), v_lat(g[0] + 1) {
       for (int t = 0; t <= g[0]; ++t){
         geometry::SliceIterator<D, 0> iter =
           g.template mk_slice_iterator<0>(pt::Direction<D>(0), t, 0);
@@ -314,19 +331,23 @@ namespace geometry {
           Point p = iter.yield();
           lat[t].at(g.template bin<N>(p)).push_back(p);
         }
+        for (typename l_slice::const_iterator i = lat[t].begin();
+             i != lat[t].end(); ++i)
+          v_lat[t].push_back(v_bin(i->begin(), i->end()));
       }
     }
-    const slice& operator[](const int& i) const {
-      return lat[i];
+    const v_slice& operator[](const int& i) const {
+      return v_lat[i];
     }
     // as operator[] just for non-const access. this is for testing
     // purposes only and should not be used 'in the wild' use the
     // constant operator above instead.
-    slice& nca(const int& i){
+    l_slice& nca(const int& i){
       return lat[i];
     }
   private:
-    lattice lat;
+    l_lattice lat;
+    v_lattice v_lat;
   };
 }
 
