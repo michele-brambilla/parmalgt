@@ -46,6 +46,7 @@ namespace fields {
       void operator()(Field_t& F, const pt::Point<dim>& n) const {
         F[n] += (*other)[n];
       }
+      static const int n_cb = 0;
     private:
       inplace_add(const inplace_add&) { } // no copy allowed
       Field_t const * other;
@@ -58,6 +59,7 @@ namespace fields {
       void operator()(Field_t& F, const pt::Point<dim>& n) const {
         F[n] -= (*other)[n];
       }
+     static const int n_cb = 0;
     private:
       inplace_sub(const inplace_sub&) { } // no copy allowed
       Field_t const * other;
@@ -71,6 +73,7 @@ namespace fields {
       void operator()(Field_t& F, const pt::Point<dim>& n) const {
         F[n] *= other;
       }
+      static const int n_cb = 0;
     private:
       inplace_smul(const inplace_smul&) { } // no copy allowed
       Scalar_t other;
@@ -80,7 +83,7 @@ namespace fields {
     template <class Field_t> class inner_prod {
     public:
       static const int dim = Field_t::dim;
-
+      static const int n_cb = 0;
       inner_prod(const Field_t &F) : 
         result(omp_get_max_threads(), Cplx(0,0)), other(&F) { }
 
@@ -210,14 +213,9 @@ namespace fields {
     template <class M>
     M& apply_on_timeslice(M& f, const int& t){
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM>::slice slice;
-      typedef typename geometry::CheckerBoard<DIM>::bin bin;
-#ifdef IMP_ACT
-      const int CHECKER_BOARD_SIZE = 2;
-#else
-      const int CHECKER_BOARD_SIZE = 1;
-#endif
-      static geometry::CheckerBoard<DIM> cb(g, CHECKER_BOARD_SIZE);
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::bin bin;
+      static geometry::CheckerBoard<DIM, M::n_cb> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
            s != cb[t].end(); ++s){
         // here, we have to do a nasty workaround
@@ -238,14 +236,9 @@ namespace fields {
     template <class M>
     M& apply_on_timeslice(M& f, const int& t) const {
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM>::slice slice;
-      typedef typename geometry::CheckerBoard<DIM>::bin bin;
-#ifdef IMP_ACT
-      const int CHECKER_BOARD_SIZE = 2;
-#else
-      const int CHECKER_BOARD_SIZE = 1;
-#endif
-      static geometry::CheckerBoard<DIM> cb(g, CHECKER_BOARD_SIZE);
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::bin bin;
+      static geometry::CheckerBoard<DIM, M::n_cb> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
            s != cb[t].end(); ++s){
         // here, we have to do a nasty workaround

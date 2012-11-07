@@ -10,6 +10,7 @@ struct randomize {
   void operator()(Field_t& F, const pt::Point<dim>& n) const {
     F[n] = rand();
   }
+  static const int n_cb = 0;
 };
 
 TEST(Operators, AddAssign){

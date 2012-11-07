@@ -136,8 +136,8 @@ namespace geometry {
     ///  reduces to the usual checkerboard scheme.
     ///
     ///  added by DH, 31st Oct. 2012
-    
-    int bin(const pt::Point<DIM>& p, const int& N) const {
+    template <int N>
+    int bin(const pt::Point<DIM>& p) const {
       raw_pt_t n = coords(p);
       // A) is p in a black (0) or a white (1) block?
       int A = 0;
@@ -150,11 +150,14 @@ namespace geometry {
       return A*pow(N, DIM) + B;
     }
 
+
     /// get the total number of bins with a checkerboard scheme of
     /// cube size N
-    int n_bins(const int& N) const{
+    template <int N>
+    int n_bins() const{
       return 2*pow(N, DIM);
     }
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
@@ -217,6 +220,13 @@ namespace geometry {
       }
     }
   };
+  
+  // specializations for four dimensions ...
+  
+  template <> template <>
+  int Geometry<4>::bin<0>(const pt::Point<4>&) const { return 0; }
+  template <> template <>
+  int Geometry<4>::n_bins<0>() const { return 1; }
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -288,21 +298,21 @@ namespace geometry {
     int step;
   };
 
-  template <int D>
+  template <int D, int N>
   class CheckerBoard {
   public:
     typedef pt::Point<D> Point; // single point
     typedef std::list<Point> bin; // one bin
     typedef std::vector<bin> slice; // bins in a time slice
     typedef std::vector<slice> lattice; // all time slices
-    CheckerBoard (const Geometry<D>& g, const int& N) :
-      lat(g[0] + 1, slice(g.n_bins(N))){
+    explicit CheckerBoard (const Geometry<D>& g) :
+      lat(g[0] + 1, slice(g.template n_bins<N>())){
       for (int t = 0; t <= g[0]; ++t){
         geometry::SliceIterator<D, 0> iter =
           g.template mk_slice_iterator<0>(pt::Direction<D>(0), t, 0);
         while (iter.is_good()){
           Point p = iter.yield();
-          lat[t].at(g.bin(p, N)).push_back(p);
+          lat[t].at(g.template bin<N>(p)).push_back(p);
         }
       }
     }

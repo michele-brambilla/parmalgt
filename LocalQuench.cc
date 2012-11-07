@@ -106,9 +106,6 @@ typedef kernels::GaugeFixingKernel<GF_MODE, GluonField> GaugeFixingKernel;
 typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
 
 // ... and for the measurements ...
-typedef kernels::PlaqLowerKernel<GluonField> PlaqLowerKernel;
-typedef kernels::PlaqUpperKernel<GluonField> PlaqUpperKernel;
-typedef kernels::PlaqSpatialKernel<GluonField> PlaqSpatialKernel;
 typedef kernels::MeasureNormKernel<GluonField> MeasureNormKernel;
 typedef kernels::GammaUpperKernel<GluonField> GammaUpperKernel;
 typedef kernels::GammaLowerKernel<GluonField> GammaLowerKernel;

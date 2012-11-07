@@ -115,6 +115,10 @@ namespace kernels {
     typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
     typedef typename array_t<double, 1>::Type weight_array_t;    
 
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 1;
+
     ptsu3_array_t val;
     Direction mu;
     static weight_array_t weights;
@@ -175,6 +179,10 @@ namespace kernels {
 
     typedef typename array_t<ptSU3, 2>::Type ptsu3_array_t;    
     typedef typename array_t<double, 2>::Type weight_array_t;    
+    
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 2;
 
     ptsu3_array_t val;
     Direction mu;
@@ -322,6 +330,10 @@ namespace kernels {
     typedef std::vector<Cplx>::iterator cpx_vec_it;
     typedef std::vector<std::vector<Cplx> >::iterator outer_cvec_it;
 
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = StapleK_t::n_cb;    
+
     // for testing, c.f. below
     static std::vector<MyRand> rands;
     //static MyRand Rand;
@@ -414,7 +426,7 @@ namespace kernels {
 
   template <int METHOD, class Field_t>
   class GaugeFixingKernel {
-
+  public:
     // collect info about the field
     typedef typename std_types<Field_t>::ptGluon_t ptGluon;
     typedef typename std_types<Field_t>::ptSU3_t ptSU3;
@@ -425,11 +437,15 @@ namespace kernels {
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
-  public:
     explicit GaugeFixingKernel (const double& a) : alpha (a) { }
     void operator()(Field_t& U, const Point& n) const { 
     do_it(U, n, mode_selektor<METHOD>());
     }
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 1;
+
 private:
     double alpha;
   template <int M> struct mode_selektor { };
@@ -525,8 +541,12 @@ private:
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
-  Direction mu;
-  ptSU3 M; // zero momentum contribution
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 1;
+
+    Direction mu;
+    ptSU3 M; // zero momentum contribution
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
@@ -538,10 +558,11 @@ private:
     ///  \param N The sum over the zero modes to be subtracted.
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Thu May 24 17:51:17 2012
-  ZeroModeSubtractionKernel(const Direction& nu, const ptsu3& N) :
-    mu(nu), M(exp<BGF, ORD>(-1*reH(N))) { }
-  void operator()(Field_t& U, const Point& n) {
-    U[n][mu] = M * U[n][mu];
+    ZeroModeSubtractionKernel(const Direction& nu, const ptsu3& N) :
+      mu(nu), M(exp<BGF, ORD>(-1*reH(N))) { }
+
+    void operator()(Field_t& U, const Point& n) {
+      U[n][mu] = M * U[n][mu];
   }
 };
   
@@ -565,6 +586,10 @@ private:
     typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
 
     explicit SetBgfKernel(const int& t_in) : t(t_in) { }
     int t;
@@ -603,6 +628,9 @@ private:
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
     std::vector<typename array_t<double, ORD+1>::Type> norm;
 
     explicit MeasureNormKernel() : norm(omp_get_max_threads()) { }
@@ -621,43 +649,6 @@ private:
     }
   };
 
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
-  ///  Kernel to measure the temporal Plaquette.
-  ///
-  ///  This measures the temporal plaquette at t = 0, arranged such
-  ///   that the derivative w.r.t. eta may be inserted at the very
-  ///   end.
-  ///
-  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
-  ///  \date Thu May 24 17:53:07 2012
-  template <class Field_t>
-  struct PlaqLowerKernel {
-
-    // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
-
-    ptSU3 val;
-    PlaqLowerKernel () : val(bgf::zero<BGF>()) { }
-    void operator()(Field_t& U, const Point& n){
-      Direction t(0);
-      ptSU3 tmp(bgf::zero<BGF>());
-      for (Direction k(1); k.is_good(); ++k)
-        tmp += U[n][k].bgf() * U[n + k][t] * 
-          dag( U[n +t][k] ) * dag( U[n][t] );
-#pragma omp critical
-      val += tmp;
-    }
-  
-  };
   // measures Udagger * U
   template <class Field_t>
   struct UdagUKernel {
@@ -671,6 +662,10 @@ private:
     typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
 
     ptSU3 val;
     UdagUKernel () : val(bgf::zero<BGF>()) { }
@@ -697,6 +692,10 @@ private:
     typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
 
     ptSU3 val;
     // \tilde C = - [d_eta C]
@@ -732,6 +731,10 @@ private:
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
     ptsu3 val;
 
     void operator()(Field_t& U, const Point& n){
@@ -758,6 +761,10 @@ private:
 
     ptSU3 Omega, OmegaDag;
     
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
     GFApplyKernel (ptsu3 omega, const double& alpha,
                                  const int& L) { 
       for (int r = 0; r < ORD; ++r)
@@ -794,6 +801,10 @@ private:
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
+     // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
     ptSU3 val;
     // \tilde C = - [d_eta C]
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
@@ -828,6 +839,10 @@ private:
     typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
 
     ptSU3 val;
     // \tilde C = - [d_eta C]
@@ -879,6 +894,10 @@ private:
     typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
 
     ptSU3 val;
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
@@ -932,6 +951,10 @@ private:
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
     ptSU3 val;
     // \tilde C = - [d_eta C]
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
@@ -943,7 +966,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(Field_t& U, const Point& n){
+    void operator()(const Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
@@ -969,6 +992,10 @@ private:
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
     ptSU3 val;
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
@@ -979,7 +1006,7 @@ private:
       Ctilde[1] = ioL/2.;
       Ctilde[2] = ioL/2.;
     }
-    void operator()(Field_t& U, const Point& n){
+    void operator()(const Field_t& U, const Point& n){
       Direction t(0);
       ptSU3 tmp(bgf::zero<BGF>());
       for (Direction k(1); k.is_good(); ++k)
@@ -995,85 +1022,14 @@ private:
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
-  ///  Kernel to measure the temporal Plaquette.
-  ///
-  ///  This measures the plaquette at t = T, arranged such that the
-  ///   derivative w.r.t. eta may be inserted at the very end.
-  ///
-  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
-  ///  \date Thu May 24 17:53:07 2012
-  template <class Field_t>
-  struct PlaqUpperKernel {
-
-    // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
-
-
-  ptSU3 val;
-  PlaqUpperKernel () : val(bgf::zero<BGF>()) { }
-  void operator()(Field_t& U, const Point& n){
-    Direction t(0);
-    ptSU3 tmp(bgf::zero<BGF>());
-    for (Direction k(1); k.is_good(); ++k)
-      tmp += dag( U [n + t][k].bgf() ) * dag( U[n][t] ) *
-              U[n][k] * U[n + k][t];
-#pragma omp cirtical
-    val += tmp;
-  }
-};
-
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
-  ///  Kernel to measure the spatial Plaquette.
-  ///
-  ///
-  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
-  ///  \date Thu May 24 17:53:07 2012
-  template <class Field_t>
-  struct PlaqSpatialKernel {
-
-    // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
-
-    ptSU3 val;
-    PlaqSpatialKernel () : val(bgf::zero<BGF>()) { }
-    void operator()(Field_t& U, const Point& n){
-      ptSU3 tmp(bgf::zero<BGF>());
-      for (Direction k(1); k.is_good(); ++k)
-        for (Direction l(k + 1); l.is_good(); ++l)
-          tmp += U[n][k] * U[n + k][l]
-            * dag( U[n + l][k] ) * dag( U[n][l] );
-#pragma omp critical
-      val += tmp;
-    }
-};
-
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
   ///  Writing a gluon to a file.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri May 25 15:59:06 2012
 
   template <class Field_t>
-  struct FileWriterKernel {
-
+  class FileWriterKernel {
+  public:
     // collect info about the field
     typedef typename std_types<Field_t>::ptGluon_t ptGluon;
     typedef typename std_types<Field_t>::ptSU3_t ptSU3;
@@ -1083,7 +1039,6 @@ private:
     typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
-
 
     explicit FileWriterKernel (uparam::Param& p) : o(p) { }
 
@@ -1093,6 +1048,10 @@ private:
         U[n][mu].write(o);
     }
     io::CheckedOut o;
+  private:
+    // make n_cb private to prevent parallel application of this
+    // kernel, because this would be a terrible idea
+    static const int n_cb = 0;
   };
   
   //////////////////////////////////////////////////////////////////////
@@ -1105,7 +1064,7 @@ private:
 
   template <class Field_t>
   struct FileReaderKernel {
-
+  public:
     // collect info about the field
     typedef typename std_types<Field_t>::ptGluon_t ptGluon;
     typedef typename std_types<Field_t>::ptSU3_t ptSU3;
@@ -1123,6 +1082,10 @@ private:
         U[n][mu].read(i);
     }
     io::CheckedIn i;
+  private:
+    // make n_cb private to prevent parallel application of this
+    // kernel, because this would be a terrible idea
+    static const int n_cb = 0;
   };
 
 
