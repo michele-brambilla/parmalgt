@@ -16,6 +16,7 @@
 #include <time.h>
 #endif
 #include <signal.h>
+#include <util.hpp>
 
 #ifdef USE_MPI
 #include <mpi.h>
@@ -350,9 +351,9 @@ int main(int argc, char *argv[]) {
   of << "Timings:\n";
   for (tmap::const_iterator i = timings.begin(); i != timings.end();
        ++i){
-    io::pretty_print(i->first, i->second.t, "s", of);
+    util::pretty_print(i->first, i->second.t, "s", of);
   }
-  io::pretty_print("TOTAL", Timer::t_tot, "s", of);
+  util::pretty_print("TOTAL", Timer::t_tot, "s", of);
   of.close();
 
   return 0;

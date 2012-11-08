@@ -4,13 +4,7 @@
 #include <string>
 #include <algorithm>
 #include <map>
-
-namespace io {
-  template <typename T>
-  inline void pretty_print(const std::string& s, const T& d, 
-                           const std::string& unit = "",
-			   std::ostream& os = std::cout);
-}
+#include <util.hpp>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -55,7 +49,7 @@ namespace uparam {
     }
     void print(std::ostream& os = std::cout) const {
       for (const_iterator i = begin(); i != end(); ++i)
-        io::pretty_print(i->first, i->second, "", os);
+        util::pretty_print(i->first, i->second, "", os);
     }
   private:
     map_t params;
