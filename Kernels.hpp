@@ -828,18 +828,34 @@ private:
 
   // helper class to get around compile errors during initialization
   // of the kernels below ..
-  template <class B> void init_helper(const int&, B&){ }
+  template <class B> struct init_helper_gamma {
+    void operator()(const int&, B&) const {}
+  };
   template <> 
-  void init_helper<bgf::AbelianBgf>(const int& L, bgf::AbelianBgf& Ctilde){
+  struct init_helper_gamma<bgf::AbelianBgf> {
+    void operator()(const int& L, bgf::AbelianBgf& Ctilde) const {
       Cplx ioL(0, 1./L);
-      Ctilde[0] = -ioL;
-      Ctilde[1] = ioL/2.;
-      Ctilde[2] = ioL/2.;
-  }
+      Ctilde[0] = -2.*ioL;
+      Ctilde[1] = ioL;
+      Ctilde[2] = ioL;
+    }
+  };
+  template <class B> struct init_helper_vbar {
+    void operator()(const int&, B&) const {}
+  };
+  template <> 
+  struct init_helper_vbar<bgf::AbelianBgf> {
+    void operator()(const int& L, bgf::AbelianBgf& Ctilde) const {
+      Cplx ioL(0, 1./L);
+      Ctilde[0] = 0;
+      Ctilde[1] = 2.*ioL;
+      Ctilde[2] = -2.*ioL;
+    }
+  };
 
 #ifdef IMP_ACT
   // Measure Gamma at t = 0
-  template <class Field_t>
+  template <class Field_t, typename init_helper_t>
   struct GammaLowerKernel {
 
     // collect info about the field
@@ -862,7 +878,7 @@ private:
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
     explicit GammaLowerKernel (const int& L) : val(bgf::zero<BGF>()) { 
-      init_helper<BGF>(L, Ctilde);
+      init_helper_t<BGF>()(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
@@ -891,7 +907,7 @@ private:
   };
 
   // Measure Gamma at t = T - a
-  template <class Field_t>
+  template <class Field_t, typename init_helper_t>
   struct GammaUpperKernel {
 
     // collect info about the field
@@ -913,7 +929,7 @@ private:
     // we can use Ctilde as above
     BGF Ctilde;
     explicit GammaUpperKernel (const int& L) : val(bgf::zero<BGF>()) { 
-      init_helper<BGF>(L, Ctilde);
+      init_helper_t<BGF>()(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
@@ -943,7 +959,7 @@ private:
 
 #else
   // Measure Gamma at t = 0
-  template <class Field_t>
+  template <class Field_t, template <class C> class init_helper_t>
   struct GammaLowerKernel {
 
     // collect info about the field
@@ -966,7 +982,7 @@ private:
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
     explicit GammaLowerKernel (const int &L) : val(bgf::zero<BGF>()) { 
-      init_helper<BGF>(L, Ctilde);
+      init_helper_t<BGF>()(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
@@ -980,7 +996,7 @@ private:
   };
 
   // Measure Gamma at t = T - a
-  template <class Field_t>
+  template <class Field_t, template <class C> class init_helper_t>
   struct GammaUpperKernel {
 
     // collect info about the field
@@ -1002,7 +1018,7 @@ private:
     // we can use Ctilde as above
     BGF Ctilde;
     explicit GammaUpperKernel (const int& L) : val(bgf::zero<BGF>()) { 
-      init_helper<BGF>(L, Ctilde);
+      init_helper_t<BGF>()(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
       Direction t(0);
