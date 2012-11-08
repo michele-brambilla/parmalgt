@@ -16,13 +16,10 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 # moment
 
 bin_PROGRAMS = test_Geometry test_Bgfield test_Helper test_SU3 test_newQCDpt \
-	test_PtTypes test_Dirac test_LocalField
+	test_PtTypes test_LocalField
 
 test_LocalField_SOURCES = test_LocalField.cc
 test_LocalField_LDADD = lib/libgtest_main.la -lpthread
-
-test_Dirac_SOURCES = test_Dirac.cc ../MyMath.cc ../MyRand.cc
-test_Dirac_LDADD = lib/libgtest_main.la -lpthread
 
 test_Geometry_SOURCES = test_Geometry.cc
 test_Geometry_LDADD = lib/libgtest_main.la -lpthread
