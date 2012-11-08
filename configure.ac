@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
+AC_PREREQ([2.59])
 AC_INIT([ParmaLGT], [0.11], [])
-AM_INIT_AUTOMAKE([1.11])
+AM_INIT_AUTOMAKE([1.09])
 AC_CONFIG_SRCDIR([Background.h])
 AC_CONFIG_HEADERS([config.h])
 
@@ -41,7 +41,7 @@ AC_SUBST([BOOST_DIR],["$with_boost_srcdir"])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_INLINE
-AC_TYPE_UINT32_T
+# AC_TYPE_UINT32_T
 # AC_TYPE_UINT64_T
 
 # Checks for library functions.
