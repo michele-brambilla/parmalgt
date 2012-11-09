@@ -16,6 +16,7 @@
 #include <time.h>
 #endif
 #include <signal.h>
+#include <util.hpp>
 
 #ifdef USE_MPI
 #include <mpi.h>
@@ -107,8 +108,10 @@ typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
 
 // ... and for the measurements ...
 typedef kernels::MeasureNormKernel<GluonField> MeasureNormKernel;
-typedef kernels::GammaUpperKernel<GluonField> GammaUpperKernel;
-typedef kernels::GammaLowerKernel<GluonField> GammaLowerKernel;
+typedef kernels::GammaUpperKernel<GluonField, kernels::init_helper_gamma> GammaUpperKernel;
+typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_gamma> GammaLowerKernel;
+typedef kernels::GammaUpperKernel<GluonField, kernels::init_helper_vbar> VbarUpperKernel;
+typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_vbar> VbarLowerKernel;
 typedef kernels::UdagUKernel<GluonField> UdagUKernel;
 typedef kernels::TemporalPlaqKernel<GluonField> TemporalPlaqKernel;
 typedef kernels::PlaqKernel<GluonField> PlaqKernel;
@@ -139,6 +142,14 @@ void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
   ptSU3 tmp = U.apply_on_timeslice(Gu, T-1).val
     + U.apply_on_timeslice(Gl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Gp" + rep_str + ".bindat");
+
+  VbarUpperKernel Vu(L);
+  VbarLowerKernel Vl(L);
+
+  // Evaluate vbar
+  tmp = U.apply_on_timeslice(Vu, T-1).val
+    + U.apply_on_timeslice(Vl, 0).val;
+  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Vbar" + rep_str + ".bindat");
   
   measure_common(U, rep_str);
 }
@@ -350,9 +361,9 @@ int main(int argc, char *argv[]) {
   of << "Timings:\n";
   for (tmap::const_iterator i = timings.begin(); i != timings.end();
        ++i){
-    io::pretty_print(i->first, i->second.t, "s", of);
+    util::pretty_print(i->first, i->second.t, "s", of);
   }
-  io::pretty_print("TOTAL", Timer::t_tot, "s", of);
+  util::pretty_print("TOTAL", Timer::t_tot, "s", of);
   of.close();
 
   return 0;
