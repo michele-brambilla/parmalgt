@@ -152,7 +152,9 @@ inline bool operator!=(double, Cplx);
 
 
 inline std::ostream& operator<<(std::ostream& os, const Cplx& c){
-  os << c.re << c.im;
+  os << "(" << c.re 
+     << ","<< c.im
+     << ")";
   return os;
 }
 
@@ -1442,6 +1444,12 @@ inline CVector SU3::operator^(const CVector& V) const {
   return res;
 }
 
+inline std::ostream& operator<<(std::ostream& os, const CVector& c){
+  os << c.whr[0] << "\n"
+     << c.whr[1] << "\n"
+     << c.whr[2] << "\n";
+  return os;
+}
 
 SU3 SU3rand(MyRand&);
 
