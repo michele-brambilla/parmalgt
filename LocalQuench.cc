@@ -157,7 +157,7 @@ void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
 
   // Evaluate vbar
   tmp = U.apply_on_timeslice(Vu, T-1).val
-    + U.apply_on_timeslice(Vl, 0).val;
+    - U.apply_on_timeslice(Vl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Vbar" + rep_str + ".bindat");
   
   measure_common(U, rep_str);
