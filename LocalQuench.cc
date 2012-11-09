@@ -94,10 +94,19 @@ template <class PR> struct GUK {
   typedef  kernels::GaugeUpdateKernel <GluonField, StK, PR> type;
 };
 #else
+#ifdef HIGHER_ORDER_INT
+typedef fields::LocalField<SU3, DIM> RandField;
+typedef kernels::RSU3Kernel<RandField> RandKernel;
+typedef kernels::StapleSqKernel<GluonField> StK;
+typedef kernels::TrivialPreProcess<GluonField> PrK;
+typedef kernels::GaugeUpdateKernelStepOne <GluonField, StK, PrK, RandField> GUKStepOne;
+typedef kernels::GaugeUpdateKernelStepTwo <GluonField, StK, PrK, RandField> GUKStepTwo;
+#else
 typedef kernels::StapleSqKernel<GluonField> StK;
 typedef kernels::TrivialPreProcess<GluonField> PrK;
 typedef kernels::GaugeUpdateKernel <GluonField, StK, PrK> 
         GaugeUpdateKernel;
+#endif
 #endif
 typedef kernels::ZeroModeSubtractionKernel<GluonField> ZeroModeSubtractionKernel;
 typedef kernels::GaugeFixingKernel<GF_MODE, GluonField> GaugeFixingKernel;
@@ -254,9 +263,15 @@ int main(int argc, char *argv[]) {
     GUK<PrTK>::type::rands[i].init(rand());
   }
 #else
+#ifdef HIGHER_ORDER_INT
+  RandKernel::rands.resize(L*L*L*(T+1));
+  for (int i = 0; i < L*L*L*(T+1); ++i)
+    RandKernel::rands[i].init(rand());
+#else
   GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
   for (int i = 0; i < L*L*L*(T+1); ++i)
     GaugeUpdateKernel::rands[i].init(rand());
+#endif
 #endif
   ////////////////////////////////////////////////////////////////////
   //
@@ -267,10 +282,18 @@ int main(int argc, char *argv[]) {
   std::fill(e.begin(), e.end(), L);
   // for SF boundary: set the time extend to T + 1
   e[0] = T + 1;
-  // we will have just one field
-  GluonField U(e, 1, 0, nt());
   // initialize background field get method
   bgf::get_abelian_bgf(0, 0, T, L, s);
+  // we will have just one field
+  GluonField U(e, 1, 0, nt());
+#ifdef HIGHER_ORDER_INT
+  // or two if we use an higher order integrator
+  GluonField Up(e, 1, 0, nt());
+  for (int t = 0; t <= T; ++t){
+    SetBgfKernel f(t);
+    Up.apply_on_timeslice(f, t);
+  }
+#endif
   ////////////////////////////////////////////////////////////////////
   //
   // initialzie the background field of U or read config
@@ -323,6 +346,32 @@ int main(int argc, char *argv[]) {
     U.apply_on_timeslice(gut[0], T-1);
     timings["Gauge Update"].stop();
 #else
+#ifdef HIGHER_ORDER_INT
+    // TODO: GET RID OF POINTERS!!!!
+    // make new gluon field
+    RandField R(e, 1, 0, nt());
+    R.apply_everywhere(RandKernel());
+    std::vector<GUKStepOne> gu;
+    for (Direction mu; mu.is_good(); ++mu)
+      gu.push_back(GUKStepOne(mu, taug, &Up, &R));
+    // for x_0 = 0 update the temporal direction only
+    U.apply_on_timeslice(gu[0], 0);
+    // for x_0 != 0 update all directions
+    for (int t = 1; t < T; ++t)
+      for (Direction mu; mu.is_good(); ++mu)
+        U.apply_on_timeslice(gu[mu], t);
+
+    std::vector<GUKStepTwo> gu2;
+    for (Direction mu; mu.is_good(); ++mu)
+      gu2.push_back(GUKStepTwo(mu, taug, &Up, &R));
+    // for x_0 = 0 update the temporal direction only
+    U.apply_on_timeslice(gu2[0], 0);
+    // for x_0 != 0 update all directions
+    for (int t = 1; t < T; ++t)
+      for (Direction mu; mu.is_good(); ++mu)
+        U.apply_on_timeslice(gu2[mu], t);
+    
+#else
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
       gu.push_back(GaugeUpdateKernel(mu, taug));
@@ -334,6 +383,7 @@ int main(int argc, char *argv[]) {
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu[mu], t);
     timings["Gauge Update"].stop();
+#endif
 #endif
     ////////////////////////////////////////////////////////
     //

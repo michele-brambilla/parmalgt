@@ -358,6 +358,8 @@ namespace kernels {
       plaq(omp_get_max_threads(), std::vector<Cplx>(ORD+1)), 
       pp(omp_get_max_threads(), std::vector<Cplx>(ORD+1)) { }
 
+
+
     void operator()(Field_t& U, const Point& n) {
       ptSU3 W;
 
@@ -368,12 +370,13 @@ namespace kernels {
       Process::pre_process(U,n,mu);
       st(U,n);
       Process::post_process(U,n,mu);
+      
       pp[omp_get_thread_num()] = (st.val[0].trace()); // Save the 1x1 plaquette
 
       for(cpx_vec_it k = plaq[omp_get_thread_num()].begin(), 
-	    j = pp[omp_get_thread_num()].begin(),
-	    e = plaq[omp_get_thread_num()].end(); 
-	  k != e; ++k, ++j) *k += *j;
+      j = pp[omp_get_thread_num()].begin(),
+      e = plaq[omp_get_thread_num()].end(); 
+      	  k != e; ++k, ++j) *k += *j;
 
       ptsu3 tmp  = st.reduce().reH() * -taug;
 
@@ -405,8 +408,129 @@ namespace kernels {
     }
     
   };
-  template <class C, class P, class Q> std::vector<MyRand> 
+
+template <class C, class P, class Q> std::vector<MyRand> 
   kernels::GaugeUpdateKernel<C,P,Q>::rands;
+
+  template <class Field_t> struct RSU3Kernel {
+    
+    // collect info about the field
+    static const int n_dim = Field_t::dim;
+    typedef pt::Point<n_dim> Point;
+    static std::vector<MyRand> rands;
+    static const int n_cb = 0;
+
+    void operator()(Field_t& U, const Point& n) const {
+      U[n] = SU3rand(rands[n]);
+    }
+  };
+
+  template <class C> std::vector<MyRand> 
+  kernels::RSU3Kernel<C>::rands;
+
+  template <class Field_t, 
+	    class StapleK_t, class Process, class RandField_t >
+  struct GaugeUpdateKernelStepOne {
+
+  // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
+    typedef std::vector<Cplx>::iterator cpx_vec_it;
+    typedef std::vector<std::vector<Cplx> >::iterator outer_cvec_it;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = StapleK_t::n_cb;    
+
+    Direction mu;
+    double taug, stau;
+    Field_t *Utarget;
+    RandField_t *SU3rand;
+    GaugeUpdateKernelStepOne(const Direction& nu, const double& t,
+                             Field_t* Utrgt, RandField_t *rands) :
+      mu(nu), taug(t), stau(sqrt(t)), Utarget(Utrgt), SU3rand(rands) { }
+
+
+
+    void operator()(Field_t& U, const Point& n) {
+      ptSU3 W;
+
+      // We wants this static, but it fails ... field grows bigger and bigger ...
+
+      // Make a Kernel to calculate and store the plaquette(s)
+      StapleK_t st(mu); // maye make a vector of this a class member
+      Process::pre_process(U,n,mu);
+      st(U,n);
+      Process::post_process(U,n,mu);
+      
+      ptsu3 tmp  = st.reduce().reH() * ((-3./2 + sqrt(2.))* taug);
+
+      // DH Feb. 6, 2012
+      tmp[0] -= stau * (1. - sqrt(2)) * (*SU3rand)[n];
+      (*Utarget)[n][mu] = exp<BGF, ORD>(tmp) * U[n][mu]; // back to SU3
+    }
+    
+  };
+
+  template <class Field_t, 
+	    class StapleK_t, class Process, class RandField_t >
+  struct GaugeUpdateKernelStepTwo {
+
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
+    typedef std::vector<Cplx>::iterator cpx_vec_it;
+    typedef std::vector<std::vector<Cplx> >::iterator outer_cvec_it;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = StapleK_t::n_cb;    
+
+    Direction mu;
+    double taug, stau;
+    Field_t *Uprime;
+    RandField_t *SU3rand;
+    GaugeUpdateKernelStepTwo(const Direction& nu, const double& t,
+                             Field_t *Up, RandField_t* rands) :
+      mu(nu), taug(t), stau(sqrt(t)), Uprime(Up), 
+      SU3rand(rands) { }
+
+
+
+    void operator()(Field_t& U, const Point& n) {
+      ptSU3 W;
+
+      // We wants this static, but it fails ... field grows bigger and bigger ...
+
+      // Make a Kernel to calculate and store the plaquette(s)
+      StapleK_t st(mu); // maye make a vector of this a class member
+      Process::pre_process(U,n,mu);
+      st(*Uprime,n);
+      Process::post_process(U,n,mu);
+      const double ca = 3.;
+      ptsu3 tmp  = st.reduce().reH() * ((1. + taug*(5. - 3.*sqrt(2.))*
+                                         ca/12.)* taug) * -1.;
+
+      // DH Feb. 6, 2012
+      tmp[0] -= stau * (*SU3rand)[n];
+      U[n][mu] = exp<BGF, ORD>(tmp) * U[n][mu]; // back to SU3
+    }
+    
+  };
 
 
   //////////////////////////////////////////////////////////////////////
