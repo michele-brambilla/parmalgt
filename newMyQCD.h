@@ -72,6 +72,16 @@ template <int DIM>
       i->randomize();
   }
   
+  self_t& operator+=(const self_t& other) {
+    for (int i = 0; i < psi_.size(); ++i) psi_[i] += other[i];
+    return *this;
+  }
+
+  self_t& operator-=(const self_t& other) {
+    for (int i = 0; i < psi_.size(); ++i) psi_[i] -= other[i];
+    return *this;
+  }
+
   template <class C>
   self_t& operator*=(const C& other){
     for (iterator i = begin(), e = end(); i != e; ++i) (*i) *= other;
@@ -81,32 +91,9 @@ template <int DIM>
   template <class C>
   self_t& operator/=(const C& other){
     for (iterator i = begin(), e = end(); i != e; ++i) (*i) /= other;
-     return *this;
-  }
-
-  self_t& operator+=(const self_t& other){
-    for (int i = 0; i < psi_.size(); ++i) psi_[i] += other[i];
     return *this;
   }
 
-  self_t& operator-=(const self_t& other){
-    for (int i = 0; i < psi_.size(); ++i) psi_[i] -= other[i];
-    return *this;
-  }
-
-  template<class C>
-    self_t operator*(const C& other){
-    self_t result;
-    for (iterator i = begin(), e = end(), i1 = result.begin(); i != e; ++i, ++i1) (*i1) = (*i)*other;
-    return result;
-  }
-
-  template<class C>
-    self_t operator/(const C& other){
-    self_t result(*this);
-    for (iterator i = result.begin(), e = result.end(); i != e; ++i) i /= other;
-    return result;
-  }
 
   self_t operator+(const self_t& other){
     self_t result(*this);
@@ -120,10 +107,24 @@ template <int DIM>
     return result;
   }
 
-  Cplx operator*(const self_t& other){
+  Cplx operator*(const self_t& other) const{
     Cplx result;
     for (int i = 0; i < psi_.size(); ++i) result += psi_[i] * dag(other[i]);
     return result;
+  }
+
+  template<class C>
+    self_t operator*(const C& other) const{
+    self_t result(*this);
+    // for (iterator i = begin(), e = end(), i1 = result.begin(); i != e; ++i, ++i1) (*i1) = (*i)*other;
+    return (result *= other);
+  }
+
+  template<class C>
+    self_t operator/(const C& other){
+    self_t result(*this);
+    // for (iterator i = result.begin(), e = result.end(); i != e; ++i) i /= other;
+    return (result /= other);
   }
 
 private:

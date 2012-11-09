@@ -34,6 +34,7 @@ namespace kernels {
 
 namespace dirac {
 
+  // Indices of Dirac Gamma matrices
   int gmuind[15][4]  = {
     {3,2,1,0}, //gm1
     {3,2,1,0},
@@ -52,6 +53,7 @@ namespace dirac {
     {0,1,2,3},
   };
 
+  // Values of Dirac Gamma matrices
   Cplx gmuval[15][4] = {
     {Cplx(0,-1),Cplx(0,-1),Cplx(0, 1),Cplx(0, 1)}, //gm1
     {       -1 ,        1 ,        1 ,       -1 },
@@ -70,6 +72,9 @@ namespace dirac {
     {Cplx(0,-1),Cplx(0, 1),Cplx(0, 1),Cplx(0,-1)}
   };
 
+  // Factors multiplying each Dirac Gamma matrices to get transposed
+  // ones
+  const double gmT[4] = {-1.0, 1.0, -1.0, 1.0};
 
 }
 
@@ -1087,7 +1092,7 @@ private:
   };
 
 
-  /*
+
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -1096,28 +1101,32 @@ private:
   ///  \author Michele Brambilla <mib.mic@gmail.com>
   ///  \date Fri Nov 02 16:24:21 2012
 
-
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct WilsonPTKernel {
-
-    // geometry
-    typedef typename pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-
-    // gauge
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-
+  public:
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+        
     // fermion
     typedef SpinColor<4> Fermion;
     typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
     typedef std::vector<ScalarFermionField> FermionField;
     typedef typename array_t<double, DIM>::Type double_array_t;    
     typedef typename array_t<double, ORD>::Type ptarray_t;    
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
     
-    WilsonPTKernel(GluonField& G, FermionField& X, ptarray_t& m ) : U(G), src(X), mass(m), ord_(0) { };
+    WilsonPTKernel(Field_t& G, FermionField& X, ptarray_t& m ) : U(G), src(X), mass(m), ord_(0) { };
     
 
     void operator() ( ScalarFermionField& dest, Point& n) {
@@ -1182,7 +1191,7 @@ private:
     int ord_;
     ptarray_t mass;
     array_t<Cplx, 2>::Type sign;
-    GluonField& U;
+    Field_t& U;
     FermionField& src;
 
   };
@@ -1198,30 +1207,35 @@ private:
   ///  \author Michele Brambilla <mib.mic@gmail.com>
   ///  \date Fri Nov 02 16:23:58 2012
 
-
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct WilsonTreeLevelKernel {
-
-    // geometry
-    typedef typename pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-
-    // gauge
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
-
+  public:
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+        
     // fermion
     typedef SpinColor<4> Fermion;
     typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
     typedef std::vector<ScalarFermionField> FermionField;
     typedef typename array_t<double, DIM>::Type double_array_t;    
     typedef typename array_t<double, ORD>::Type ptarray_t;    
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
     
-    WilsonTreeLevelKernel(GluonField& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
+
+
+    WilsonTreeLevelKernel(Field_t& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
     
-    void operator() ( ScalarFermionField& dest, Point& n) {
+    void operator() ( ScalarFermionField& dest, const Point& n) {
 
       dest[n] = (src[n] * mass);
       Fermion Xi1, Xi2;
@@ -1269,7 +1283,7 @@ private:
     int kord;
     double mass;
     array_t<Cplx, 2>::Type sign;
-    GluonField& U;
+    Field_t& U;
     ScalarFermionField& src;
 
   };
@@ -1277,7 +1291,99 @@ private:
 
 
 
-  
+
+
+
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  TreeLevel ( U = bgf() ) transposed application of the Wilson dirac operator
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Thu Nov 08 19:05:57 2012
+
+  template <class Field_t>
+  struct TransposedWilsonTreeLevelKernel {
+  public:
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+        
+    // fermion
+    typedef SpinColor<4> Fermion;
+    typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
+    typedef std::vector<ScalarFermionField> FermionField;
+    typedef typename array_t<double, DIM>::Type double_array_t;    
+    typedef typename array_t<double, ORD>::Type ptarray_t;    
+    
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
+
+    TransposedWilsonTreeLevelKernel(Field_t& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
+    
+    void operator() ( ScalarFermionField& dest, Point& n) {
+
+      dest[n] = (src[n] * mass);
+      Fermion Xi1, Xi2;
+      
+      // Time direction
+      Point dn = n-Direction(0);
+      Point up = n+Direction(0);
+      // (1 +(-) \gamma^T_\mu)\psi
+      for( Direction nu(0); nu.is_good(); ++nu )
+	{
+	  Xi1[nu] = ( src[dn][nu] + dirac::gmT[0] * dirac::gmuval[0][nu] * src[dn][dirac::gmuind[0][nu]] );
+	  Xi2[nu] = ( src[up][nu] - dirac::gmT[0] * dirac::gmuval[0][nu] * src[up][dirac::gmuind[0][nu]] );
+	}
+      // sign takes care of (anti)periodic (or others) boundary conditions
+      dest[n] -= ( dag(U[dn][Direction(0)].bgf()) * Xi1 * sign[0] + 
+		       U[n ][Direction(0)].bgf()  * Xi2 * sign[1]) * .5;
+      
+      // Spatial directions
+      for( Direction mu(1); mu.is_good(); ++mu )
+	{
+	  
+	  Point dn = n-Direction(mu);
+	  Point up = n+Direction(mu);
+	  // (1 +(-) \gamma^T_\mu)\psi
+	  for( Direction nu(0); nu.is_good(); ++nu )
+	    {
+	      Xi1[nu] =  ( src[dn][nu] + dirac::gmT[mu] * dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
+	      Xi2[nu] =  ( src[up][nu] - dirac::gmT[mu] * src[up][dirac::gmuind[mu][nu]] );
+	    }
+	  
+	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
+		           U[n ][mu].bgf()  * Xi2 ) * .5;
+	} // mu
+      
+    }
+      
+    void bulk()  { sign[0] = Cplx( 1,0); sign[1] = Cplx( 1,0); }
+    void lower() { sign[0] = Cplx(-1,0); sign[1] = Cplx( 1,0); }
+    void upper() { sign[0] = Cplx( 1,0); sign[1] = Cplx(-1,0); }
+
+
+    inline int& ord() { return kord; }
+    
+  private:
+    int kord;
+    double mass;
+    array_t<Cplx, 2>::Type sign;
+    Field_t& U;
+    ScalarFermionField& src;
+
+  };
+
+
+
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -1287,26 +1393,30 @@ private:
   ///  \author Michele Brambilla <mib.mic@gmail.com>
   ///  \date Fri Nov 02 16:23:46 2012
 
-
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct StaggeredPTKernel {
-
-    // geometry
-    typedef pt::Point<DIM> Point;
-    typedef pt::Direction<DIM> Direction;
-
-    // gauge
-    typedef BGptSU3<BGF, ORD> ptSU3;
-    typedef ptt::PtMatrix<ORD> ptsu3;
-    typedef BGptGluon<BGF, ORD, DIM> ptGluon;
-    typedef fields::LocalField<ptGluon, DIM> GluonField;
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
 
     // fermion
     typedef SpinColor<1> Fermion;
     typedef fields::LocalField<Fermion, DIM> FermionField;
     typedef typename array_t<double, DIM>::Type double_array_t;    
     
-    StaggeredPTKernel( GluonField& G, FermionField& X, const double& m ) : U(G), src(X), mass(m) { Uorder = 0; std::cout << "Fix eta definition!!!!!\n";};
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
+
+
+    StaggeredPTKernel( Field_t& G, FermionField& X, const double& m ) : U(G), src(X), mass(m) { Uorder = 0; std::cout << "Fix eta definition!!!!!\n";};
     
     void eta(const Point& n, double_array_t& phase) {
 
@@ -1328,7 +1438,7 @@ private:
     int Uorder;
     double mass;
     double_array_t phase;
-    GluonField& U;
+    Field_t& U;
     FermionField& src;
 
   };
@@ -1344,11 +1454,24 @@ private:
   ///  \date Fri Nov 02 16:23:16 2012
 
 
-  template <class BGF, int ORD,int DIM>
+  template <class Field_t>
   struct StaggeredTreeLevelKernel {
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
+    // fermion
+    typedef SpinColor<1> Fermion;
+    typedef fields::LocalField<Fermion, DIM> FermionField;
+    typedef typename array_t<double, DIM>::Type double_array_t;    
 
     // TODO
-    // ok, let's fix staggered before ..
 
   };
   */

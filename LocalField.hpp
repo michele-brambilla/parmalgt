@@ -306,6 +306,14 @@ namespace fields {
       apply_everywhere(detail::inplace_sub<LocalField>(other));
       return *this;
     }
+    LocalField& operator+=(const LocalField& other) {
+      apply_everywhere(detail::inplace_add<LocalField>(other));
+      return *this;
+    }
+    LocalField& operator-=(const LocalField& other) {
+      apply_everywhere(detail::inplace_sub<LocalField>(other));
+      return *this;
+    }
 
     LocalField operator+(const LocalField& other) {
       LocalField result(*this);
