@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 -I. -I${BOOST_DIR}
+AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 -I.
 
 ACLOCAL_AMFLAGS = -I m4
 noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
