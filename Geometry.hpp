@@ -182,7 +182,7 @@ namespace geometry {
     /// Label (integer value) belonging to a give point
     int mk_label(const raw_pt_t &n) const {
       int vol = 1, label = 0;
-      for (int i = 0; i < DIM; ++i){
+      for (int i = DIM-1; i >= 0; --i){
         label += ((n[i] + extents[i]) % extents[i]) * vol;
         vol *= extents[i];
       }
@@ -192,7 +192,7 @@ namespace geometry {
     raw_pt_t reverse_label(const int& n) const {
       int vol = 1;
       raw_pt_t x;
-      for (int i = 0; i < DIM; ++i){
+      for (int i = DIM - 1; i >= 0; --i){
         x[i] = (n / vol) % extents[i];
         vol *= extents[i];
       }
