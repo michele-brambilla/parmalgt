@@ -144,6 +144,16 @@ void measure_common(GluonField &U, const std::string& rep_str){
 // Stuff that makes sense only for an Abelian background field.
 void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
 
+  //PlaqKernel P;
+  //io::write_file(U.apply_everywhere(P).val, "Plaq" + rep_str + ".bindat");
+
+#ifndef HIGHER_ORDER_INT
+
+  TemporalPlaqKernel tp;
+  U.apply_on_timeslice(tp, 0);
+  U.apply_on_timeslice(tp, T-1);
+  io::write_file(tp.val, "F" + rep_str + ".bindat");
+
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
 
@@ -152,6 +162,8 @@ void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
     + U.apply_on_timeslice(Gl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Gp" + rep_str + ".bindat");
 
+  io::write_file(tp.val*tmp, "FGamm" + rep_str + ".bindat");
+
   VbarUpperKernel Vu(L);
   VbarLowerKernel Vl(L);
 
@@ -159,7 +171,9 @@ void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
   tmp = U.apply_on_timeslice(Vu, T-1).val
     - U.apply_on_timeslice(Vl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Vbar" + rep_str + ".bindat");
-  
+
+  io::write_file(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
+#endif
   measure_common(U, rep_str);
 }
 
@@ -306,10 +320,12 @@ int main(int argc, char *argv[]) {
     FileReaderKernel fr(p);
     U.apply_everywhere_serial(fr);
   }
+
   ////////////////////////////////////////////////////////////////////
   //
   // start the simulation
-  for (int i_ = 1; i_ <= NRUN && !soft_kill; ++i_){
+  int i_;
+  for (i_ = 1; i_ <= NRUN && !soft_kill; ++i_){
     if (! (i_ % MEAS_FREQ) ) {
       timings["measurements"].start();
       measure(U, rank_str, Bgf_t());
@@ -356,11 +372,21 @@ int main(int argc, char *argv[]) {
       gu.push_back(GUKStepOne(mu, taug, &Up, &R));
     // for x_0 = 0 update the temporal direction only
     U.apply_on_timeslice(gu[0], 0);
-    // for x_0 != 0 update all directions
+    //for x_0 != 0 update all directions
     for (int t = 1; t < T; ++t)
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu[mu], t);
-
+    //for (Direction mu(1); mu.is_good(); ++mu)
+    //  U.apply_on_timeslice(gu[mu], T);
+    {
+          GaugeFixingKernel gf(alpha);
+          GFMeasKernel gfm;
+          Up.apply_on_timeslice(gfm, 0);
+          GFApplyKernel gfa(gfm.val, alpha, L);
+          Up.apply_on_timeslice(gfa, 0);
+          for (int t = 1; t < T; ++t)
+            Up.apply_on_timeslice(gf, t);
+    }
     std::vector<GUKStepTwo> gu2;
     for (Direction mu; mu.is_good(); ++mu)
       gu2.push_back(GUKStepTwo(mu, taug, &Up, &R));
@@ -370,7 +396,6 @@ int main(int argc, char *argv[]) {
     for (int t = 1; t < T; ++t)
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu2[mu], t);
-    
 #else
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
@@ -414,6 +439,8 @@ int main(int argc, char *argv[]) {
     util::pretty_print(i->first, i->second.t, "s", of);
   }
   util::pretty_print("TOTAL", Timer::t_tot, "s", of);
+  if (soft_kill)
+    util::pretty_print("actual # of configs", i_, "", of);
   of.close();
 
   return 0;
