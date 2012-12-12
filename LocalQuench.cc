@@ -137,12 +137,13 @@ typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
 void measure_common(GluonField &U, const std::string& rep_str){
   // Norm of the Gauge Field
   MeasureNormKernel m;
-  io::write_file(U.apply_everywhere(m).reduce(), 
+  io::write_file(U.apply_everywhere(m).reduce(),
                  "Norm" + rep_str + ".bindat");
 }
 
 // Stuff that makes sense only for an Abelian background field.
-void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
+void measure(GluonField &U, const std::string& rep_str,
+             const bgf::AbelianBgf&){
 
   //PlaqKernel P;
   //io::write_file(U.apply_everywhere(P).val, "Plaq" + rep_str + ".bindat");
@@ -160,9 +161,16 @@ void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
   // Evaluate Gamma'
   ptSU3 tmp = U.apply_on_timeslice(Gu, T-1).val
     + U.apply_on_timeslice(Gl, 0).val;
-  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Gp" + rep_str + ".bindat");
+  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+                             "Gp" + rep_str + ".bindat");
 
-  io::write_file(tp.val*tmp, "FGamm" + rep_str + ".bindat");
+  // Evaluate F*Gamma'
+  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
+  for (int i = 0; i <= ORD; ++i)
+    for (int j = 0; j <= i; ++j)
+      gf[i] += g[j] * f[i - j];
+
+  io::write_file(gf, "FGamm" + rep_str + ".bindat");
 
   VbarUpperKernel Vu(L);
   VbarLowerKernel Vl(L);
@@ -170,7 +178,8 @@ void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
   // Evaluate vbar
   tmp = U.apply_on_timeslice(Vu, T-1).val
     - U.apply_on_timeslice(Vl, 0).val;
-  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Vbar" + rep_str + ".bindat");
+  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+                             "Vbar" + rep_str + ".bindat");
 
   io::write_file(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
 #endif
@@ -178,7 +187,8 @@ void measure(GluonField &U, const std::string& rep_str, const bgf::AbelianBgf&){
 }
 
 // Stuff that makes sense only for a scalar background field.
-void measure(GluonField &U, const std::string& rep_str, const bgf::ScalarBgf&){
+void measure(GluonField &U, const std::string& rep_str,
+             const bgf::ScalarBgf&){
   measure_common(U, rep_str);
 }
 
@@ -229,6 +239,7 @@ int main(int argc, char *argv[]) {
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);
+  signal(SIGINT, kill_handler);
   int rank;
 #ifdef USE_MPI
   MPI_Init(&argc, &argv);
