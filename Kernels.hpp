@@ -131,14 +131,15 @@ namespace kernels {
 
     StapleSqKernel(const Direction& nu) : mu(nu) {  }
 
-    void operator()(Field_t& U, const Point& n) {      
+    void operator()(Field_t& U, const Point& n) {
       // std::cout << val[0][0] << "\n";
       val[0].zero();
       // std::cout << val[0][0] << "\n";
       for(Direction nu; nu.is_good(); ++nu)
-        if(nu != mu)
-          val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu])
-            + dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+        if(nu != mu){
+          val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu]);
+          val[0] += dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+        }
       // Close the staple
       val[0] = U[n][mu] * val[0] ;
     }
@@ -390,6 +391,10 @@ namespace kernels {
       //tmp[0] -= stau*SU3rand(Rand); // add noise
       // use this to check if the multithreaded version gives 
       // identical results to the single threaded one
+      //
+      // WARNING
+      // since we use stau as a pre-factor, it looks like the random
+      // matrices are normalized to sqrt(2)!
       tmp[0] -= stau*SU3rand(rands.at(n));
       U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       //#pragma omp critical // TODO maybe one can use a reduce or so here
@@ -465,9 +470,6 @@ template <class C, class P, class Q> std::vector<MyRand>
 
 
     void operator()(Field_t& U, const Point& n) {
-      ptSU3 W;
-
-      // We wants this static, but it fails ... field grows bigger and bigger ...
 
       // Make a Kernel to calculate and store the plaquette(s)
       StapleK_t st(mu); // maye make a vector of this a class member
@@ -476,9 +478,10 @@ template <class C, class P, class Q> std::vector<MyRand>
       Process::post_process(U,n,mu);
       
       ptsu3 tmp  = st.reduce().reH() * ((-3./2 + sqrt(2.))* taug);
-
+      //ptsu3 tmp  = st.reduce().reH() * -taug;
       // DH Feb. 6, 2012
-      tmp[0] -= stau * (1. - sqrt(2)) * (*SU3rand)[n];
+      tmp[0] -= stau * (1. - 0.5*sqrt(2)) * (*SU3rand)[n];
+      //tmp[0] -= stau * (*SU3rand)[n];
       (*Utarget)[n][mu] = exp<BGF, ORD>(tmp) * U[n][mu]; // back to SU3
     }
     
@@ -517,18 +520,23 @@ template <class C, class P, class Q> std::vector<MyRand>
 
 
     void operator()(Field_t& U, const Point& n) {
-      ptSU3 W;
-
-      // We wants this static, but it fails ... field grows bigger and bigger ...
-
       // Make a Kernel to calculate and store the plaquette(s)
-      StapleK_t st(mu); // maye make a vector of this a class member
+      StapleK_t st(mu), stp(mu); // maye make a vector of this a class member
       Process::pre_process(U,n,mu);
       st(*Uprime,n);
+      //stp(U,n);
       Process::post_process(U,n,mu);
       const double ca = 3.;
-      ptsu3 tmp  = st.reduce().reH() * ((1. + taug*(5. - 3.*sqrt(2.))*
-                                         ca/12.)* taug) * -1.;
+      //ptsu3 tmp  = (st.reduce().reH() + stp.reduce().reH()) * -taug;
+      ptsu3 tmp = st.reduce().reH() * -taug;
+      ptsu3 tmpp;
+      for (int i = 2; i < ORD; ++i)
+        tmpp[i] = tmp[i - 2];
+      std::fill(tmpp[0].begin(), tmpp[0].end(), 0);
+      std::fill(tmpp[1].begin(), tmpp[1].end(), 0);
+      //tmp += tmpp * taug * 0.5;
+      tmp += tmpp * taug * (5. - 3.*sqrt(2.))* (ca / 6.);
+      //tmp *= 0.5;
 
       // DH Feb. 6, 2012
       tmp[0] -= stau * (*SU3rand)[n];
@@ -729,7 +737,11 @@ private:
 
     void impl(Field_t& U, const Point& n, const bgf::AbelianBgf&) const {
       for (Direction mu; mu.is_good(); ++mu)
+#ifdef HIGHER_ORDER_INT
+        U[n][mu].bgf() =  bgf::get_abelian_bgf(t, 0);
+#else
         U[n][mu].bgf() =  bgf::get_abelian_bgf(t, mu);
+#endif
     }
 
     void impl(Field_t& U, const Point& n, const bgf::ScalarBgf&)
@@ -808,6 +820,39 @@ private:
     }
   
 };
+
+// Measure the average paquette
+  template <class Field_t>
+  struct PlaqKernel {
+
+    // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
+
+    ptSU3 val;
+    
+    PlaqKernel () : val(bgf::zero<BGF>()) { }
+    
+    void operator()(Field_t& U, const Point& n){
+      ptSU3 tmp(bgf::zero<BGF>());
+      for (Direction mu(0); mu.is_good(); ++mu)
+        for (Direction nu(0); nu.is_good(); ++nu)
+          tmp += U[n][mu] * U[n + mu][nu] * 
+            dag( U[n][nu] * U[n + nu][mu] );
+#pragma omp critical
+      val += tmp;
+    }
+  };
   
   // Measure the temporal paquette
   template <class Field_t>
@@ -828,10 +873,6 @@ private:
     static const int n_cb = 0;
 
     ptSU3 val;
-    // \tilde C = - [d_eta C]
-    // at the t = 0 side, we have dagger(e^C) and hence an insertion
-    // of \tilde C, since C itself is purely imaginary
-    BGF Ctilde;
 
     TemporalPlaqKernel () : val(bgf::zero<BGF>()) { }
     
@@ -914,43 +955,6 @@ private:
       U[n][t] = Omega * U[n][t];
         //U[n - mu][mu] *= OmegaDag;
         //}
-    }
-    
-  };
-  // Measure the paquette
-  template <class Field_t>
-  struct PlaqKernel {
-
-    // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
-
-     // checker board hyper cube size
-    // c.f. geometry and localfield for more info
-    static const int n_cb = 0;
-
-    ptSU3 val;
-    // \tilde C = - [d_eta C]
-    // at the t = 0 side, we have dagger(e^C) and hence an insertion
-    // of \tilde C, since C itself is purely imaginary
-    BGF Ctilde;
-
-    PlaqKernel () : val(bgf::zero<BGF>()) { }
-    
-    void operator()(Field_t& U, const Point& n){
-      ptSU3 tmp(bgf::zero<BGF>());
-      for (Direction mu; mu.is_good(); ++mu)
-	for (Direction nu(mu + 1); nu.is_good(); ++nu)
-	  tmp += U[n][mu] * U[n + mu][nu] * 
-	    dag( U[n][nu] * U[n + nu][mu] );
-#pragma omp critical
-      val += tmp;
     }
     
   };
