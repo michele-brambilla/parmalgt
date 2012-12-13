@@ -39,8 +39,7 @@ const int ORD = 6;
 const int GF_MODE = 1;
 
 // some short-hands
-// typedef bgf::ScalarBgf Bgf_t; // background field
-typedef bgf::AbelianBgf Bgf_t; // background field
+typedef bgf::ScalarBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
 typedef ptt::PtMatrix<ORD> ptsu3; // algebra variables
 typedef BGptGluon<Bgf_t, ORD, DIM> ptGluon; // gluon
@@ -73,9 +72,14 @@ typedef kernels::PlaqKernel<GluonField> PlaqKernel;
 typedef kernels::GFMeasKernel<GluonField> GFMeasKernel;
 typedef kernels::GFApplyKernel<GluonField> GFApplyKernel;
 
+// ... zero mode subtraction ...
+typedef kernels::ZeroModeSubtractionKernel<GluonField> 
+   ZeroModeSubtractionKernel; 
+
 // ... and for the checkpointing.
 typedef kernels::FileWriterKernel<GluonField> FileWriterKernel;
 typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
+
 
 // Our measurement...
 
@@ -84,12 +88,13 @@ void measure_common(GluonField &U, const std::string& rep_str){
   // Norm of the Gauge Field
   MeasureNormKernel m;
   io::write_file(U.apply_everywhere(m).reduce(),
-                 "SFNorm" + rep_str + ".bindat");
+                 "Norm" + rep_str + ".bindat");
   PlaqKernel p;
   std::list<double> pl;
   pl.push_back(1);
   for (auto &i : U.apply_everywhere(p).val) pl.push_back(-i.Tr().re);
-  io::write_file(pl, "SFPlaq" + rep_str + ".bindat");
+  io::write_file(pl, "Plaq" + rep_str + ".bindat");
+
 }
 
 // Stuff that makes sense only for an Abelian background field.
@@ -159,7 +164,7 @@ int main(int argc, char *argv[]) {
   // read the parameters
   uparam::Param p;
   p.read("input" + rank_str);
-  std::ofstream of(("SFrun.info"+rank_str).c_str(), std::ios::app);
+  std::ofstream of(("run.info"+rank_str).c_str(), std::ios::app);
   of << "INPUT PARAMETERS:\n";
   p.print(of);
   of.close();
@@ -194,23 +199,14 @@ int main(int argc, char *argv[]) {
   // lattice setup
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
-  // we want a L = 4 lattice
+  // we want a L^D lattice
   std::fill(e.begin(), e.end(), L);
-  // for SF boundary: set the time extend to T + 1
-  e[0] = T + 1;
-  // initialize background field get method
-  bgf::get_abelian_bgf(0, 0, T, L, s);
   // we will have just one field
   GluonField U(e, 1, 0, nt());
   ////////////////////////////////////////////////////////////////////
   //
   // initialzie the background field of U or read config
-  if ( p["read"] == "none" )
-    for (int t = 0; t <= T; ++t){
-      SetBgfKernel f(t);
-      U.apply_on_timeslice(f, t);
-    }
-  else {
+  if ( p["read"] != "none" ) {
     FileReaderKernel fr(p);
     U.apply_everywhere_serial(fr);
   }
@@ -228,14 +224,11 @@ int main(int argc, char *argv[]) {
       std::vector<WilFlowKernel> wf;
       for (Direction mu; mu.is_good(); ++mu)
         wf.push_back(WilFlowKernel(mu, taug));
+
       for (int j_ = 0; j_ < NFLOW && !soft_kill; ++j_){
         timings["Wilson flow"].start();
-        // for x_0 = 0 update the temporal direction only
-        Up.apply_on_timeslice(wf[0], 0);
-        // for x_0 != 0 update all directions
-        for (int t = 1; t < T; ++t)
-          for (Direction mu; mu.is_good(); ++mu)
-            Up.apply_on_timeslice(wf[mu], t);
+        for (Direction mu; mu.is_good(); ++mu)
+          Up.apply_everywhere(wf[mu]);
         timings["Wilson flow"].stop();
         timings["measurements"].start();
         measure(Up, rank_str, Bgf_t());
@@ -249,26 +242,28 @@ int main(int argc, char *argv[]) {
     for (Direction mu; mu.is_good(); ++mu)
       gu.push_back(GaugeUpdateKernel(mu, taug));
     timings["Gauge Update"].start();
-    // for x_0 = 0 update the temporal direction only
-    U.apply_on_timeslice(gu[0], 0);
-    // for x_0 != 0 update all directions
-    for (int t = 1; t < T; ++t)
-      for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_timeslice(gu[mu], t);
+    for (Direction mu; mu.is_good(); ++mu)
+      U.apply_everywhere(gu[mu]);
     timings["Gauge Update"].stop();
+    ////////////////////////////////////////////////////////                    
+    //                                                                          
+    //  zero mode subtraction                                                   
+    std::vector<ZeroModeSubtractionKernel> z;                                   
+    double vinv = 1./L/L/L/L; // inverse volume                                 
+    for (Direction mu; mu.is_good(); ++mu){
+      gu[mu].reduce();
+      z.push_back(ZeroModeSubtractionKernel(mu, gu[mu].M[0]*vinv));
+    }
+    timings["Zero Mode Subtraction"].start();                                   
+    for (Direction mu; mu.is_good(); ++mu)                                    
+      U.apply_everywhere(z[mu]);                                         
+    timings["Zero Mode Subtraction"].stop();           
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
     GaugeFixingKernel gf(alpha);
     timings["Gauge Fixing"].start();
-
-    GFMeasKernel gfm;
-    U.apply_on_timeslice(gfm, 0);
-    GFApplyKernel gfa(gfm.val, alpha, L);
-    U.apply_on_timeslice(gfa, 0);
-
-    for (int t = 1; t < T; ++t)
-      U.apply_on_timeslice(gf, t);
+    U.apply_everywhere(gf);
     timings["Gauge Fixing"].stop();
 
   } // end main for loop
@@ -278,7 +273,7 @@ int main(int argc, char *argv[]) {
     U.apply_everywhere_serial(fw);
   }
   // write out timings
-  of.open(("SFrun.info"+rank_str).c_str(), std::ios::app);
+  of.open(("run.info"+rank_str).c_str(), std::ios::app);
   of << "Timings:\n";
   for (tmap::const_iterator i = timings.begin(); i != timings.end();
        ++i){
