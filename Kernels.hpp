@@ -478,6 +478,94 @@ namespace kernels {
 
     }
   };
+  template <class Field_t, 
+	    class StapleK_t, class Process >
+  struct WilFlowMeasKernel {
+
+  // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = StapleK_t::n_cb;    
+
+    Direction mu;
+
+    double taug, stau;
+
+    WilFlowMeasKernel(const Direction& nu, const double& t,
+                  Field_t& targ) :
+      mu(nu), taug(t), stau(sqrt(t)), target(&targ) { }
+
+
+
+    void operator()(Field_t& U, const Point& n) {
+      ptSU3 W;
+
+      // Make a Kernel to calculate and store the plaquette(s)
+      StapleK_t st(mu); // maye make a vector of this a class member
+      Process::pre_process(U,n,mu);
+      st(U,n);
+      Process::post_process(U,n,mu);
+      
+      ptsu3 tmp  = st.reduce().reH() * -taug;
+
+      (*target)[n][mu] = exp<BGF, ORD>(tmp); // back to SU3
+
+    }
+
+    Field_t *target;
+  };
+
+  template <class Field_t, 
+	    class StapleK_t, class Process >
+  struct WilFlowApplyKernel {
+
+  // collect info about the field
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int ORD = std_types<Field_t>::order;
+    static const int DIM = std_types<Field_t>::n_dim;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = StapleK_t::n_cb;    
+
+    Direction mu;
+
+    double taug, stau;
+
+    WilFlowApplyKernel(const Direction& nu, const double& t,
+                       Field_t &src) :
+      mu(nu), taug(t), stau(sqrt(t)), source(&src) { }
+
+
+    void operator()(Field_t& U, const Point& n) {
+      ptSU3 W;
+
+      // Make a Kernel to calculate and store the plaquette(s)
+      StapleK_t st(mu); // maye make a vector of this a class member
+      Process::pre_process(U,n,mu);
+      st(U,n);
+      Process::post_process(U,n,mu);
+      
+      ptsu3 tmp  = st.reduce().reH() * -taug;
+
+      U[n][mu] = (*source)[n][mu]*U[n][mu]; // back to SU3
+    }
+    Field_t *source;
+  };
 
 
 template <class C, class P, class Q> std::vector<MyRand> 

@@ -60,6 +60,9 @@ typedef kernels::StapleSqKernel<GluonField> StK;
 typedef kernels::TrivialPreProcess<GluonField> PrK;
 typedef kernels::GaugeUpdateKernel <GluonField, StK, PrK> GaugeUpdateKernel;
 typedef kernels::WilFlowKernel <GluonField, StK, PrK> WilFlowKernel;
+typedef kernels::WilFlowApplyKernel <GluonField, StK, PrK> WilFlowApplyKernel;
+typedef kernels::WilFlowMeasKernel <GluonField, StK, PrK> WilFlowMeasKernel;
+
 typedef kernels::GaugeFixingKernel<GF_MODE, GluonField> GaugeFixingKernel;
 
 // ... to set the background field ...
@@ -225,6 +228,33 @@ int main(int argc, char *argv[]) {
       GluonField Up(U);
       // do the flow
       // ... prepare Kernels
+#ifdef GLOBAL_FLOW
+      GluonField Z(U); // Field to store the force
+      std::vector<WilFlowMeasKernel> wfm;
+      std::vector<WilFlowApplyKernel> wfa;
+      for (Direction mu; mu.is_good(); ++mu){
+        wfm.push_back(WilFlowMeasKernel(mu, taug, Z));
+        wfa.push_back(WilFlowApplyKernel(mu, taug, Z));
+      }
+      for (int j_ = 0; j_ < NFLOW && !soft_kill; ++j_){
+        timings["Wilson flow"].start();
+        // 1) measure the force
+        // for x_0 = 0 update the temporal direction only
+        Up.apply_on_timeslice(wfm[0], 0);
+        // for x_0 != 0 update all directions
+        for (int t = 1; t < T; ++t)
+          for (Direction mu; mu.is_good(); ++mu)
+            Up.apply_on_timeslice(wfm[mu], t);
+        // 1) apply the force
+        // for x_0 = 0 update the temporal direction only
+        Up.apply_on_timeslice(wfa[0], 0);
+        // for x_0 != 0 update all directions
+        for (int t = 1; t < T; ++t)
+          for (Direction mu; mu.is_good(); ++mu)
+            Up.apply_on_timeslice(wfa[mu], t);
+
+        timings["Wilson flow"].stop();
+#else
       std::vector<WilFlowKernel> wf;
       for (Direction mu; mu.is_good(); ++mu)
         wf.push_back(WilFlowKernel(mu, taug));
@@ -237,6 +267,7 @@ int main(int argc, char *argv[]) {
           for (Direction mu; mu.is_good(); ++mu)
             Up.apply_on_timeslice(wf[mu], t);
         timings["Wilson flow"].stop();
+#endif
         timings["measurements"].start();
         measure(Up, rank_str, Bgf_t());
         timings["measurements"].stop();
