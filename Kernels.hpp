@@ -988,7 +988,7 @@ private:
 
 #ifdef IMP_ACT
   // Measure Gamma at t = 0
-  template <class Field_t, typename init_helper_t>
+  template <class Field_t, template <class C> class init_helper_t>
   struct GammaLowerKernel {
 
     // collect info about the field
@@ -1040,7 +1040,7 @@ private:
   };
 
   // Measure Gamma at t = T - a
-  template <class Field_t, typename init_helper_t>
+  template <class Field_t, template <class C> class init_helper_t>
   struct GammaUpperKernel {
 
     // collect info about the field
