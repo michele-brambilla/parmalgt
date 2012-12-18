@@ -456,15 +456,14 @@ namespace kernels {
 
     Direction mu;
 
-    double taug, stau;
+    double taug;
 
     WilFlowKernel(const Direction& nu, const double& t) :
-      mu(nu), taug(t), stau(sqrt(t)) { }
+      mu(nu), taug(t) { }
 
 
 
     void operator()(Field_t& U, const Point& n) {
-      ptSU3 W;
 
       // Make a Kernel to calculate and store the plaquette(s)
       StapleK_t st(mu); // maye make a vector of this a class member
