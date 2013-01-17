@@ -80,6 +80,15 @@ namespace fields {
     };
 
 
+    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
+    ///  
+    ///  The name makes sense for vectors: in this case is
+    ///  "inner product" in strict sense. For matrices
+    ///  it means whatever is the definition of operator*
+    ///  
+    ///  \author Michele Brambilla <mib.mic@gmail.com>
+    ///  \date Thu Jan 17 10:40:05 2013
     template <class Field_t> class inner_prod {
     public:
       static const int dim = Field_t::dim;
@@ -99,6 +108,39 @@ namespace fields {
       std::vector<Cplx> result;
       Field_t const * other;
     };
+
+
+    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
+    ///  
+    ///  In case of vectors this the element-by-element
+    ///  product (defined according to opertator^).
+    ///  For matrices it means whatever is the definition 
+    ///  of operator^
+    ///  
+    ///  \author Michele Brambilla <mib.mic@gmail.com>
+    ///  \date Thu Jan 17 10:40:05 2013
+    template <class Field_t> class prod {
+    public:
+      static const int dim = Field_t::dim;
+      static const int n_cb = 0;
+      prod(const Field_t &F) : 
+        result(omp_get_max_threads(), Cplx(0,0)), other(&F) { }
+
+      void operator()(const Field_t& F, const pt::Point<dim>& n) {
+        result[omp_get_thread_num()] += F[n] ^ (*other)[n];
+      }
+
+      Cplx reduce() const {
+        return std::accumulate(result.begin(), result.end(), Cplx(0,0));
+      }
+    private:
+      prod(const prod&) { } // no copy allowed
+      std::vector<Cplx> result;
+      Field_t const * other;
+    };
+
+
   }
 
   /// \defgroup MPI
@@ -337,6 +379,13 @@ namespace fields {
     // DH: maybe call this prod instead?
     Cplx operator*(const LocalField& other) const { 
       detail::inner_prod<LocalField> p(other);
+      return apply_everywhere(p).reduce();
+    }
+
+    ///  \author Michele Brambilla <mib.mic@gmail.com>
+    ///  \date Thu Jan 10 20:47:14 2013
+    Cplx operator^(const LocalField& other) const { 
+      detail::prod<LocalField> p(other);
       return apply_everywhere(p).reduce();
     }
     

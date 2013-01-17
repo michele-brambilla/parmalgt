@@ -107,9 +107,28 @@ template <int DIM>
     return result;
   }
 
+
+  /////////////////////////////////////////////////
+  /////////////////////////////////////////////////
+  ///  Inner product between two spin color
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Wed Jan 09 12:56:58 2013
   Cplx operator*(const self_t& other) const{
     Cplx result;
-    for (int i = 0; i < psi_.size(); ++i) result += psi_[i] * dag(other[i]);
+    for (int i = 0; i < psi_.size(); ++i) result += psi_[i] * other[i];
+    return result;
+  }
+
+  /////////////////////////////////////////////////
+  /////////////////////////////////////////////////
+  /// Product between two spin color
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Wed Jan 09 12:58:12 2013
+  Cplx operator^(const self_t& other) const{
+    Cplx result;
+    for (int i = 0; i < psi_.size(); ++i) result += psi_[i] ^ other[i];
     return result;
   }
 

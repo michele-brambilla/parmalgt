@@ -9,7 +9,7 @@ noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
 
 dist_data_DATA = input run.sh
 
-bin_PROGRAMS = LocalQuench Fermi
+bin_PROGRAMS = LocalQuench Invert
 
 #ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
@@ -17,7 +17,10 @@ bin_PROGRAMS = LocalQuench Fermi
 LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc
 
-Fermi_SOURCES = Fermi.cc MyMath.cc MyRand.cc \
+#Fermi_SOURCES = Fermi.cc MyMath.cc MyRand.cc \
+#  newQCDpt.cc Point.cc Background.cc IO.cc
+
+Invert_SOURCES = Invert.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc
 
 SUBDIRS = testing

@@ -1201,6 +1201,30 @@ public:
   };  
 
 
+  /////////////////////////////////////////////////
+  /////////////////////////////////////////////////
+  ///  Product between two CVector
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Wed Jan 09 13:00:18 2013
+  Cplx operator^(const CVector& V) const{
+    Cplx res;
+    res.re = ( whr[0].re * V.whr[0].re - whr[0].im * V.whr[0].im +
+	       whr[1].re * V.whr[1].re - whr[1].im * V.whr[1].im +
+	       whr[2].re * V.whr[2].re - whr[2].im * V.whr[2].im );
+    res.im = ( whr[0].re * V.whr[0].im + whr[0].im * V.whr[0].re +
+	       whr[1].re * V.whr[1].im + whr[1].im * V.whr[1].re +
+	       whr[2].re * V.whr[2].im + whr[2].im * V.whr[2].re );
+    return res;
+  }
+
+
+  /////////////////////////////////////////////////
+  /////////////////////////////////////////////////
+  ///  Inner product between two CVector
+  ///
+  ///  \author Michele Brambilla <mib.mic@gmail.com>
+  ///  \date Wed Jan 09 13:00:42 2013
   Cplx operator*(const CVector& V) const{
     Cplx res;
     res.re = ( whr[0].re * V.whr[0].re + whr[0].im * V.whr[0].im +
@@ -1211,6 +1235,7 @@ public:
 	       whr[2].re * V.whr[2].im - whr[2].im * V.whr[2].re );
     return res;
   }
+
 
   void operator+=(const CVector&V ) {   
     whr[0].re += V.whr[0].re;

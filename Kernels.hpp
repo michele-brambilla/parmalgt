@@ -1435,19 +1435,16 @@ private:
 
 
 
-
-
-
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
-  ///  TreeLevel ( U = bgf() ) transposed application of the Wilson dirac operator
+  ///  TreeLevel ( U = bgf() ) application of the Wilson dirac operator x Gamma5
   ///
   ///  \author Michele Brambilla <mib.mic@gmail.com>
-  ///  \date Thu Nov 08 19:05:57 2012
+  ///  \date Fri Nov 02 16:23:58 2012
 
   template <class Field_t>
-  struct TransposedWilsonTreeLevelKernel {
+  struct WilsonTreeLevel5Kernel {
   public:
     // collect info about the field
     typedef typename std_types<Field_t>::ptGluon_t ptGluon;
@@ -1465,48 +1462,57 @@ private:
     typedef std::vector<ScalarFermionField> FermionField;
     typedef typename array_t<double, DIM>::Type double_array_t;    
     typedef typename array_t<double, ORD>::Type ptarray_t;    
-    
+
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
     static const int n_cb = 0;
-
-
-    TransposedWilsonTreeLevelKernel(Field_t& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
     
-    void operator() ( ScalarFermionField& dest, Point& n) {
 
-      dest[n] = (src[n] * mass);
+
+    WilsonTreeLevel5Kernel(Field_t& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
+    
+    void operator() ( ScalarFermionField& dest, const Point& n) {
+
+      for( Direction nu(0); nu.is_good(); ++nu )
+      	{
+      	  dest[n][nu] = (dirac::gmuval[4][nu] * src[n][dirac::gmuind[4][nu]] * mass);
+      	}
+
       Fermion Xi1, Xi2;
       
       // Time direction
       Point dn = n-Direction(0);
       Point up = n+Direction(0);
-      // (1 +(-) \gamma^T_\mu)\psi
+      // (1 +(-) \gamma_\mu)\psi
       for( Direction nu(0); nu.is_good(); ++nu )
-	{
-	  Xi1[nu] = ( src[dn][nu] + dirac::gmT[0] * dirac::gmuval[0][nu] * src[dn][dirac::gmuind[0][nu]] );
-	  Xi2[nu] = ( src[up][nu] - dirac::gmT[0] * dirac::gmuval[0][nu] * src[up][dirac::gmuind[0][nu]] );
-	}
+      	{
+      	  Xi1[nu] = ( dirac::gmuval[4  ][nu] * src[dn][dirac::gmuind[4  ][nu]] + 
+      		      dirac::gmuval[5+0][nu] * src[dn][dirac::gmuind[5+0][nu]] );
+      	  Xi2[nu] = ( dirac::gmuval[4  ][nu] * src[up][dirac::gmuind[4  ][nu]] - 
+      		      dirac::gmuval[5+0][nu] * src[up][dirac::gmuind[5+0][nu]] );
+      	}
       // sign takes care of (anti)periodic (or others) boundary conditions
       dest[n] -= ( dag(U[dn][Direction(0)].bgf()) * Xi1 * sign[0] + 
-		       U[n ][Direction(0)].bgf()  * Xi2 * sign[1]) * .5;
+      		       U[n ][Direction(0)].bgf()  * Xi2 * sign[1]) * .5;
       
       // Spatial directions
       for( Direction mu(1); mu.is_good(); ++mu )
-	{
+      	{
 	  
-	  Point dn = n-Direction(mu);
-	  Point up = n+Direction(mu);
-	  // (1 +(-) \gamma^T_\mu)\psi
-	  for( Direction nu(0); nu.is_good(); ++nu )
-	    {
-	      Xi1[nu] =  ( src[dn][nu] + dirac::gmT[mu] * dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
-	      Xi2[nu] =  ( src[up][nu] - dirac::gmT[mu] * src[up][dirac::gmuind[mu][nu]] );
-	    }
+      	  Point dn = n-Direction(mu);
+      	  Point up = n+Direction(mu);
+      	  // (1 +(-) \gamma_\mu)\psi
+      	  for( Direction nu(0); nu.is_good(); ++nu )
+      	    {
+      	      Xi1[nu] =  ( dirac::gmuval[4   ][nu] * src[dn][dirac::gmuind[4   ][nu]] + 
+      			   dirac::gmuval[5+mu][nu] * src[dn][dirac::gmuind[5+mu][nu]] );
+      	      Xi2[nu] =  ( dirac::gmuval[4   ][nu] * src[up][dirac::gmuind[4   ][nu]] - 
+      			   dirac::gmuval[5+mu][nu] * src[up][dirac::gmuind[5+mu][nu]] );
+      	    }
 	  
-	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
-		           U[n ][mu].bgf()  * Xi2 ) * .5;
-	} // mu
+      	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
+      		           U[n ][mu].bgf()  * Xi2 ) * .5;
+      	} // mu
       
     }
       
@@ -1525,6 +1531,11 @@ private:
     ScalarFermionField& src;
 
   };
+
+
+
+
+
 
 
 
