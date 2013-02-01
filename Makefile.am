@@ -23,7 +23,11 @@ LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
 Invert_SOURCES = Invert.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc
 
-SUBDIRS = testing
+if GTEST
+  SUBDIRS = testing
+else
+  DIST_SUBDIRS = $(SUBDIRS)
+endif
 
 .PHONY: docs
 

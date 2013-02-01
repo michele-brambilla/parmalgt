@@ -37,6 +37,9 @@ AC_ARG_WITH([boost-srcdir], [AS_HELP_STRING([--with-boost-srcdir=DIR],
  [Path to Boost.])], [], [])
 
 AC_SUBST([BOOST_DIR],["$with_boost_srcdir"])
+AM_CONDITIONAL([GTEST], [test x$with_boost_srcdir != x])
+echo "TEST:"
+echo x$with_boost_srcdir
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
