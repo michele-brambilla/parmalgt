@@ -223,6 +223,22 @@ namespace bgf {
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
+    ///  SpinColor multiplication. Ok, it's awful.. let's see if it works!
+    ///
+    ///  \author Michele Brambilla <mib.mic@gmail.com>
+    ///  \date Fri Feb 01 20:23:23 2013
+    template<int DIM>
+      SpinColor<DIM> operator* (const SpinColor<DIM>& alpha ) const {
+      SpinColor<DIM> result(alpha);
+      for( int mu = 0; mu < DIM; ++mu)
+	for( int col = 0; col < 3; ++col)
+	  result[mu][col] *= v_[col];
+      return result;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ///
     ///  Addition and subtraction of a sclar.
     ///
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
