@@ -81,8 +81,31 @@ typedef std::vector<ScalarFermionField> FermionField;
 // Make aliases for the Kernels ...
 //
 
-//typedef kernels::WilsonPTKernel<GluonField> WilsonKernel;
-typedef kernels::WilsonTreeLevel5Kernel<GluonField> WilsonTLKernel;
+enum bdy{bulk=0,lower=1,upper=2};
+template <class T>
+struct FermionBulkKernels
+{
+  typedef kernels::WilsonTreeLevel5Kernel<T,bulk> WilsonTLKernel;
+  typedef kernels::Wilson5Kernel<T,bulk> WilsonKernel;
+};
+
+template <class T>
+struct FermionLowerKernels
+{
+  typedef kernels::WilsonTreeLevel5Kernel<T,lower> WilsonTLKernel;
+  typedef kernels::Wilson5Kernel<T,lower> WilsonKernel;
+};
+
+template <class T>
+struct FermionUpperKernels
+{
+  typedef kernels::WilsonTreeLevel5Kernel<T,upper> WilsonTLKernel;
+  typedef kernels::Wilson5Kernel<T,upper> WilsonKernel;
+};
+
+typedef FermionBulkKernels<GluonField>  Bulk;
+typedef FermionLowerKernels<GluonField> Lower;
+typedef FermionUpperKernels<GluonField> Upper;
 
 
 // ... to set the background field ...
@@ -127,62 +150,60 @@ std::string to_string(const T& x){
 
 
 
-// // BCGstab
-// template<int DIM>
-// void BCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  double& m )
-// {
+// BCGstab
+template<int DIM, int count_max>
+int BCGstab0(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  double& m, const double& tol )
+{
 
-//   x = src;
-//   const double inv_prec = 1e-5;
-//   Cplx alpha, beta, omega;
-//   Cplx nr, nr1;
-//   Cplx norm_r, norm_r1;
+  x = src;
+  Cplx alpha, beta, omega;
+  Cplx nr, nr1;
+  Cplx norm_r, norm_r1;
 
-//   //  b.randomize();  // ok, here preconditioning or something else...
+  //  b.randomize();  // ok, here preconditioning or something else...
 
-//   ScalarFermionField b (x), r0(x), Ax(x);
-//   WilsonTLKernel apply_from_x(U, x, m );
-//   apply_from_x.bulk();
+  ScalarFermionField b (x), r0(x), Ax(x);
+  //  WilsonTLKernel apply_from_x(U, x, m );
+  Bulk::WilsonTLKernel  apply_from_x(U, x, m );
   
-//   Ax.apply_everywhere(apply_from_x);
-//   r0 = b - Ax;
 
-//   ScalarFermionField p(x), p0(r0), r(r0), r0star(r), s(x);
-//   WilsonTLKernel apply_from_p(U, p, m );
-//   WilsonTLKernel apply_from_s(U, s, m );
-//   apply_from_p.bulk();
-//   apply_from_s.bulk();
+  Ax.apply_everywhere(apply_from_x);
+  r0 = b - Ax;
 
-//   ScalarFermionField Ap(x), As(x);
+  ScalarFermionField p(x), p0(r0), r(r0), r0star(r), s(x);
+  Bulk::WilsonTLKernel apply_from_p(U, p, m );
+  Bulk::WilsonTLKernel apply_from_s(U, s, m );
 
-//   int count = 0;
+  ScalarFermionField Ap(x), As(x);
 
-//   nr1 = (r ^ r0star);
-//   while( count < COUNT_MAX )
-//     {
+  int count = 0;
 
-//       ++count;
-//       nr = nr1;
+  nr1 = (r ^ r0star);
+  while( count < COUNT_MAX )
+    {
 
-//       Ap.apply_everywhere(apply_from_p);
+      ++count;
+      nr = nr1;
 
-//       alpha = nr / ( Ap ^ r0star );
-//       s     = r - Ap * alpha;
+      Ap.apply_everywhere(apply_from_p);
+
+      alpha = nr / ( Ap ^ r0star );
+      s     = r - Ap * alpha;
       
-//       As.apply_everywhere(apply_from_s);
+      As.apply_everywhere(apply_from_s);
 
-//       omega = ( As * s ) / ( As * As );
-//       x     = x + ( (p * alpha) + (s * omega) );
-//       r     = s - As * omega;
-//       nr1   = (r * r0star);
-//       beta  = (nr1 / nr) * (alpha / omega);
-//       p     = r + (p - Ap * omega) * beta;
+      omega = ( As * s ) / ( As * As );
+      x     = x + ( (p * alpha) + (s * omega) );
+      r     = s - As * omega;
+      nr1   = (r * r0star);
+      beta  = (nr1 / nr) * (alpha / omega);
+      p     = r + (p - Ap * omega) * beta;
       
-//       std::cout << count << "\t" << x*x << "\n";
-//     }
+      std::cout << count << "\t" << x*x << "\n";
+    }
 
-//   x = Ap;
-// }
+  x = Ap;
+}
 
 
 
@@ -199,7 +220,7 @@ std::string to_string(const T& x){
 ///  \author Michele Brambilla <mib.mic@gmail.com>
 ///  \date Thu Jan 17 11:19:12 2013
 template<int DIM, int count_max>
-int BCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  double& m, const double& tol )
+int BiCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  double& m, const double& tol )
 {
   
   x = src;
@@ -210,10 +231,19 @@ int BCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  d
   //  b.randomize();  // ok, here preconditioning or something else...
 
   ScalarFermionField b(x), r0(x), Ax(x);
-  WilsonTLKernel apply_from_x(U, x, m );
-  apply_from_x.bulk();
+
+  Bulk::WilsonTLKernel  apply_from_x_blk(U, x, m );
+  Lower::WilsonTLKernel apply_from_x_low(U, x, m );
+  Upper::WilsonTLKernel apply_from_x_up (U, x, m );
   
-  Ax.apply_everywhere(apply_from_x);
+  // Ax.apply_everywhere(apply_from_x_blk);
+  Ax.apply_on_timeslice(apply_from_x_low, 0);
+  //for x_0 != 0 update all directions
+  for (int x0 = 1; x0 < T; ++x0)
+    for (Direction mu; mu.is_good(); ++mu)
+      Ax.apply_on_timeslice(apply_from_x_blk, x0);
+  Ax.apply_on_timeslice(apply_from_x_up, T);
+
   r0 = b - Ax;
 
 //  std::cout << "#\t" << r0*r0 << "\n#----------------\n";
@@ -236,16 +266,23 @@ int BCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  d
 #endif
 
       p = r + (p - v * omega) * beta;
-      WilsonTLKernel apply_from_p(U, p, m );
-      apply_from_p.bulk();
+      Bulk::WilsonTLKernel  apply_from_p_blk(U, p, m );
+      Lower::WilsonTLKernel apply_from_p_low(U, p, m );
+      Upper::WilsonTLKernel apply_from_p_up (U, p, m );
+
+      //      v.apply_everywhere( apply_from_p_blk );
+      v.apply_on_timeslice(apply_from_p_low, 0);
+      //for x_0 != 0 update all directions
+      for (int x0 = 1; x0 < T; ++x0)
+      	for (Direction mu; mu.is_good(); ++mu)
+      	  v.apply_on_timeslice(apply_from_p_blk, x0);
+      v.apply_on_timeslice(apply_from_p_up, T);
 
 #if DEBUG == 1
       std::cout << "|p-r| = " << (p-r)*(p-r)
 		<< std::endl;
 #endif
 
-      v.apply_everywhere( apply_from_p );
-      
       alpha = rho_1 / (rtilde*v);       
 
 #if DEBUG == 1
@@ -255,20 +292,19 @@ int BCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  d
 #endif
 
       s = r - v * alpha;
-      WilsonTLKernel apply_from_s(U, s, m );
-      apply_from_s.bulk();
+      Bulk::WilsonTLKernel  apply_from_s_blk(U, s, m );
+      Lower::WilsonTLKernel apply_from_s_low(U, s, m );
+      Upper::WilsonTLKernel apply_from_s_up (U, s, m );
 
-      // if (sqrt((s*s).re) < 1e-5) {
-      //   x += p * alpha;
+           // t.apply_everywhere( apply_from_s_blk );
+      t.apply_on_timeslice(apply_from_s_low, 0);
+      //for x_0 != 0 update all directions
+      for (int x0 = 1; x0 < T; ++x0)
+      	for (Direction mu; mu.is_good(); ++mu)
+      	  t.apply_on_timeslice(apply_from_s_blk, x0);
+      t.apply_on_timeslice(apply_from_s_up, T);
 
-      // 	Ax.apply_everywhere(apply_from_x);
-      // 	r0 = b - Ax;
 
-      // 	std::cout << "\tResidual:" << r0*r0 << "\n----------------\n";
-      // 	break;
-      // }
-
-      t.apply_everywhere( apply_from_s );
       omega = (t*s) / (t*t);
 
 #if DEBUG == 1
@@ -284,7 +320,14 @@ int BCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  d
       if (sqrt((r*r).re) < tol) {
         x += p * alpha;
 
-	Ax.apply_everywhere(apply_from_x);
+		// Ax.apply_everywhere(apply_from_x_blk);
+	Ax.apply_on_timeslice(apply_from_x_low, 0);
+	//for x_0 != 0 update all directions
+	for (int x0 = 1; x0 < T; ++x0)
+	  for (Direction mu; mu.is_good(); ++mu)
+	    Ax.apply_on_timeslice(apply_from_x_blk, x0);
+	Ax.apply_on_timeslice(apply_from_x_up, T);
+
 	r0 = b - Ax;
 
 	std::cout << "#\tResidual:" << r0*r0 << "\n#----------------\n";
@@ -304,6 +347,108 @@ int BCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  d
 
 
 
+// template<int DIM, int count_max>
+// int CGR(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  double& m, const double& tol )
+// {
+  
+//   x = src;
+//   Cplx alpha(0.0,0.0), beta;
+//   Cplx norm_rAr, norm_rAr1;
+
+//   //  b.randomize();  // ok, here preconditioning or something else...
+
+//   ScalarFermionField b(x), r0(x), Ax(x);
+
+//   Bulk::WilsonTLKernel  apply_from_x_blk(U, x, m );
+//   Lower::WilsonTLKernel apply_from_x_low(U, x, m );
+//   Upper::WilsonTLKernel apply_from_x_up (U, x, m );
+  
+//   // Ax.apply_everywhere(apply_from_x_blk);
+//   Ax.apply_on_timeslice(apply_from_x_low, 0);
+//   //for x_0 != 0 update all directions
+//   for (int x0 = 1; x0 < T; ++x0)
+//     for (Direction mu; mu.is_good(); ++mu)
+//       Ax.apply_on_timeslice(apply_from_x_blk, x0);
+//   Ax.apply_on_timeslice(apply_from_x_up, T);
+
+//   r0 = b - Ax;
+
+// //  std::cout << "#\t" << r0*r0 << "\n#----------------\n";
+//   ScalarFermionField p(r0), r(r0), Ar(r0), Ar1(x), Ap(x), rtilde(r0);
+
+//   int count = 0;
+
+//   Bulk::WilsonTLKernel  apply_from_r_blk(U,r,m);
+//   Lower::WilsonTLKernel apply_from_r_low(U,r,m);
+//   Upper::WilsonTLKernel apply_from_r_up (U,r,m);
+
+//   Ar.apply_on_timeslice(apply_from_r_low, 0);
+//   //for x_0 != 0 update all directions
+//   for (int x0 = 1; x0 < T; ++x0)
+//     for (Direction mu; mu.is_good(); ++mu)
+//       Ar.apply_on_timeslice(apply_from_r_blk, x0);
+//   Ar.apply_on_timeslice(apply_from_r_up, T);
+//   norm_rAr1 = (r*Ar);
+
+//   Bulk::WilsonTLKernel  apply_from_p_blk(U,p,m);
+//   Lower::WilsonTLKernel apply_from_p_low(U,p,m);
+//   Upper::WilsonTLKernel apply_from_p_up (U,p,m);
+//   Ap.apply_on_timeslice(apply_from_p_low, 0);
+//   //for x_0 != 0 update all directions
+//   for (int x0 = 1; x0 < T; ++x0)
+//     for (Direction mu; mu.is_good(); ++mu)
+//       Ap.apply_on_timeslice(apply_from_p_blk, x0);
+//   Ap.apply_on_timeslice(apply_from_p_up, T);
+  
+//   while( count < count_max )
+//     {
+
+//       ++count;
+
+//       norm_rAr = norm_rAr1;
+//       alpha = norm_rAr/(Ap*Ap);
+
+//       x +=  p * alpha;
+//       r -= Ap * alpha;
+
+//       Ar.apply_on_timeslice(apply_from_r_low, 0);
+//       //for x_0 != 0 update all directions
+//       for (int x0 = 1; x0 < T; ++x0)
+// 	for (Direction mu; mu.is_good(); ++mu)
+// 	  Ar.apply_on_timeslice(apply_from_r_blk, x0);
+//       Ar.apply_on_timeslice(apply_from_r_up, T);
+      
+//       norm_rAr1 = (r*Ar);
+//       beta = norm_rAr1/norm_rAr;
+
+//       p = p*beta+ r;
+//       Ap = Ap*beta + Ar;
+
+
+//       if (sqrt((r*r).re) < tol) {
+// 	norm_rAr = norm_rAr1;
+// 	alpha = norm_rAr/(Ap*Ap);
+	
+// 	x +=  p * alpha;
+	
+// 	r0 = b - Ax;
+
+// 	std::cout << "#\tResidual:" << r0*r0 << "\n#----------------\n";
+// 	return 0;
+//       }
+      
+//       std::cout << count << "\t|r| = " << r*r << "\n\n";
+//     }
+
+//   return 1;
+// }
+
+
+
+
+
+
+
 void invertQ( ScalarFermionField& src, GluonField& U, FermionField& dest ) {
   
   std::cout << "#Fermion Operator Inversion" << std::endl;
@@ -312,19 +457,54 @@ void invertQ( ScalarFermionField& src, GluonField& U, FermionField& dest ) {
   double m = .1;
 
   ScalarFermionField Mxi (src);
-  WilsonTLKernel apply_from_src(U, src, m );
-  apply_from_src.bulk();
-  Mxi.apply_everywhere(apply_from_src);
+  Bulk::WilsonTLKernel  apply_from_src_blk(U, src, m );
+  Lower::WilsonTLKernel apply_from_src_low(U, src, m );
+  Upper::WilsonTLKernel apply_from_src_up (U, src, m );
+
+  //  Mxi.apply_everywhere(apply_from_src);
+  Mxi.apply_on_timeslice(apply_from_src_low, 0);
+  //for x_0 != 0 update all directions
+  for (int x0 = 1; x0 < T; ++x0)
+    for (Direction mu; mu.is_good(); ++mu)
+      Mxi.apply_on_timeslice(apply_from_src_blk, x0);
+  Mxi.apply_on_timeslice(apply_from_src_up, T);
   
   double tol = 1e-5;
 
-  if( BCGstab<DIM, COUNT_MAX>( U, Mxi, dest[0], m, tol ) )
+  if( BiCGstab<DIM, COUNT_MAX>( U, Mxi, dest[0], m, tol ) )
     {
       std::cout << "#Error: unable to converge in less than " 
-		<< COUNT_MAX 
-		<< " iterations." 
-		<< std::endl;
+  		<< COUNT_MAX 
+  		<< " iterations." 
+  		<< std::endl;
     }
+
+}
+
+
+
+void test0( ScalarFermionField& src, GluonField& U, ScalarFermionField& dest ) {
+  
+  double m = .0;
+
+  Bulk::WilsonTLKernel  apply_from_src_blk(U, src, m );
+  Lower::WilsonTLKernel apply_from_src_low(U, src, m );
+  Upper::WilsonTLKernel apply_from_src_up (U, src, m );
+
+  dest.apply_on_timeslice(apply_from_src_blk, 0);
+  //for x_0 != 0 update all directions
+  for (int x0 = 1; x0 < T; ++x0)
+    for (Direction mu; mu.is_good(); ++mu)
+      dest.apply_on_timeslice(apply_from_src_blk, x0);
+  dest.apply_on_timeslice(apply_from_src_blk, T);
+
+}
+
+void test1( ScalarFermionField& src, GluonField& U, ScalarFermionField& dest ) {
+  
+  double m = .1;
+  Bulk::WilsonTLKernel  apply_from_src(U, src, m );
+  dest.apply_everywhere(apply_from_src);
 
 }
 
@@ -377,9 +557,12 @@ int main(int argc, char *argv[]) {
 
   // fields
   GluonField U(e, 1, 0, nt());
+  // for (int t = 0; t < T; ++t){
+  //   SetBgfKernel f(t);
+  //   U.apply_on_timeslice(f, t);
+  // }
   ScalarFermionField Xi  (e, 1, 0, nt());
   FermionField Psi;
-  Psi.push_back(ScalarFermionField(e, 1, 0, nt()));
 
   geometry::Geometry<DIM>::raw_pt_t coords={0,0,0,0};
   Point point = Xi.mk_point(coords);
@@ -390,8 +573,16 @@ int main(int argc, char *argv[]) {
     for( Direction mu(0); mu.is_good(); ++mu) 
       (*it)[mu].whr[0] = Cplx(rand()/(double)RAND_MAX,rand()/(double)RAND_MAX);
 
-  invertQ( Xi, U, Psi );
+  // Psi.push_back(ScalarFermionField(e, 1, 0, nt()));
+  // test0( Xi, U, Psi[0] );
+  // Psi.push_back(ScalarFermionField(e, 1, 0, nt()));
+  // test1( Xi, U, Psi[1] );
+  // std::cout << Psi[0]*Psi[0] << std::endl;
+  // std::cout << Psi[1]*Psi[1] << std::endl;
+  // std::cout << (Psi[1] - Psi[0])*(Psi[1] - Psi[0]) << std::endl;
 
+  Psi.push_back(ScalarFermionField(e, 1, 0, nt()));
+  invertQ( Xi, U, Psi );
   std::cout << (Xi - Psi[0])*(Xi - Psi[0]) << std::endl;
 
   return 0;
