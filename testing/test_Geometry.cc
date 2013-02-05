@@ -22,9 +22,11 @@ TEST(Geometry, Neighbors){
             geometry::Geometry<DIM>::raw_pt_t x(n);
             x[mu]++;
             ASSERT_EQ(g.mk_point(x), g.mk_point(n) + mu);
+	    ASSERT_EQ(g.mk_point(x), g.mk_point(n) - (-mu));
             ASSERT_NE(g.mk_point(x), g.mk_point(n));
             x[mu] -= 2;
             ASSERT_EQ(g.mk_point(x), g.mk_point(n) - mu);
+            ASSERT_EQ(g.mk_point(x), g.mk_point(n)  + (-mu));
             ASSERT_NE(g.mk_point(x), g.mk_point(n));
         }
 };
