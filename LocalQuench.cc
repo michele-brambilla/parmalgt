@@ -10,6 +10,7 @@
 #include <uparam.hpp>
 #include <stdlib.h>
 #include <IO.hpp>
+#include <Clover.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -23,6 +24,8 @@
 #include <sstream>
 #endif
 
+int L;
+
 bool soft_kill = false;
 int got_signal = 100;
 void kill_handler(int s){
@@ -34,7 +37,7 @@ void kill_handler(int s){
 // space-time dimensions
 const int DIM = 4;
 // perturbative order
-const int ORD = 6;
+const int ORD = 4;
 // testing gauge fixing option -- DO NOT TOUCH!
 const int GF_MODE = 1;
 
@@ -85,20 +88,25 @@ typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
 // Stuff we want to measure in any case
 void measure_common(GluonField &U, const std::string& rep_str){
   // Norm of the Gauge Field
-  MeasureNormKernel m;
-  io::write_file(U.apply_everywhere(m).reduce(),
-                 "SFNorm" + rep_str + ".bindat");
+  //MeasureNormKernel m;
+  //io::write_file(U.apply_everywhere(m).reduce(),
+  //               "SFNorm" + rep_str + ".bindat");
   PlaqKernel p;
-  std::list<double> pl;
+  std::list<double> pl, E0, E1;
   pl.push_back(1);
   for (auto &i : U.apply_everywhere(p).val) pl.push_back(-i.Tr().re);
   io::write_file(pl, "SFPlaq" + rep_str + ".bindat");
+  clover::E0m<GluonField> e0m;
+  clover::E0s<GluonField> e0s;
+  U.apply_on_timeslice(e0m, L/2).reduce();
+  U.apply_on_timeslice(e0s, L/2).reduce();
+  io::write_file(e0m.result, "E0m.bindat");
+  io::write_file(e0s.result, "E0s.bindat");
 }
 
 // Stuff that makes sense only for an Abelian background field.
 void measure(GluonField &U, const std::string& rep_str,
              const bgf::AbelianBgf&){
-
   measure_common(U, rep_str);
 }
 
@@ -166,7 +174,7 @@ int main(int argc, char *argv[]) {
   of << "INPUT PARAMETERS:\n";
   p.print(of);
   of.close();
-  int L = atoi(p["L"].c_str());  // Spatial lattice size
+  L = atoi(p["L"].c_str());  // Spatial lattice size
   int s = atoi(p["s"].c_str());  // s parameter, T = L - s
   double alpha = atof(p["alpha"].c_str());  // gauge fixing parameter
   double taug = atof(p["taug"].c_str()); // integration step size

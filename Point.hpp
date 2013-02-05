@@ -33,6 +33,9 @@ namespace pt {
     A deref_fwd(B b) const { return b[DIM + mu]; }
     template <typename A, typename B>
     A deref_bkw(B b) const { return b[mu]; }
+    Direction operator -() const { return Direction( (mu + DIM) % (2*DIM)); }
+    bool operator<(const int& o) const { return mu < o; }
+    bool operator>(const int& o) const { return mu > o; }
     static const Direction t;
     static const Direction x;
     static const Direction y;
@@ -40,7 +43,6 @@ namespace pt {
   private:
     int mu;
   };
-
 
   template <int DIM>
   inline Direction<DIM> operator+(const Direction<DIM>& d, const int& i){
@@ -56,12 +58,13 @@ namespace pt {
     typedef typename vec_t::const_iterator iter_t;
     Point(int nn, const iter_t& i) : n(nn), L_begin(i) { }
     Point& operator+=(const Direction<DIM>& mu){
+      if (mu >= DIM) return *this -= Direction<DIM>(mu % DIM);
       n = mu.template deref_fwd<const int &, 
                                 const arr_t &>(*(L_begin +n));
       return *this;
     }
     Point& operator-=(const Direction<DIM>& mu){
-      
+      if (mu >= DIM) return *this += Direction<DIM>(mu % DIM);
       n = mu.template deref_bkw<const int&,
                                 const arr_t&>(*(L_begin +n));
       return *this;

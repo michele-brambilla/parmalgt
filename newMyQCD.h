@@ -35,7 +35,7 @@ template <int DIM>
   const_iterator end() const {return psi_.end();}
 
   // norm
-  std::vector<double> Norm() const {
+  double Norm() const {
     double norm;
     for (const_iterator i = begin(), e = end(); i != e; ++i){
       norm += i->Norm() * i->Norm();
