@@ -10,7 +10,7 @@
 // space-time dimensions
 const int DIM = 4;
 // perturbative order
-const int ORD = 4;
+const int ORD = 2;
 
 typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
@@ -59,18 +59,32 @@ struct pl_compare {
     clover::detail::FieldWrapper<F> fwrp(fld);
     for (pt::Direction<DIM> mu; mu.is_good(); ++mu)
       for (pt::Direction<DIM> nu; nu.is_good(); ++nu){
-	typename kernels::std_types<F>::ptSU3_t tmpff = 
+	typename kernels::std_types<F>::ptSU3_t 
+	  tmpff = // forward-forward
 	  fld[n][mu] * fld[n+mu][nu] * 
 	  dag(fld[n+nu][mu]) * dag(fld[n][nu]),
-	  tmpfb = fld[n][mu] * dag(fld[n + mu - nu][nu]) *
+	  tmpfb = // forward-backward
+	  fld[n][mu] * dag(fld[n + mu - nu][nu]) *
 	  dag(fld[n - nu][mu]) * fld[n - nu][nu],
+	  tmpbf = // backward-forward
+	  dag(fld[n - mu][mu]) * fld[n - mu][nu] *
+	  fld[n - mu + nu][mu] * dag(fld[n][nu]),
+	  tmpbb = // backward-backward
+	  dag(fld[n - mu][mu]) * dag(fld[n - mu - nu][nu]) *
+	  fld[n - mu - nu][mu] * fld[n - nu][nu],
 	  ff = fwrp(n, mu, nu),
-	  fb = fwrp(n, mu, -nu);
+	  fb = fwrp(n, mu, -nu),
+	  bf = fwrp(n, -mu, nu),
+	  bb = fwrp(n, -mu, -nu);
       ASSERT_TRUE(tmpff.bgf() == ff.bgf());
-      //ASSERT_TRUE(tmpfb.bgf() == fb.bgf());
+      ASSERT_TRUE(tmpfb.bgf() == fb.bgf());
+      ASSERT_TRUE(tmpbf.bgf() == bf.bgf());
+      ASSERT_TRUE(tmpbb.bgf() == bb.bgf());
       for (int i = 0; i < ORD; ++i){
 	ASSERT_TRUE(SU3Cmp(ff[i], tmpff[i])());
 	ASSERT_TRUE(SU3Cmp(fb[i], tmpfb[i])());
+	ASSERT_TRUE(SU3Cmp(bb[i], tmpbb[i])());
+	ASSERT_TRUE(SU3Cmp(bf[i], tmpbf[i])());
       }
     }
   }
@@ -82,7 +96,7 @@ TEST(util, wrapper){
   int T = 10;
   int L = T;
   int s = 0;
-  std::fill(e.begin(), e.end(), 10);
+  std::fill(e.begin(), e.end(), 5);
   // for SF boundary: set the time extend to T + 1
   e[0] = T + 1;
   // initialize background field get method
