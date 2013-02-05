@@ -5,7 +5,6 @@ docs/doxygen
 gtest
 testing/Makefile
 testing/Makefile.in
-
 testing/aclocal.m4
 testing/autom4te.cache
 testing/config.h
@@ -15,7 +14,6 @@ testing/config.sub
 testing/configure
 testing/depcomp
 testing/gtest-all.lo
-
 testing/gtest_main.lo
 testing/install-sh
 testing/lib/
@@ -23,7 +21,6 @@ testing/libtool
 testing/ltmain.sh
 testing/missing
 testing/stamp-h1
-
 testing/.deps/
 testing/.libs/
 testing/config.guess
@@ -52,3 +49,7 @@ Doxyfile
 COPYING
 configure
 missing
+INSTALL
+parmalgt.xcodeproj
+test-driver
+.DS_Store

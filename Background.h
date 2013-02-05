@@ -43,6 +43,7 @@ namespace bgf {
     virtual double Norm() const  = 0;
     // Make traceless
     virtual void Trless() = 0;
+    // Make (anti-)hermitian and traceless
     virtual void reH() = 0;
   };
 
