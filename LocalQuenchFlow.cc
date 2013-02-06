@@ -97,11 +97,11 @@ void measure_common(GluonField &U, const std::string& rep_str){
   for (auto &i : U.apply_everywhere(p).val) pl.push_back(-i.Tr().re);
   io::write_file(pl, "SFPlaq" + rep_str + ".bindat");
   clover::E0m<GluonField> e0m;
-  clover::E0m<GluonField> e0m2;
+  clover::E0s<GluonField> e0s;
   U.apply_on_timeslice(e0m, L/2).reduce();
-  U.apply_on_timeslice(e0m2, L/2 + 1).reduce();
+  U.apply_on_timeslice(e0s, L/2).reduce();
   io::write_file(e0m.result, "E0m.bindat");
-  io::write_file(e0m2.result, "E0m2.bindat");
+  io::write_file(e0s.result, "E0s.bindat");
 
 }
 
@@ -263,6 +263,7 @@ int main(int argc, char *argv[]) {
             Up.apply_on_timeslice(wfa[mu], t);
 
         timings["Wilson flow"].stop();
+      }
 #else
       std::vector<WilFlowKernel> wf;
       for (Direction mu; mu.is_good(); ++mu)
@@ -276,11 +277,11 @@ int main(int argc, char *argv[]) {
           for (Direction mu; mu.is_good(); ++mu)
             Up.apply_on_timeslice(wf[mu], t);
         timings["Wilson flow"].stop();
-#endif
-        timings["measurements"].start();
-        measure(Up, rank_str, Bgf_t());
-        timings["measurements"].stop();
       }
+#endif
+      timings["measurements"].start();
+      measure(Up, rank_str, Bgf_t());
+      timings["measurements"].stop();
     }
     ////////////////////////////////////////////////////////
     //

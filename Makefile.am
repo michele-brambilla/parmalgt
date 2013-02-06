@@ -14,6 +14,9 @@ bin_PROGRAMS = LocalQuenchFlow LocalQuenchFlowTorus Fermi LocalQuench Invert
 #ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
 
+LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
+  newQCDpt.cc Point.cc Background.cc IO.cc
+
 LocalQuenchFlow_SOURCES = LocalQuenchFlow.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc
 

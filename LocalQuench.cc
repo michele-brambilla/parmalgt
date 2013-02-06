@@ -153,7 +153,7 @@ void measure(GluonField &U, const std::string& rep_str,
   TemporalPlaqKernel tp;
   U.apply_on_timeslice(tp, 0);
   U.apply_on_timeslice(tp, T-1);
-  io::write_file(tp.val, "F" + rep_str + ".bindat");
+  io::write_ptSUN(tp.val, "F" + rep_str + ".bindat");
 
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
@@ -181,7 +181,7 @@ void measure(GluonField &U, const std::string& rep_str,
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
                              "Vbar" + rep_str + ".bindat");
 
-  io::write_file(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
+  io::write_ptSUN(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
 #endif
   measure_common(U, rep_str);
 }

@@ -241,7 +241,17 @@ namespace io {
       of.write(reinterpret_cast<const char*>(&(*i)), sizeof(typename CONT::value_type));
     of.close();
   }
-  
+  template <class CONT>
+  inline void write_ptSUN(const CONT& c, const std::string& fname){
+    std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+    Cplx tmp = c.bgf().Tr();
+    to_bin_file(of, tmp);
+    for (typename CONT::const_iterator i = c.begin(), j = c.end(); i != j; ++i){
+      tmp = i->Tr();
+      of.write(reinterpret_cast<const char*>(&tmp), sizeof(Cplx));
+    }
+    of.close();
+  }
 }
 
 

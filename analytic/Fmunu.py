@@ -66,7 +66,9 @@ def Edens_cont():
 #print F(L/2, 4, 1)*L**3
 #print U(L/2, 4, 1)
 
-print np.sinh(G0k())**2*L**3*3
+# print with a factor of L**3 because of the sum in parmalgt
+# and with a factor of three because of the sum over k
+print np.sinh(G0k())**2 * L**3 * 3
 
 
 
