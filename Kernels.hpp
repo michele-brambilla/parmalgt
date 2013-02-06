@@ -739,7 +739,7 @@ private:
     // exp version
     ptSU3 omega;
     for (Direction mu; mu.is_good(); ++mu)
-      omega += U[n][mu] - U[n - mu][mu];
+      omega += U[n - mu][mu] - U[n][mu] ;
     
     ptSU3 Omega = exp<BGF, ORD>( alpha * omega.reH());
     ptSU3 OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
@@ -785,8 +785,8 @@ private:
     // exp version
     ptSU3 omega;
     for (Direction mu; mu.is_good(); ++mu)
-      omega += U[n][mu]*dag(U[n][mu].bgf()) - 
-        dag(U[n-mu][mu].bgf())*U[n - mu][mu];
+      omega += dag(U[n-mu][mu].bgf())*U[n - mu][mu] 
+	- U[n][mu]*dag(U[n][mu].bgf());
     
     ptSU3 Omega = exp<BGF, ORD>( alpha * omega.reH());
     ptSU3 OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
@@ -1093,15 +1093,11 @@ private:
       
       omega /= L*L*L;
       Omega = exp<BGF, ORD>( -alpha * omega.reH());
-      //OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
     }
 
     void operator()(Field_t& U, const Point& n){
-      //for (Direction mu; mu.is_good(); ++mu){
       static Direction t(0);
       U[n][t] = Omega * U[n][t];
-        //U[n - mu][mu] *= OmegaDag;
-        //}
     }
     
   };

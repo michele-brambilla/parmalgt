@@ -93,9 +93,11 @@ void measure_common(GluonField &U, const std::string& rep_str){
   //               "SFNorm" + rep_str + ".bindat");
   PlaqKernel p;
   std::list<double> pl, E0, E1;
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
   pl.push_back(1);
   for (auto &i : U.apply_everywhere(p).val) pl.push_back(-i.Tr().re);
   io::write_file(pl, "SFPlaq" + rep_str + ".bindat");
+#endif
   clover::E0m<GluonField> e0m;
   clover::E0s<GluonField> e0s;
   U.apply_on_timeslice(e0m, L/2).reduce();

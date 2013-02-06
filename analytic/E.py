@@ -26,7 +26,7 @@ def tsqEs(L, T, x, c):
       for n[1] in range(-L/2, L/2):
         for n[2] in range(-L/2, L/2):
           for n[3] in range(-L/2, L/2):
-            p = np.array([ni * 2 * pi / L for ni in n])
+            p = np.array([ni * 2 * pi / LL for ni, LL in zip(n, (T, L, L, L))])
             psqd = np.sum((hat(i)**2 for i in p[1:])) + check(p[0])**2
             tmp = np.exp(- L**2 * c**2 / 4 * psqd)
             prsq = np.sum((ring(i)**2 for i in p[1:]))
