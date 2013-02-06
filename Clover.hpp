@@ -59,7 +59,7 @@ namespace clover {
       return 1./8 * ( U(n, mu_, nu_) - U(n, nu_, mu_)
 		      + U(n, nu_, -mu_) - U(n, mu_, -nu_)
 		      + U(n, -mu_, -nu_) - U(n, -nu_, -mu_)
-		      + U(n, -nu_, mu_) - U(n, -mu_ ,nu_) );
+		      + U(n, -nu_, mu_) - U(n, -mu_ ,nu_));
     }
   };
 
@@ -106,6 +106,7 @@ namespace clover {
     E0m() : val(omp_get_max_threads(), ptSU3(bgf::zero<BGF>())), result(ORD + 1) { }
 
     void operator()(const Fld_t& UU, const Point& n) {
+      //val[omp_get_thread_num()] += F<Fld_t>(Direction(0), Direction(1))(UU, n);
       Direction t;
       ptSU3 tmp;
       for (Direction k(1); k.is_good(); ++k){
@@ -117,8 +118,10 @@ namespace clover {
 
     void reduce() {
       for (int i = 1; i < omp_get_max_threads(); ++i) val[0] += val[i];
-      result[0] = val[0].bgf().Tr();
-      for (int i = 1; i <= ORD; ++i) result[i] = val[0][i-1].Tr();
+      result[0] = val[0].bgf()[0];
+      result[1] = val[0].bgf()[1];
+      result[2] = val[0].bgf()[2];
+      //for (int i = 1; i <= ORD; ++i) result[i] = val[0][i-1].Tr();
     }
   };
 }

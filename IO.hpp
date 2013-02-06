@@ -238,7 +238,7 @@ namespace io {
   inline void write_file(const CONT& c, const std::string& fname){
     std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
     for (typename CONT::const_iterator i = c.begin(), j = c.end(); i != j; ++i)
-      of.write(reinterpret_cast<const char*>(&(*i)), sizeof(double));
+      of.write(reinterpret_cast<const char*>(&(*i)), sizeof(typename CONT::value_type));
     of.close();
   }
   

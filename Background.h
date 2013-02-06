@@ -853,6 +853,9 @@ namespace bgf {
     three_vec_t alpha_v = {0, 0, 0};
     return AbelianBgf(alpha_v);
   };
+  template <> inline ScalarBgf zero<ScalarBgf>() {
+    return ScalarBgf(0);
+  };
   
   inline AbelianBgf random(){
     static MyRand r(134);

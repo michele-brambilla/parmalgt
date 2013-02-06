@@ -91,6 +91,24 @@ TEST_F(TrivialBgfTest, ApplyFromLeft){
   ASSERT_TRUE( SU3Cmp(One.ApplyFromLeft(A), A)() );
 }
 
+TEST(AbelianBgf, Arithmetic){
+  bgf::AbelianBgf A, B;
+  A[0] = 1.2;
+  A[1] = 2.3;
+  A[2] = 3.4;
+
+  B[0] = 0.2;
+  B[1] = 1.3;
+  B[2] = 2.4;
+  bgf::AbelianBgf C = A+B, D = A-B;
+  ASSERT_TRUE(Cmp(C[0], 1.4)());
+  ASSERT_TRUE(Cmp(C[1], 3.6)());
+  ASSERT_TRUE(Cmp(C[2], 5.8)());
+  ASSERT_TRUE(Cmp(D[0], 1.)());
+  ASSERT_TRUE(Cmp(D[1], 1.)());
+  ASSERT_TRUE(Cmp(D[2], 1.)());
+}
+
 TEST(AbelianBgf, KnownValues){
   //  This tests the class
   //     bgf::AbelianBgfFactory

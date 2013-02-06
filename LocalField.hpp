@@ -176,6 +176,7 @@ namespace fields {
     typedef pt::Point<DIM> Point;
     typedef typename array_t<std::pair<int,int>, DIM>::Type neighbors_t;
     typedef typename geometry::Geometry<DIM>::extents_t extents_t;
+    typedef typename geometry::Geometry<DIM>::raw_pt_t raw_pt;
     LocalField (const extents_t& e,
                 const int& number_of_threads,
                 const int& mpi_process_id,
@@ -216,7 +217,7 @@ namespace fields {
     const_iterator begin() const { return rep.begin(); };
     const_iterator end() const { return rep.end(); };
 
-    pt::Point<DIM> mk_point(const typename geometry::Geometry<DIM>::raw_pt_t& n){
+    pt::Point<DIM> mk_point(const raw_pt& n){
       return g.mk_point(n);
     }
     geometry::SliceIterator<DIM, 0> mk_slice_iterator 

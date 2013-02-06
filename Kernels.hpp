@@ -884,11 +884,11 @@ private:
 
     void impl(Field_t& U, const Point& n, const bgf::AbelianBgf&) const {
       for (Direction mu; mu.is_good(); ++mu)
-#ifdef HIGHER_ORDER_INT
-        U[n][mu].bgf() =  bgf::get_abelian_bgf(t, 0);
-#else
+	//#ifdef HIGHER_ORDER_INT
+        //U[n][mu].bgf() =  bgf::get_abelian_bgf(t, 0);
+	//#else
         U[n][mu].bgf() =  bgf::get_abelian_bgf(t, mu);
-#endif
+      //#endif
     }
 
     void impl(Field_t& U, const Point& n, const bgf::ScalarBgf&)

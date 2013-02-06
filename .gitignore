@@ -53,3 +53,4 @@ INSTALL
 parmalgt.xcodeproj
 test-driver
 .DS_Store
+*.pyc

@@ -368,7 +368,14 @@ private:
 };
 
 
-
+template <class B, int ORD> std::ostream& 
+operator<<(std::ostream &o, const BGptSU3<B, ORD>& U) {
+  o << U.bgf() << std::endl;
+  for (typename BGptSU3<B, ORD>::const_iterator i = U.begin();
+       i != U.end(); ++i)
+    o << *i << std::endl;
+  return o;
+}
 
 template <class B, int ORD>
 inline BGptSU3<B, ORD> 
@@ -419,7 +426,7 @@ operator+(const C& b, const BGptSU3<BG, ORD>& A ){
 template <class C, class BG, int ORD>
 inline BGptSU3<BG, ORD> 
 operator-(const C& b, const BGptSU3<BG, ORD>& A ){
-  return BGptSU3<BG, ORD> (A) -= b;
+  return C(b) -= A;
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -42,7 +42,7 @@ const int ORD = 4;
 const int GF_MODE = 1;
 
 // some short-hands
-// typedef bgf::ScalarBgf Bgf_t; // background field
+//typedef bgf::ScalarBgf Bgf_t; // background field
 typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
 typedef ptt::PtMatrix<ORD> ptsu3; // algebra variables
@@ -97,11 +97,12 @@ void measure_common(GluonField &U, const std::string& rep_str){
   for (auto &i : U.apply_everywhere(p).val) pl.push_back(-i.Tr().re);
   io::write_file(pl, "SFPlaq" + rep_str + ".bindat");
   clover::E0m<GluonField> e0m;
-  clover::E0s<GluonField> e0s;
+  clover::E0m<GluonField> e0m2;
   U.apply_on_timeslice(e0m, L/2).reduce();
-  U.apply_on_timeslice(e0s, L/2).reduce();
+  U.apply_on_timeslice(e0m2, L/2 + 1).reduce();
   io::write_file(e0m.result, "E0m.bindat");
-  io::write_file(e0s.result, "E0s.bindat");
+  io::write_file(e0m2.result, "E0m2.bindat");
+
 }
 
 // Stuff that makes sense only for an Abelian background field.

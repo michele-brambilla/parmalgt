@@ -1099,10 +1099,7 @@ public:
 Cplx Tr(const SU3& A);
 
 
-
-
-
-
+std::ostream& operator << (std::ostream&, const SU3&);
 
 class CVector {
   friend class SU3;

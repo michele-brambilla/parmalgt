@@ -6,6 +6,12 @@
 
 #define C0MAX_CONST 2./sqrt(27.)
 
+std::ostream& operator << (std::ostream& o, const SU3& A){
+  o << "/ " << A.whr[0] << "," << A.whr[1] << "," << A.whr[2] << " \\\n";
+  o << "| " << A.whr[3] << "," << A.whr[4] << "," << A.whr[5] << " |\n";
+  o << "\\ " << A.whr[6] << "," << A.whr[7] << "," << A.whr[8] << " /\n";
+  return o;
+}
 
 double mod(Cplx z) {
   return sqrt(z.re*z.re + z.im*z.im);;
