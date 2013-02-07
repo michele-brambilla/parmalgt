@@ -87,8 +87,8 @@ namespace clover {
     }
     void reduce() {
       for (int i = 1; i < omp_get_max_threads(); ++i) val[0] += val[i];
-      result[0] = val[0].bgf().Tr();
-      for (int i = 1; i <= ORD; ++i) result[i] = val[0][i-1].Tr();
+      result[0] = -val[0].bgf().Tr();
+      for (int i = 1; i <= ORD; ++i) result[i] = -val[0][i-1].Tr();
     }
   };
 
@@ -117,8 +117,8 @@ namespace clover {
 
     void reduce() {
       for (int i = 1; i < omp_get_max_threads(); ++i) val[0] += val[i];
-      result[0] = val[0].bgf().Tr();
-      for (int i = 1; i <= ORD; ++i) result[i] = val[0][i-1].Tr();
+      result[0] = -val[0].bgf().Tr();
+      for (int i = 1; i <= ORD; ++i) result[i] = -val[0][i-1].Tr();
     }
   };
 }
