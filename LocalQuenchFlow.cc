@@ -37,13 +37,13 @@ void kill_handler(int s){
 // space-time dimensions
 const int DIM = 4;
 // perturbative order
-const int ORD = 4;
+const int ORD = 2;
 // testing gauge fixing option -- DO NOT TOUCH!
 const int GF_MODE = 1;
 
 // some short-hands
-//typedef bgf::ScalarBgf Bgf_t; // background field
-typedef bgf::AbelianBgf Bgf_t; // background field
+typedef bgf::ScalarBgf Bgf_t; // background field
+//typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
 typedef ptt::PtMatrix<ORD> ptsu3; // algebra variables
 typedef BGptGluon<Bgf_t, ORD, DIM> ptGluon; // gluon
@@ -183,6 +183,7 @@ int main(int argc, char *argv[]) {
   double taug = atof(p["taug"].c_str()); // integration step size
   int NRUN = atoi(p["NRUN"].c_str()); // Total # of gauge updates
   int NFLOW = atoi(p["NFLOW"].c_str()); // # of wilson flow steps
+  int FLOW_FREQ = atoi(p["NFLOW"].c_str()); // after how many steps shall we flow?
   int MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str()); // freq. of meas.
   int T = L-s; // temporal lattice size
   // also write the number of space-time dimensions
@@ -234,7 +235,7 @@ int main(int argc, char *argv[]) {
   // start the simulation
   int i_;
   for (i_ = 1; i_ <= NRUN && !soft_kill; ++i_){
-    if (! (i_ % MEAS_FREQ) ) {
+    if (! (i_ % FLOW_FREQ) ) {
       // make a copy of the gluon field
       GluonField Up(U);
       // do the flow
@@ -247,7 +248,7 @@ int main(int argc, char *argv[]) {
         wfm.push_back(WilFlowMeasKernel(mu, taug, Z));
         wfa.push_back(WilFlowApplyKernel(mu, taug, Z));
       }
-      for (int j_ = 0; j_ < NFLOW && !soft_kill; ++j_){
+      for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
         timings["Wilson flow"].start();
         // 1) measure the force
         // for x_0 = 0 update the temporal direction only
@@ -263,14 +264,18 @@ int main(int argc, char *argv[]) {
         for (int t = 1; t < T; ++t)
           for (Direction mu; mu.is_good(); ++mu)
             Up.apply_on_timeslice(wfa[mu], t);
-
         timings["Wilson flow"].stop();
+	if ( ! (j_ % MEAS_FREQ) ){
+	  timings["measurements"].start();
+	  measure(Up, rank_str, Bgf_t());
+	  timings["measurements"].stop();
+	}
       }
 #else
       std::vector<WilFlowKernel> wf;
       for (Direction mu; mu.is_good(); ++mu)
         wf.push_back(WilFlowKernel(mu, taug));
-      for (int j_ = 0; j_ < NFLOW && !soft_kill; ++j_){
+      for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
         timings["Wilson flow"].start();
         // for x_0 = 0 update the temporal direction only
         Up.apply_on_timeslice(wf[0], 0);
@@ -279,11 +284,13 @@ int main(int argc, char *argv[]) {
           for (Direction mu; mu.is_good(); ++mu)
             Up.apply_on_timeslice(wf[mu], t);
         timings["Wilson flow"].stop();
+	if ( ! (j_ % MEAS_FREQ) ){
+	  timings["measurements"].start();
+	  measure(Up, rank_str, Bgf_t());
+	  timings["measurements"].stop();
+	}
       }
 #endif
-      timings["measurements"].start();
-      measure(Up, rank_str, Bgf_t());
-      timings["measurements"].stop();
     }
     ////////////////////////////////////////////////////////
     //
