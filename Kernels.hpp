@@ -800,6 +800,57 @@ private:
 };
 
 
+  template <class Field_t>
+  struct GF_trivial_bg_zero {
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    static const int ORD = std_types<Field_t>::order;
+    static const int n_cb = 1;
+    double alpha;
+    GF_trivial_bg_zero  (const double& a ) : alpha(a) { }
+    void operator()(Field_t& U, const Point& n) const {
+      ptSU3 omega;
+      static Direction mu(0);
+      //for (Direction mu; mu.is_good(); ++mu)
+      omega -= U[n][mu] ;
+      
+      ptSU3 Omega = exp<BGF, ORD>( alpha * omega.reH());
+      ptSU3 OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
+      
+      //for (Direction mu; mu.is_good(); ++mu){
+      U[n][mu] = Omega * U[n][mu];
+	//U[n - mu][mu] *= OmegaDag;
+      //}
+    }
+  };
+  template <class Field_t>
+  struct GF_trivial_bg_T {
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    static const int ORD = std_types<Field_t>::order;
+    static const int n_cb = 1;
+    double alpha;
+    GF_trivial_bg_T  (const double& a ) : alpha(a) { }
+    void operator()(Field_t& U, const Point& n) const {
+      ptSU3 omega;
+      for (Direction mu; mu.is_good(); ++mu)
+	omega += U[n - mu][mu];
+      
+      ptSU3 Omega = exp<BGF, ORD>( alpha * omega.reH());
+      ptSU3 OmegaDag = exp<BGF, ORD>( -alpha * omega.reH());
+      
+      static Direction mu(0);
+      //for (Direction mu; mu.is_good(); ++mu){
+      //U[n][mu] = Omega * U[n][mu];
+      U[n - mu][mu] *= OmegaDag;
+	//}
+    }
+  };
+
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///

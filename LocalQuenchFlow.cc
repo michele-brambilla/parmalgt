@@ -37,7 +37,7 @@ void kill_handler(int s){
 // space-time dimensions
 const int DIM = 4;
 // perturbative order
-const int ORD = 2;
+const int ORD = 6;
 // testing gauge fixing option -- DO NOT TOUCH!
 const int GF_MODE = 1;
 
@@ -66,8 +66,6 @@ typedef kernels::WilFlowKernel <GluonField, StK, PrK> WilFlowKernel;
 typedef kernels::WilFlowApplyKernel <GluonField, StK, PrK> WilFlowApplyKernel;
 typedef kernels::WilFlowMeasKernel <GluonField, StK, PrK> WilFlowMeasKernel;
 
-typedef kernels::GaugeFixingKernel<GF_MODE, GluonField> GaugeFixingKernel;
-
 // ... to set the background field ...
 typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
 
@@ -76,8 +74,11 @@ typedef kernels::MeasureNormKernel<GluonField> MeasureNormKernel;
 typedef kernels::PlaqKernel<GluonField> PlaqKernel;
 
 // .. gauge fixing ...
+typedef kernels::GaugeFixingKernel<GF_MODE, GluonField> GaugeFixingKernel;
 typedef kernels::GFMeasKernel<GluonField> GFMeasKernel;
 typedef kernels::GFApplyKernel<GluonField> GFApplyKernel;
+typedef kernels::GF_trivial_bg_zero<GluonField> GFKernelz;
+typedef kernels::GF_trivial_bg_T<GluonField> GFKernelT;
 
 // ... and for the checkpointing.
 typedef kernels::FileWriterKernel<GluonField> FileWriterKernel;
@@ -312,10 +313,15 @@ int main(int argc, char *argv[]) {
     GaugeFixingKernel gf(alpha);
     timings["Gauge Fixing"].start();
 
-    GFMeasKernel gfm;
-    U.apply_on_timeslice(gfm, 0);
-    GFApplyKernel gfa(gfm.val, alpha, L);
-    U.apply_on_timeslice(gfa, 0);
+    //GFMeasKernel gfm;
+    //U.apply_on_timeslice(gfm, 0);
+    //GFApplyKernel gfa(gfm.val, alpha, L);
+    //U.apply_on_timeslice(gfa, 0);
+
+    GFKernelz gfz(alpha);
+    U.apply_on_timeslice(gfz, 0);
+    GFKernelT gft(alpha);
+    U.apply_on_timeslice(gft, T);
 
     for (int t = 1; t < T; ++t)
       U.apply_on_timeslice(gf, t);
