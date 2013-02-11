@@ -10,6 +10,7 @@
 #include <uparam.hpp>
 #include <stdlib.h>
 #include <IO.hpp>
+#include <Methods.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -50,8 +51,6 @@ int s;
 int NRUN;
 // frequency of measurements
 int MEAS_FREQ;
-// testing gauge fixing option -- DO NOT TOUCH!
-const int GF_MODE = 1;
 // integration step and gauge fixing parameter
 double taug;
 double alpha;
@@ -109,7 +108,6 @@ typedef kernels::GaugeUpdateKernel <GluonField, StK, PrK>
 #endif
 #endif
 typedef kernels::ZeroModeSubtractionKernel<GluonField> ZeroModeSubtractionKernel;
-typedef kernels::GaugeFixingKernel<GF_MODE, GluonField> GaugeFixingKernel;
 
 
 // ... to set the background field ...
@@ -124,8 +122,6 @@ typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_vbar> VbarLow
 typedef kernels::UdagUKernel<GluonField> UdagUKernel;
 typedef kernels::TemporalPlaqKernel<GluonField> TemporalPlaqKernel;
 typedef kernels::PlaqKernel<GluonField> PlaqKernel;
-typedef kernels::GFMeasKernel<GluonField> GFMeasKernel;
-typedef kernels::GFApplyKernel<GluonField> GFApplyKernel;
 
 // ... and for the checkpointing.
 typedef kernels::FileWriterKernel<GluonField> FileWriterKernel;
@@ -387,17 +383,6 @@ int main(int argc, char *argv[]) {
     for (int t = 1; t < T; ++t)
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu[mu], t);
-    //for (Direction mu(1); mu.is_good(); ++mu)
-    //  U.apply_on_timeslice(gu[mu], T);
-    {
-          GaugeFixingKernel gf(alpha);
-          GFMeasKernel gfm;
-          Up.apply_on_timeslice(gfm, 0);
-          GFApplyKernel gfa(gfm.val, alpha, L);
-          Up.apply_on_timeslice(gfa, 0);
-          for (int t = 1; t < T; ++t)
-            Up.apply_on_timeslice(gf, t);
-    }
     std::vector<GUKStepTwo> gu2;
     for (Direction mu; mu.is_good(); ++mu)
       gu2.push_back(GUKStepTwo(mu, taug, &Up, &R));
@@ -424,16 +409,8 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
-    GaugeFixingKernel gf(alpha);
     timings["Gauge Fixing"].start();
-
-    GFMeasKernel gfm;
-    U.apply_on_timeslice(gfm, 0);
-    GFApplyKernel gfa(gfm.val, alpha, L);
-    U.apply_on_timeslice(gfa, 0);
-
-    for (int t = 1; t < T; ++t)
-      U.apply_on_timeslice(gf, t);
+    meth::gf::sf_gauge_fixing(U, alpha);
     timings["Gauge Fixing"].stop();
 
   } // end main for loop

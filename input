@@ -13,8 +13,9 @@ s 0             # s parameter for staggered
 alpha 0.05      # gauge fixing parameter
 taug 0.03       # integration step size
 NRUN 400        # number of configs to generate
-NFLOW 20         # number of configs to generate
+NFLOW 20        # number of configs to generate
 MEAS_FREQ 10    # frequency of measurements
+FLOW_FREQ 10    # after how many Langevin steps do we want to flow?
 seed 1234       # random number seed
 
 # reading / writing gauge configurations
