@@ -11,9 +11,12 @@
 L 4             # Lattice extend, we set T = L in the simulation
 s 0             # s parameter for staggered
 alpha 0.05      # gauge fixing parameter
-taug 0.03       # integration step size
+taug 0.03       # Langevin integration step size
+tuaf 0.02       # Wilson flow integration step size
 NRUN 400        # number of configs to generate
-MEAS_FREQ 10    # frequency of measurements
+NFLOW 20        # number of flow steps
+MEAS_FREQ 10    # frequency of measurements durin flow
+FLOW_FREQ 10    # after how many Langevin steps do we want to flow?
 seed 1234       # random number seed
 
 # reading / writing gauge configurations

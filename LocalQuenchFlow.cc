@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////////////////////////////////////////////////
   // read the parameters
   uparam::Param p;
-  p.read("input" + rank_str);
+  p.read("flow_ipt" + rank_str);
   std::ofstream of(("SFrun.info"+rank_str).c_str(), std::ios::app);
   of << "INPUT PARAMETERS:\n";
   p.print(of);
@@ -174,6 +174,7 @@ int main(int argc, char *argv[]) {
   int s = atoi(p["s"].c_str());  // s parameter, T = L - s
   double alpha = atof(p["alpha"].c_str());  // gauge fixing parameter
   double taug = atof(p["taug"].c_str()); // integration step size
+  double tauf = atof(p["tauf"].c_str());
   int NRUN = atoi(p["NRUN"].c_str()); // Total # of gauge updates
   int NFLOW = atoi(p["NFLOW"].c_str()); // # of wilson flow steps
   int FLOW_FREQ = atoi(p["NFLOW"].c_str()); // after how many steps shall we flow?
@@ -238,8 +239,8 @@ int main(int argc, char *argv[]) {
       std::vector<WilFlowMeasKernel> wfm;
       std::vector<WilFlowApplyKernel> wfa;
       for (Direction mu; mu.is_good(); ++mu){
-        wfm.push_back(WilFlowMeasKernel(mu, taug, Z));
-        wfa.push_back(WilFlowApplyKernel(mu, taug, Z));
+        wfm.push_back(WilFlowMeasKernel(mu, tauf, Z));
+        wfa.push_back(WilFlowApplyKernel(mu, tauf, Z));
       }
       for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
         timings["Wilson flow"].start();
@@ -267,7 +268,7 @@ int main(int argc, char *argv[]) {
 #else
       std::vector<WilFlowKernel> wf;
       for (Direction mu; mu.is_good(); ++mu)
-        wf.push_back(WilFlowKernel(mu, taug));
+        wf.push_back(WilFlowKernel(mu, tauf));
       for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
         timings["Wilson flow"].start();
         // for x_0 = 0 update the temporal direction only
