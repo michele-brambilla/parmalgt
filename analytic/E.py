@@ -64,7 +64,7 @@ def tsqEm(L, T, x, c):
 if __name__ == "__main__":
     L = 4
     for f in (tsqEs, tsqEm):
-        for c in [np.sqrt(t / L**2 * 8) for t in (.18, .36, .54, .72)]:
+        for c in [np.sqrt(t / L**2 * 8) for t in (.16, .32, .48)]:
             print f(L,L,L/2,c),
         print
             #        print c, tsqEs(4, 4, 2, c), tsqEm(4, 4, 2, c)

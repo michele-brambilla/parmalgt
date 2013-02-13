@@ -200,7 +200,7 @@ namespace fields {
       }
 #endif
     }
-    
+    int vol() const { return g.vol(); }
     int extent(const int& i) const {
       return g[i];
     }

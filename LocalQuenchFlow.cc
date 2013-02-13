@@ -38,7 +38,7 @@ void kill_handler(int s){
 // space-time dimensions
 const int DIM = 4;
 // perturbative order
-const int ORD = 6;
+const int ORD = 2;
 
 // some short-hands
 typedef bgf::ScalarBgf Bgf_t; // background field
@@ -56,6 +56,9 @@ typedef GluonField::neighbors_t nt;
 //
 // Make aliases for the Kernels ...
 //
+
+typedef fields::LocalField<SU3, DIM> RandField;
+typedef kernels::RSU3Kernel<RandField> RandKernel;
 
 // ... for the gauge update/fixing ...
 typedef kernels::StapleSqKernel<GluonField> StK;
@@ -198,6 +201,9 @@ int main(int argc, char *argv[]) {
   GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
   for (int i = 0; i < L*L*L*(T+1); ++i)
     GaugeUpdateKernel::rands[i].init(rand());
+  RandKernel::rands.resize(L*L*L*(T+1));
+  for (int i = 0; i < L*L*L*(T+1); ++i)
+    RandKernel::rands[i].init(rand());
   ////////////////////////////////////////////////////////////////////
   //
   // lattice setup
@@ -234,38 +240,7 @@ int main(int argc, char *argv[]) {
       GluonField Up(U);
       // do the flow
       // ... prepare Kernels
-#ifdef GLOBAL_FLOW
-      GluonField Z(U); // Field to store the force
-      std::vector<WilFlowMeasKernel> wfm;
-      std::vector<WilFlowApplyKernel> wfa;
-      for (Direction mu; mu.is_good(); ++mu){
-        wfm.push_back(WilFlowMeasKernel(mu, tauf, Z));
-        wfa.push_back(WilFlowApplyKernel(mu, tauf, Z));
-      }
-      for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
-        timings["Wilson flow"].start();
-        // 1) measure the force
-        // for x_0 = 0 update the temporal direction only
-        Up.apply_on_timeslice(wfm[0], 0);
-        // for x_0 != 0 update all directions
-        for (int t = 1; t < T; ++t)
-          for (Direction mu; mu.is_good(); ++mu)
-            Up.apply_on_timeslice(wfm[mu], t);
-        // 1) apply the force
-        // for x_0 = 0 update the temporal direction only
-        Up.apply_on_timeslice(wfa[0], 0);
-        // for x_0 != 0 update all directions
-        for (int t = 1; t < T; ++t)
-          for (Direction mu; mu.is_good(); ++mu)
-            Up.apply_on_timeslice(wfa[mu], t);
-        timings["Wilson flow"].stop();
-	if ( ! (j_ % MEAS_FREQ) ){
-	  timings["measurements"].start();
-	  measure(Up, rank_str, Bgf_t());
-	  timings["measurements"].stop();
-	}
-      }
-#else
+      /*/
       std::vector<WilFlowKernel> wf;
       for (Direction mu; mu.is_good(); ++mu)
         wf.push_back(WilFlowKernel(mu, tauf));
@@ -284,11 +259,32 @@ int main(int argc, char *argv[]) {
 	  timings["measurements"].stop();
 	}
       }
-#endif
+	/*/
+      for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
+        timings["Wilson flow"].start();
+	meth::RK3_flow(Up, tauf);
+	timings["Wilson flow"].stop();
+	if ( ! (j_ % MEAS_FREQ) ){
+	  timings["measurements"].start();
+	  measure(Up, rank_str, Bgf_t());
+	  timings["measurements"].stop();
+	}
+      }
+      //*/
     }
     ////////////////////////////////////////////////////////
     //
     //  gauge update
+    /*/
+    std::vector<RandField> R;
+    for (int k = 0; k < DIM; ++k){
+      R.push_back(RandField(e, 1, 0, nt()));
+      R[k].apply_everywhere(RandKernel());
+    }
+    timings["Gauge Update"].start();
+    meth::gu::RK2_update(U, taug, R);
+    timings["Gauge Update"].stop();
+    /*/
     std::vector<GaugeUpdateKernel> gu;
     for (Direction mu; mu.is_good(); ++mu)
       gu.push_back(GaugeUpdateKernel(mu, taug));
@@ -300,6 +296,7 @@ int main(int argc, char *argv[]) {
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu[mu], t);
     timings["Gauge Update"].stop();
+    //*/
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
