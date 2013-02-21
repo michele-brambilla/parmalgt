@@ -204,7 +204,7 @@ namespace fields {
     int extent(const int& i) const {
       return g[i];
     }
-    
+    extents_t extents() const { return g.get_extents(); }
     data_t& operator[](const pt::Point<DIM> &n){
       return n.template deref<rep_t>(rep);
     }
