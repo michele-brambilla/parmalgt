@@ -193,8 +193,9 @@ namespace kernels {
   namespace gauge_update {
     ////////////////////////////////////////////////////////////
     //
-    //  Gauge update with -order Runge-Kutta scheme, step.
+    //  Gauge update with third-order Runge-Kutta scheme, first step.
     //
+    //  \bug       CURRENTLY DOES NOT SEEM TO WORK!
     //  \date      Thu Feb 21 19:12:07 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class Field_t, class StapleK_t, class RF_t>
@@ -228,8 +229,10 @@ namespace kernels {
   
     ////////////////////////////////////////////////////////////
     //
-    //  Gauge update with -order Runge-Kutta scheme, step.
+    //  Gauge update with third-order Runge-Kutta scheme, second
+    //  step.
     //
+    //  \bug       CURRENTLY DOES NOT SEEM TO WORK!
     //  \date      Thu Feb 21 19:12:43 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class Field_t, class StapleK_t, class RF_t>
@@ -263,8 +266,10 @@ namespace kernels {
 
     ////////////////////////////////////////////////////////////
     //
-    //  Gauge update with -order Runge-Kutta scheme, step.
+    //  Gauge update with second-order Runge-Kutta scheme, first
+    //  step.
     //
+    //  \bug       CURRENTLY DOES NOT SEEM TO WORK!
     //  \date      Thu Feb 21 19:12:50 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class Field_t, class StapleK_t, class RF_t>
@@ -296,6 +301,14 @@ namespace kernels {
       }
     };
   
+    ////////////////////////////////////////////////////////////
+    //
+    //  Gauge update with second-order Runge-Kutta scheme, second
+    //  step.
+    //
+    //  \bug       CURRENTLY DOES NOT SEEM TO WORK!
+    //  \date      Thu Feb 21 19:28:54 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class Field_t, class StapleK_t, class RF_t>
     struct GU_RK2_1 {
       
@@ -325,12 +338,20 @@ namespace kernels {
         U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
-  template <class Field_t, class StapleK_t, class RF_t>
+
+    ////////////////////////////////////////////////////////////
+    //
+    //  Gauge update with -order Runge-Kutta scheme, step.
+    //
+    //  \bug       CURRENTLY DOES NOT SEEM TO WORK!
+    //  \date      Thu Feb 21 19:29:02 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+    template <class Field_t, class StapleK_t, class RF_t>
     struct GU_RK2_2 {
       
       // collect info about the field
       FLD_INFO(Field_t);
-  
+      
       // checker board hyper cube size
       // c.f. geometry and localfield for more info
       static const int n_cb = StapleK_t::n_cb;    
