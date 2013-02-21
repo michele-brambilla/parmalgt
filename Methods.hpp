@@ -37,7 +37,7 @@ namespace meth{
     void sf_gauge_fixing(Fld_t& U, const double& alpha){
       typedef kernels::GaugeFixingKernel<GF_MODE, Fld_t> GaugeFixingKernel;
       detail::bnd_gauge_fixing(U, alpha, typename kernels::std_types<Fld_t>::bgf_t());
-      int T = U.extent(0);
+      int T = U.extent(0) - 1;
       GaugeFixingKernel gf(alpha);
       for (int t = 1; t < T; ++t)
 	U.apply_on_timeslice(gf, t);
