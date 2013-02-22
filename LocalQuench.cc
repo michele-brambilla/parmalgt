@@ -161,23 +161,23 @@ void measure(GluonField &U, const std::string& rep_str,
                              "Gp" + rep_str + ".bindat");
 
   // Evaluate F*Gamma'
-  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
-  for (int i = 0; i <= ORD; ++i)
-    for (int j = 0; j <= i; ++j)
-      gf[i] += g[j] * f[i - j];
-
-  io::write_file(gf, "FGamm" + rep_str + ".bindat");
-
-  VbarUpperKernel Vu(L);
-  VbarLowerKernel Vl(L);
-
-  // Evaluate vbar
-  tmp = U.apply_on_timeslice(Vu, T-1).val
-    - U.apply_on_timeslice(Vl, 0).val;
-  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
-                             "Vbar" + rep_str + ".bindat");
-
-  io::write_ptSUN(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
+//  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
+//  for (int i = 0; i <= ORD; ++i)
+//    for (int j = 0; j <= i; ++j)
+//      gf[i] += g[j] * f[i - j];
+//
+//  io::write_file(gf, "FGamm" + rep_str + ".bindat");
+//
+//  VbarUpperKernel Vu(L);
+//  VbarLowerKernel Vl(L);
+//
+//  // Evaluate vbar
+//  tmp = U.apply_on_timeslice(Vu, T-1).val
+//    - U.apply_on_timeslice(Vl, 0).val;
+//  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+//                             "Vbar" + rep_str + ".bindat");
+//
+//  io::write_ptSUN(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
 #endif
   measure_common(U, rep_str);
 }
@@ -299,7 +299,7 @@ int main(int argc, char *argv[]) {
   // lattice setup
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
-  // we want a L = 4 lattice
+  // we want a T x L^3 lattice
   std::fill(e.begin(), e.end(), L);
   // for SF boundary: set the time extend to T + 1
   e[0] = T + 1;
@@ -393,16 +393,8 @@ int main(int argc, char *argv[]) {
       for (Direction mu; mu.is_good(); ++mu)
         U.apply_on_timeslice(gu2[mu], t);
 #else
-    std::vector<GaugeUpdateKernel> gu;
-    for (Direction mu; mu.is_good(); ++mu)
-      gu.push_back(GaugeUpdateKernel(mu, taug));
     timings["Gauge Update"].start();
-    // for x_0 = 0 update the temporal direction only
-    U.apply_on_timeslice(gu[0], 0);
-    // for x_0 != 0 update all directions
-    for (int t = 1; t < T; ++t)
-      for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_timeslice(gu[mu], t);
+    meth::gu::RK2_update(U, taug);
     timings["Gauge Update"].stop();
 #endif
 #endif

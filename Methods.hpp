@@ -208,7 +208,7 @@ namespace meth{
 	typedef typename kernels::std_types<Fld_t>::direction_t Direction;
 	int T, L;
 	std::vector<GaugeUpdateKernel> gu;
-	euler_(const Fld_t& U, const int& eps) : T(U.extent(0) - 1), L(U.extent(1)) {
+	euler_(const Fld_t& U, const double& eps) : T(U.extent(0) - 1), L(U.extent(1)) {
 	  StK::weights[0] = 1.;
 	  for (Direction mu; mu.is_good(); ++mu)
 	    gu.push_back(GaugeUpdateKernel(mu, eps));
@@ -377,6 +377,33 @@ namespace meth{
       for (int t = 1; t < T; ++t)
 	for (Direction mu; mu.is_good(); ++mu)
 	  U.apply_on_timeslice(wf2[mu], t);
+    }
+     ////////////////////////////////////////////////////////////
+    //
+    //  Perform a gauge update on the SF d.o.f. using a first-order
+    //  Runge-Kutta (speak: Euler) scheme.
+    //
+    //  \bug       NOT TESTED!
+    //
+    //  \date      Thu Feb 22 12:29:21 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+
+    template <class Fld_t>
+    void RK1_update(Fld_t& U, const double& eps){
+      typedef typename detail::rand_gen_<Fld_t>::RandField RK_t;
+      typedef typename kernels::gauge_update::GU_RK1<Fld_t, kernels::StapleSqKernel<Fld_t>, RK_t > wf1_t;
+      typedef typename kernels::std_types<Fld_t>::direction_t Direction;
+      static detail::rand_gen_<Fld_t> R(U);
+      R.update();
+      Fld_t F(U);
+      int T = U.extent(0) - 1;
+      std::vector<wf1_t> wf1;
+      for (Direction mu; mu.is_good(); ++mu)
+	wf1.push_back(wf1_t(mu, eps, F, R[mu]));
+      U.apply_on_timeslice(wf1[0], 0);
+      for (int t = 1; t < T; ++t)
+	for (Direction mu; mu.is_good(); ++mu)
+	  U.apply_on_timeslice(wf1[mu], t);
     }
   }
 }

@@ -38,7 +38,7 @@ void kill_handler(int s){
 // space-time dimensions
 const int DIM = 4;
 // perturbative order
-const int ORD = 2;
+const int ORD = 6;
 
 // some short-hands
 typedef bgf::ScalarBgf Bgf_t; // background field
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
   // lattice setup
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
-  // we want a L = 4 lattice
+  // we want a T x L^3 lattice
   std::fill(e.begin(), e.end(), L);
   // for SF boundary: set the time extend to T + 1
   e[0] = T + 1;
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
       // ... prepare Kernels
       for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
         timings["Wilson flow"].start();
-	meth::wflow::euler_flow(Up, tauf);
+	meth::wflow::RK2_flow(Up, tauf);
 	timings["Wilson flow"].stop();
 	if ( ! (j_ % MEAS_FREQ) ){
 	  timings["measurements"].start();
