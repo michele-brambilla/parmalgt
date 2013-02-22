@@ -141,18 +141,18 @@ namespace kernels {
       Direction mu;
       double taug;
       double staug;
-      Field_t *F;
+      Field_t *F, *Utilde;
       
-      WF_RK2_1(const Direction& nu, const double& t, Field_t& FF) :
-        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF) { }
+      WF_RK2_1(const Direction& nu, const double& t, Field_t& FF, Field_t& Util) :
+        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), Utilde(&Util) { }
   
       void operator()(Field_t& U, const Point& n) {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu); // maye make a vector of this a class member
         st(U,n);
         (*F)[n][mu] = st.reduce();
-        ptsu3 tmp = (*F)[n][mu].reH() * -taug * .5;
-        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        ptsu3 tmp = (*F)[n][mu].reH() * -taug;
+        (*Utilde)[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
     ////////////////////////////////////////////////////////////
@@ -175,18 +175,18 @@ namespace kernels {
       Direction mu;
       double taug;
       double staug;
-      Field_t *F;
+      Field_t *F, *Utilde;
       
-      WF_RK2_2(const Direction& nu, const double& t, Field_t& FF) :
-        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF) { }
+      WF_RK2_2(const Direction& nu, const double& t, Field_t& FF, Field_t& Util) :
+        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), Utilde(&Util) { }
   
       void operator()(Field_t& U, const Point& n) {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu); // maye make a vector of this a class member
-        st(U,n);
+        st(*Utilde,n);
         (*F)[n][mu] += st.reduce();
-        (*F)[n][mu] *= -(.25 + .125 * taug ) * taug;
-        U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() )*U[n][mu]; // back to SU3
+        (*F)[n][mu] *= -(.5 + .25 * taug ) * taug;
+        U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() )* U[n][mu]; // back to SU3
       }
     };
   } // end namespace flow
@@ -324,22 +324,22 @@ namespace kernels {
       Direction mu;
       double taug;
       double staug;
-      Field_t *F;
+      Field_t *F, *Utilde;
       RF_t *R;
       
-      GU_RK2_1(const Direction& nu, const double& t, Field_t& FF, RF_t &RR) :
-        mu(nu), taug(t), staug(std::sqrt(t)/2), F(&FF), R(&RR) { }
+      GU_RK2_1(const Direction& nu, const double& t, Field_t& FF, RF_t &RR, Field_t& Util) :
+        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), R(&RR), Utilde(&Util) { }
   
       void operator()(Field_t& U, const Point& n) {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu); // maye make a vector of this a class member
         st(U,n);
         (*F)[n][mu] = st.reduce();
-        ptsu3 tmp = (*F)[n][mu].reH() * -taug * 0.5;
+        ptsu3 tmp = (*F)[n][mu].reH() * -taug;
         tmp[0] -= (*R)[n] * staug;
 	//ptsu3 tmp;
 	//tmp[0] -= (*R)[n] * staug;
-        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        (*Utilde)[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
 
@@ -365,22 +365,22 @@ namespace kernels {
       Direction mu;
       double taug;
       double staug;
-      Field_t *F;
+      Field_t *F, *Utilde;
       RF_t *R;
       
-      GU_RK2_2(const Direction& nu, const double& t, Field_t& FF, RF_t &RR) :
-        mu(nu), taug(t), staug(std::sqrt(t)/2), F(&FF), R(&RR) { }
+      GU_RK2_2(const Direction& nu, const double& t, Field_t& FF, RF_t &RR, Field_t& Util) :
+        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), R(&RR), Utilde(&Util) { }
   
       void operator()(Field_t& U, const Point& n) {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu); // maye make a vector of this a class member
-        st(U,n);
+        st(*Utilde,n);
         (*F)[n][mu] += st.reduce();
 	/*/ Method I
-	(*F)[n][mu] *= -(0.25  + .125* taug) * taug;
+	(*F)[n][mu] *= -(0.5  + .25* taug) * taug;
 	/*/  
 	// Method II
-	(*F)[n][mu] *= -.25 * taug;
+	(*F)[n][mu] *= -.5 * taug;
         for (int i = 0; i < ORD - 2; ++i)
 	  (*F)[n][mu][i + 2] += 0.5 * taug * (*F)[n][mu][i];
 	//*/
