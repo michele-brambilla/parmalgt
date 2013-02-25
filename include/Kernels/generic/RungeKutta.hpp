@@ -185,7 +185,9 @@ namespace kernels {
         StapleK_t st(mu); // maye make a vector of this a class member
         st(*Utilde,n);
         (*F)[n][mu] += st.reduce();
-        (*F)[n][mu] *= -(.5 + .25 * taug ) * taug;
+	(*F)[n][mu] *= -.5 * taug;
+        for (int i = 0; i < ORD - 2; ++i)
+	  (*F)[n][mu][i + 2] += 0.5 * taug * (*F)[n][mu][i];
         U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() )* U[n][mu]; // back to SU3
       }
     };
