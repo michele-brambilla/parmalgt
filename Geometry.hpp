@@ -66,6 +66,7 @@ namespace geometry {
       for (int i = 0; i < DIM; ++i)
         bnd_vols[i] = V / extents[i];
     }
+    extents_t get_extents() const { return extents; }
     /// Generate an iterator over a given slice.
     /// The SliceIterator returned will ierate all lattice points
     /// \f$n\f$, keeping \f$n_\mu = x_i\f$ fixed.

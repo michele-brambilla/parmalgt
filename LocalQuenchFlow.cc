@@ -57,14 +57,6 @@ typedef GluonField::neighbors_t nt;
 // Make aliases for the Kernels ...
 //
 
-// ... for the gauge update/fixing ...
-typedef kernels::StapleSqKernel<GluonField> StK;
-typedef kernels::TrivialPreProcess<GluonField> PrK;
-typedef kernels::GaugeUpdateKernel <GluonField, StK, PrK> GaugeUpdateKernel;
-typedef kernels::WilFlowKernel <GluonField, StK, PrK> WilFlowKernel;
-typedef kernels::WilFlowApplyKernel <GluonField, StK, PrK> WilFlowApplyKernel;
-typedef kernels::WilFlowMeasKernel <GluonField, StK, PrK> WilFlowMeasKernel;
-
 // ... to set the background field ...
 typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
 
@@ -97,7 +89,6 @@ void measure_common(GluonField &U, const std::string& rep_str){
   U.apply_on_timeslice(e0s, L/2).reduce();
   io::write_file(e0m.result, "E0m.bindat");
   io::write_file(e0s.result, "E0s.bindat");
-
 }
 
 // Stuff that makes sense only for an Abelian background field.
@@ -149,7 +140,6 @@ std::string to_string(const T& x){
 
 
 int main(int argc, char *argv[]) {
-  StK::weights[0] = 1.;
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);
@@ -177,7 +167,7 @@ int main(int argc, char *argv[]) {
   double tauf = atof(p["tauf"].c_str());
   int NRUN = atoi(p["NRUN"].c_str()); // Total # of gauge updates
   int NFLOW = atoi(p["NFLOW"].c_str()); // # of wilson flow steps
-  int FLOW_FREQ = atoi(p["NFLOW"].c_str()); // after how many steps shall we flow?
+  int FLOW_FREQ = atoi(p["FLOW_FREQ"].c_str()); // after how many steps shall we flow?
   int MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str()); // freq. of meas.
   int T = L-s; // temporal lattice size
   // also write the number of space-time dimensions
@@ -195,15 +185,12 @@ int main(int argc, char *argv[]) {
   //
   // random number generators
   srand(atoi(p["seed"].c_str()));
-  GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
-  for (int i = 0; i < L*L*L*(T+1); ++i)
-    GaugeUpdateKernel::rands[i].init(rand());
   ////////////////////////////////////////////////////////////////////
   //
   // lattice setup
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
-  // we want a L = 4 lattice
+  // we want a T x L^3 lattice
   std::fill(e.begin(), e.end(), L);
   // for SF boundary: set the time extend to T + 1
   e[0] = T + 1;
@@ -229,76 +216,12 @@ int main(int argc, char *argv[]) {
   // start the simulation
   int i_;
   for (i_ = 1; i_ <= NRUN && !soft_kill; ++i_){
-    if (! (i_ % FLOW_FREQ) ) {
-      // make a copy of the gluon field
-      GluonField Up(U);
-      // do the flow
-      // ... prepare Kernels
-#ifdef GLOBAL_FLOW
-      GluonField Z(U); // Field to store the force
-      std::vector<WilFlowMeasKernel> wfm;
-      std::vector<WilFlowApplyKernel> wfa;
-      for (Direction mu; mu.is_good(); ++mu){
-        wfm.push_back(WilFlowMeasKernel(mu, tauf, Z));
-        wfa.push_back(WilFlowApplyKernel(mu, tauf, Z));
-      }
-      for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
-        timings["Wilson flow"].start();
-        // 1) measure the force
-        // for x_0 = 0 update the temporal direction only
-        Up.apply_on_timeslice(wfm[0], 0);
-        // for x_0 != 0 update all directions
-        for (int t = 1; t < T; ++t)
-          for (Direction mu; mu.is_good(); ++mu)
-            Up.apply_on_timeslice(wfm[mu], t);
-        // 1) apply the force
-        // for x_0 = 0 update the temporal direction only
-        Up.apply_on_timeslice(wfa[0], 0);
-        // for x_0 != 0 update all directions
-        for (int t = 1; t < T; ++t)
-          for (Direction mu; mu.is_good(); ++mu)
-            Up.apply_on_timeslice(wfa[mu], t);
-        timings["Wilson flow"].stop();
-	if ( ! (j_ % MEAS_FREQ) ){
-	  timings["measurements"].start();
-	  measure(Up, rank_str, Bgf_t());
-	  timings["measurements"].stop();
-	}
-      }
-#else
-      std::vector<WilFlowKernel> wf;
-      for (Direction mu; mu.is_good(); ++mu)
-        wf.push_back(WilFlowKernel(mu, tauf));
-      for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
-        timings["Wilson flow"].start();
-        // for x_0 = 0 update the temporal direction only
-        Up.apply_on_timeslice(wf[0], 0);
-        // for x_0 != 0 update all directions
-        for (int t = 1; t < T; ++t)
-          for (Direction mu; mu.is_good(); ++mu)
-            Up.apply_on_timeslice(wf[mu], t);
-        timings["Wilson flow"].stop();
-	if ( ! (j_ % MEAS_FREQ) ){
-	  timings["measurements"].start();
-	  measure(Up, rank_str, Bgf_t());
-	  timings["measurements"].stop();
-	}
-      }
-#endif
-    }
     ////////////////////////////////////////////////////////
     //
     //  gauge update
-    std::vector<GaugeUpdateKernel> gu;
-    for (Direction mu; mu.is_good(); ++mu)
-      gu.push_back(GaugeUpdateKernel(mu, taug));
+    ////
     timings["Gauge Update"].start();
-    // for x_0 = 0 update the temporal direction only
-    U.apply_on_timeslice(gu[0], 0);
-    // for x_0 != 0 update all directions
-    for (int t = 1; t < T; ++t)
-      for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_timeslice(gu[mu], t);
+    meth::gu::RK2_update(U, taug);
     timings["Gauge Update"].stop();
     ////////////////////////////////////////////////////////
     //
@@ -306,6 +229,26 @@ int main(int argc, char *argv[]) {
     timings["Gauge Fixing"].start();
     meth::gf::sf_gauge_fixing(U, alpha);
     timings["Gauge Fixing"].stop();
+
+    ////////////////////////////////////////////////////////
+    //
+    //  Wilson Flow
+    if (! (i_ % FLOW_FREQ) ) {
+      // make a copy of the gluon field
+      GluonField Up(U);
+      // do the flow
+      // ... prepare Kernels
+      for (int j_ = 1; j_ <= NFLOW && !soft_kill; ++j_){
+        timings["Wilson flow"].start();
+	meth::wflow::RK2_flow(Up, tauf);
+	timings["Wilson flow"].stop();
+	if ( ! (j_ % MEAS_FREQ) ){
+	  timings["measurements"].start();
+	  measure(Up, rank_str, Bgf_t());
+	  timings["measurements"].stop();
+	}
+      }
+    }
     
   } // end main for loop
   // write the gauge configuration

@@ -489,5 +489,41 @@ SU3 SU3rand(MyRand &Rand){
   return P;
 }
 
+SU3 SU3rand(ranlxd::Rand &Rand){
+  SU3 P;
+  double g[8], r, t;
+  // get flat distribution
+  Rand.ranlxd(g, g+8);
+  // make gaussian
+  for (int i = 0; i < 8; i+=2){
+    t = MY_2pi*g[i];
+    r = sqrt( -log((1. - g[i+1])) );
+    g[i]   = r*cos(t);
+    g[i+1] = r*sin(t);
+  }
+  g[7] *= sD3;
 
+  P.whr[1].im = g[0];
+  P.whr[3].im = g[0];
+
+  P.whr[1].re =  g[1];
+  P.whr[3].re = -g[1];
+
+  P.whr[2].im =  g[2];
+  P.whr[6].im =  g[2];
+
+  P.whr[2].re =  g[3];
+  P.whr[6].re = -g[3];
+
+  P.whr[5].im =  g[4];
+  P.whr[7].im =  g[4];
+
+  P.whr[5].re =  g[5];
+  P.whr[7].re = -g[5];
+
+  P.whr[0].im =     g[7]+g[6];
+  P.whr[4].im =     g[7]-g[6];
+  P.whr[8].im = -2.*g[7];  
+  return P;
+}
 

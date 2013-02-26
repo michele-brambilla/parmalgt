@@ -1,6 +1,7 @@
 #include <PtTypes.hpp>
 #include <Background.h>
 #include <gtest/gtest.h>
+#include <MyMath.h>
 #include <Helper.h>
 
 const int ORD = 10;
@@ -36,4 +37,16 @@ TEST(PtMatrix, AddAssign){
   A += A;
   for (int i = 0; i < ORD; ++i)
     ASSERT_TRUE( SU3Cmp(A[i],B[i])() );
+}
+
+TEST(PtMatrix, reHrandom){
+  MyRand r;
+  r.init(8126729);
+  ptt::PtMatrix<ORD> A, B;
+  for (int i = 0; i < ORD; ++i){
+    A[i] = SU3rand(r);
+    B[i] = A[i];
+  }
+  B.reH();
+  for (int i = 0; i < ORD; ++i)  ASSERT_TRUE( SU3Cmp(A[i],B[i])() );
 }

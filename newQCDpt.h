@@ -579,10 +579,8 @@ public:
     std::vector<double> norm(ORD + 1); 
     for (const_iterator i = begin(), e = end(); i != e; ++i){
       for (int j = 0; j <= ORD; ++j)
-        norm[j] += i->Norm()[j] * i->Norm()[j];
+        norm[j] += i->Norm()[j];
     }
-    for (int j = 0; j <= ORD; ++j)
-      norm[j] = sqrt(norm[j]);
     return norm;
   }
 

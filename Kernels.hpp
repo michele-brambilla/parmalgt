@@ -7,6 +7,7 @@
 #include <newQCDpt.h>
 #include <newMyQCD.h>
 
+
 #include <IO.hpp>
 #include <uparam.hpp>
 #include <Types.h>
@@ -97,6 +98,7 @@ namespace kernels {
     typedef typename Field_t::data_t ptGluon_t;
     typedef typename ptGluon_t::pt_su3_t ptSU3_t;
     typedef typename ptSU3_t::pt_matrix_t ptsu3_t;
+    typedef typename ptSU3_t::pt_matrix_t::SU3_t SU3_t;
     typedef typename ptGluon_t::bgf_t bgf_t;
     static const int order = ptGluon_t::order;
     static const int n_dim = Field_t::dim;
@@ -460,10 +462,7 @@ namespace kernels {
     WilFlowKernel(const Direction& nu, const double& t) :
       mu(nu), taug(t) { }
 
-
-
     void operator()(Field_t& U, const Point& n) {
-
       // Make a Kernel to calculate and store the plaquette(s)
       StapleK_t st(mu); // maye make a vector of this a class member
       Process::pre_process(U,n,mu);
@@ -476,6 +475,9 @@ namespace kernels {
 
     }
   };
+  
+
+
   template <class Field_t, 
 	    class StapleK_t, class Process >
   struct WilFlowMeasKernel {
@@ -522,7 +524,7 @@ namespace kernels {
     Field_t *target;
   };
 
-  template <class Field_t, 
+  template <class Field_t,
 	    class StapleK_t, class Process >
   struct WilFlowApplyKernel {
 
@@ -538,7 +540,7 @@ namespace kernels {
 
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
-    static const int n_cb = StapleK_t::n_cb;    
+    static const int n_cb = StapleK_t::n_cb;
 
     Direction mu;
 
@@ -557,7 +559,7 @@ namespace kernels {
       Process::pre_process(U,n,mu);
       st(U,n);
       Process::post_process(U,n,mu);
-      
+
       ptsu3 tmp  = st.reduce().reH() * -taug;
 
       U[n][mu] = (*source)[n][mu]*U[n][mu]; // back to SU3
@@ -566,15 +568,25 @@ namespace kernels {
   };
 
 
-template <class C, class P, class Q> std::vector<MyRand> 
+template <class C, class P, class Q> std::vector<MyRand>
   kernels::GaugeUpdateKernel<C,P,Q>::rands;
 
   template <class Field_t> struct RSU3Kernel {
-    
+
     // collect info about the field
     static const int n_dim = Field_t::dim;
     typedef pt::Point<n_dim> Point;
-    static std::vector<MyRand> rands;
+    // Choose random number generator to use
+    // Note that you have to change the same lines
+    // in Methods.hpp
+    //*/
+    // using RANLUX
+    typedef std::vector<ranlxd::Rand> rand_vec_t;
+    /*/
+    // using MyRand
+    typedef std::vector<MyRand> rand_vec_t;
+    //*/
+    static rand_vec_t rands;
     static const int n_cb = 0;
 
     void operator()(Field_t& U, const Point& n) const {
@@ -582,115 +594,8 @@ template <class C, class P, class Q> std::vector<MyRand>
     }
   };
 
-  template <class C> std::vector<MyRand> 
+  template <class C> typename kernels::RSU3Kernel<C>::rand_vec_t
   kernels::RSU3Kernel<C>::rands;
-
-  template <class Field_t, 
-	    class StapleK_t, class Process, class RandField_t >
-  struct GaugeUpdateKernelStepOne {
-
-  // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
-
-    typedef std::vector<Cplx>::iterator cpx_vec_it;
-    typedef std::vector<std::vector<Cplx> >::iterator outer_cvec_it;
-
-    // checker board hyper cube size
-    // c.f. geometry and localfield for more info
-    static const int n_cb = StapleK_t::n_cb;    
-
-    Direction mu;
-    double taug, stau;
-    Field_t *Utarget;
-    RandField_t *SU3rand;
-    GaugeUpdateKernelStepOne(const Direction& nu, const double& t,
-                             Field_t* Utrgt, RandField_t *rands) :
-      mu(nu), taug(t), stau(sqrt(t)), Utarget(Utrgt), SU3rand(rands) { }
-
-
-
-    void operator()(Field_t& U, const Point& n) {
-
-      // Make a Kernel to calculate and store the plaquette(s)
-      StapleK_t st(mu); // maye make a vector of this a class member
-      Process::pre_process(U,n,mu);
-      st(U,n);
-      Process::post_process(U,n,mu);
-      
-      ptsu3 tmp  = st.reduce().reH() * ((-3./2 + sqrt(2.))* taug);
-      //ptsu3 tmp  = st.reduce().reH() * -taug;
-      // DH Feb. 6, 2012
-      tmp[0] -= stau * (1. - 0.5*sqrt(2)) * (*SU3rand)[n];
-      //tmp[0] -= stau * (*SU3rand)[n];
-      (*Utarget)[n][mu] = exp<BGF, ORD>(tmp) * U[n][mu]; // back to SU3
-    }
-    
-  };
-
-  template <class Field_t, 
-	    class StapleK_t, class Process, class RandField_t >
-  struct GaugeUpdateKernelStepTwo {
-
-    // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
-
-    typedef std::vector<Cplx>::iterator cpx_vec_it;
-    typedef std::vector<std::vector<Cplx> >::iterator outer_cvec_it;
-
-    // checker board hyper cube size
-    // c.f. geometry and localfield for more info
-    static const int n_cb = StapleK_t::n_cb;    
-
-    Direction mu;
-    double taug, stau;
-    Field_t *Uprime;
-    RandField_t *SU3rand;
-    GaugeUpdateKernelStepTwo(const Direction& nu, const double& t,
-                             Field_t *Up, RandField_t* rands) :
-      mu(nu), taug(t), stau(sqrt(t)), Uprime(Up), 
-      SU3rand(rands) { }
-
-
-
-    void operator()(Field_t& U, const Point& n) {
-      // Make a Kernel to calculate and store the plaquette(s)
-      StapleK_t st(mu), stp(mu); // maye make a vector of this a class member
-      Process::pre_process(U,n,mu);
-      st(*Uprime,n);
-      //stp(U,n);
-      Process::post_process(U,n,mu);
-      const double ca = 3.;
-      //ptsu3 tmp  = (st.reduce().reH() + stp.reduce().reH()) * -taug;
-      ptsu3 tmp = st.reduce().reH() * -taug;
-      ptsu3 tmpp;
-      for (int i = 2; i < ORD; ++i)
-        tmpp[i] = tmp[i - 2];
-      std::fill(tmpp[0].begin(), tmpp[0].end(), 0);
-      std::fill(tmpp[1].begin(), tmpp[1].end(), 0);
-      //tmp += tmpp * taug * 0.5;
-      tmp += tmpp * taug * (5. - 3.*sqrt(2.))* (ca / 6.);
-      //tmp *= 0.5;
-
-      // DH Feb. 6, 2012
-      tmp[0] -= stau * (*SU3rand)[n];
-      U[n][mu] = exp<BGF, ORD>(tmp) * U[n][mu]; // back to SU3
-    }
-    
-  };
 
 
   //////////////////////////////////////////////////////////////////////

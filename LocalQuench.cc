@@ -69,7 +69,6 @@ typedef fields::LocalField<ptGluon, DIM> GluonField;
 typedef GluonField::neighbors_t nt;
 
 // shorthand for fermion field
-// shorthand for fermion field
 typedef SpinColor<4> Fermion;
 typedef fields::LocalField< Fermion , DIM> ScalarFermionField;
 typedef std::vector<ScalarFermionField> FermionField;
@@ -92,23 +91,8 @@ typedef kernels::TrivialPreProcess<GluonField> PrTK;
 template <class PR> struct GUK {
   typedef  kernels::GaugeUpdateKernel <GluonField, StK, PR> type;
 };
-#else
-#ifdef HIGHER_ORDER_INT
-typedef fields::LocalField<SU3, DIM> RandField;
-typedef kernels::RSU3Kernel<RandField> RandKernel;
-typedef kernels::StapleSqKernel<GluonField> StK;
-typedef kernels::TrivialPreProcess<GluonField> PrK;
-typedef kernels::GaugeUpdateKernelStepOne <GluonField, StK, PrK, RandField> GUKStepOne;
-typedef kernels::GaugeUpdateKernelStepTwo <GluonField, StK, PrK, RandField> GUKStepTwo;
-#else
-typedef kernels::StapleSqKernel<GluonField> StK;
-typedef kernels::TrivialPreProcess<GluonField> PrK;
-typedef kernels::GaugeUpdateKernel <GluonField, StK, PrK> 
-        GaugeUpdateKernel;
-#endif
 #endif
 typedef kernels::ZeroModeSubtractionKernel<GluonField> ZeroModeSubtractionKernel;
-
 
 // ... to set the background field ...
 typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
@@ -146,10 +130,10 @@ void measure(GluonField &U, const std::string& rep_str,
 
 #ifndef HIGHER_ORDER_INT
 
-  TemporalPlaqKernel tp;
-  U.apply_on_timeslice(tp, 0);
-  U.apply_on_timeslice(tp, T-1);
-  io::write_ptSUN(tp.val, "F" + rep_str + ".bindat");
+  //TemporalPlaqKernel tp;
+  //U.apply_on_timeslice(tp, 0);
+  //U.apply_on_timeslice(tp, T-1);
+  //
 
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
@@ -161,23 +145,23 @@ void measure(GluonField &U, const std::string& rep_str,
                              "Gp" + rep_str + ".bindat");
 
   // Evaluate F*Gamma'
-  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
-  for (int i = 0; i <= ORD; ++i)
-    for (int j = 0; j <= i; ++j)
-      gf[i] += g[j] * f[i - j];
-
-  io::write_file(gf, "FGamm" + rep_str + ".bindat");
-
-  VbarUpperKernel Vu(L);
-  VbarLowerKernel Vl(L);
-
-  // Evaluate vbar
-  tmp = U.apply_on_timeslice(Vu, T-1).val
-    - U.apply_on_timeslice(Vl, 0).val;
-  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
-                             "Vbar" + rep_str + ".bindat");
-
-  io::write_ptSUN(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
+//  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
+//  for (int i = 0; i <= ORD; ++i)
+//    for (int j = 0; j <= i; ++j)
+//      gf[i] += g[j] * f[i - j];
+//
+//  io::write_file(gf, "FGamm" + rep_str + ".bindat");
+//
+//  VbarUpperKernel Vu(L);
+//  VbarLowerKernel Vl(L);
+//
+//  // Evaluate vbar
+//  tmp = U.apply_on_timeslice(Vu, T-1).val
+//    - U.apply_on_timeslice(Vl, 0).val;
+//  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+//                             "Vbar" + rep_str + ".bindat");
+//
+//  io::write_ptSUN(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
 #endif
   measure_common(U, rep_str);
 }
@@ -229,8 +213,6 @@ int main(int argc, char *argv[]) {
   //TODO: CROSS CHECK THESE
   StK::weights[0] = 5./3;
   StK::weights[1] = -1./12;
-#else
-  StK::weights[0] = 1.;
 #endif
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
@@ -283,23 +265,13 @@ int main(int argc, char *argv[]) {
     GUK<PrBK>::type::rands[i].init(rand());
     GUK<PrTK>::type::rands[i].init(rand());
   }
-#else
-#ifdef HIGHER_ORDER_INT
-  RandKernel::rands.resize(L*L*L*(T+1));
-  for (int i = 0; i < L*L*L*(T+1); ++i)
-    RandKernel::rands[i].init(rand());
-#else
-  GaugeUpdateKernel::rands.resize(L*L*L*(T+1));
-  for (int i = 0; i < L*L*L*(T+1); ++i)
-    GaugeUpdateKernel::rands[i].init(rand());
-#endif
 #endif
   ////////////////////////////////////////////////////////////////////
   //
   // lattice setup
   // generate an array for to store the lattice extents
   geometry::Geometry<DIM>::extents_t e;
-  // we want a L = 4 lattice
+  // we want a T x L^3 lattice
   std::fill(e.begin(), e.end(), L);
   // for SF boundary: set the time extend to T + 1
   e[0] = T + 1;
@@ -307,14 +279,6 @@ int main(int argc, char *argv[]) {
   bgf::get_abelian_bgf(0, 0, T, L, s);
   // we will have just one field
   GluonField U(e, 1, 0, nt());
-#ifdef HIGHER_ORDER_INT
-  // or two if we use an higher order integrator
-  GluonField Up(e, 1, 0, nt());
-  for (int t = 0; t <= T; ++t){
-    SetBgfKernel f(t);
-    Up.apply_on_timeslice(f, t);
-  }
-#endif
   ////////////////////////////////////////////////////////////////////
   //
   // initialzie the background field of U or read config
@@ -369,42 +333,9 @@ int main(int argc, char *argv[]) {
     U.apply_on_timeslice(gut[0], T-1);
     timings["Gauge Update"].stop();
 #else
-#ifdef HIGHER_ORDER_INT
-    // TODO: GET RID OF POINTERS!!!!
-    // make new gluon field
-    RandField R(e, 1, 0, nt());
-    R.apply_everywhere(RandKernel());
-    std::vector<GUKStepOne> gu;
-    for (Direction mu; mu.is_good(); ++mu)
-      gu.push_back(GUKStepOne(mu, taug, &Up, &R));
-    // for x_0 = 0 update the temporal direction only
-    U.apply_on_timeslice(gu[0], 0);
-    //for x_0 != 0 update all directions
-    for (int t = 1; t < T; ++t)
-      for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_timeslice(gu[mu], t);
-    std::vector<GUKStepTwo> gu2;
-    for (Direction mu; mu.is_good(); ++mu)
-      gu2.push_back(GUKStepTwo(mu, taug, &Up, &R));
-    // for x_0 = 0 update the temporal direction only
-    U.apply_on_timeslice(gu2[0], 0);
-    // for x_0 != 0 update all directions
-    for (int t = 1; t < T; ++t)
-      for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_timeslice(gu2[mu], t);
-#else
-    std::vector<GaugeUpdateKernel> gu;
-    for (Direction mu; mu.is_good(); ++mu)
-      gu.push_back(GaugeUpdateKernel(mu, taug));
     timings["Gauge Update"].start();
-    // for x_0 = 0 update the temporal direction only
-    U.apply_on_timeslice(gu[0], 0);
-    // for x_0 != 0 update all directions
-    for (int t = 1; t < T; ++t)
-      for (Direction mu; mu.is_good(); ++mu)
-        U.apply_on_timeslice(gu[mu], t);
+    meth::gu::RK2_update(U, taug);
     timings["Gauge Update"].stop();
-#endif
 #endif
     ////////////////////////////////////////////////////////
     //

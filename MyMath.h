@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string.h>
 #include <stdio.h>
+#include <ranlxd.hpp>
 
 #include "MyRand.h"
 #ifdef SSE
@@ -1474,6 +1475,7 @@ inline std::ostream& operator<<(std::ostream& os, const CVector& c){
 }
 
 SU3 SU3rand(MyRand&);
+SU3 SU3rand(ranlxd::Rand&);
 
 #endif
 
