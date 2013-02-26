@@ -121,7 +121,7 @@ namespace meth{
     //
     //  Second-order Runge-Kutta Wilson flow.
     //
-    //  \bug       CURRENTLY DOES NOT WORK!!!
+    //  \warning   Seems to work, but not thoroughly tested.
     //  \param     U Gluon field.
     //  \param     eps Integration steps size.
     //  \tparam    Fld_t Gluon field type.
@@ -240,8 +240,9 @@ namespace meth{
       //  associated with each direction. These are needed for a
       //  Runge-Kutta style update of the gauge field. Should be used
       //  as in a singleton to avoid consuming excessive amounts of
-      //  memory.
+      //  memory. Can be instructed to use ranlux instead of MyRand.
       //
+      //  \warning   THE RANLUX VERISON IS NOT VERY WELL TESTED
       //  \tparam    Fld_t Gluon field type to be used.
       //  \date      Thu Feb 21 18:19:20 2013
       //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
@@ -303,6 +304,9 @@ namespace meth{
     //  \param     U The gluon field to be updated.
     //  \param     eps Integration step size.
     //
+    //  \warning   YOU MIGHT WANT TO USE THE RK1_update METHOD
+    //             INSTEAD, WHICH ALLOWS YOU TO USE RANLUX AS RANDOM
+    //             NUMBER GENERATOR.
     //  \date      Thu Feb 21 18:22:58 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class Fld_t>
@@ -359,7 +363,7 @@ namespace meth{
     //  Perform a gauge update on the SF d.o.f. using a second-order
     //  Runge-Kutta scheme.
     //
-    //  \bug       DOES CURRENTLY NOT WORK!
+    //  \warning   Seems to work but is not very well tested.
     //
     //  \date      Thu Feb 21 18:27:23 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
@@ -393,7 +397,7 @@ namespace meth{
     //  Perform a gauge update on the SF d.o.f. using a first-order
     //  Runge-Kutta (speak: Euler) scheme.
     //
-    //  \bug       NOT TESTED!
+    //  \warning    Not thoroughly tested.
     //
     //  \date      Thu Feb 22 12:29:21 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
