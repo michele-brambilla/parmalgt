@@ -3,7 +3,7 @@
 #include <MyRand.h>
 #include <ranlxd.hpp>
 
-const int NN = 1000000;
+const int NN = 100000;
 
 TEST(Norm, Old){
   MyRand mr;
@@ -18,8 +18,8 @@ TEST(Norm, Old){
   std::cout << AA / NN << std::endl;
 }
 TEST(Norm, New){
-  ranlxd::Rand rl(1,123);
-  SU3  B, BB;// = SU3rand(mr), B = SU3rand(rl);
+  ranlxd::Rand rl(123);
+  SU3  B, BB;
   for (int i = 0; i < NN; ++i){
     SU3 tmp = SU3rand(rl);
     B += tmp;
