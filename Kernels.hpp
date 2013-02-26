@@ -524,7 +524,7 @@ namespace kernels {
     Field_t *target;
   };
 
-  template <class Field_t, 
+  template <class Field_t,
 	    class StapleK_t, class Process >
   struct WilFlowApplyKernel {
 
@@ -540,7 +540,7 @@ namespace kernels {
 
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
-    static const int n_cb = StapleK_t::n_cb;    
+    static const int n_cb = StapleK_t::n_cb;
 
     Direction mu;
 
@@ -559,7 +559,7 @@ namespace kernels {
       Process::pre_process(U,n,mu);
       st(U,n);
       Process::post_process(U,n,mu);
-      
+
       ptsu3 tmp  = st.reduce().reH() * -taug;
 
       U[n][mu] = (*source)[n][mu]*U[n][mu]; // back to SU3
@@ -568,15 +568,25 @@ namespace kernels {
   };
 
 
-template <class C, class P, class Q> std::vector<MyRand> 
+template <class C, class P, class Q> std::vector<MyRand>
   kernels::GaugeUpdateKernel<C,P,Q>::rands;
 
   template <class Field_t> struct RSU3Kernel {
-    
+
     // collect info about the field
     static const int n_dim = Field_t::dim;
     typedef pt::Point<n_dim> Point;
-    static std::vector<MyRand> rands;
+    // Choose random number generator to use
+    // Note that you have to change the same lines
+    // in Methods.hpp
+    //*/
+    // using RANLUX
+    typedef std::vector<ranlxd::Rand> rand_vec_t;
+    /*/
+    // using MyRand
+    typedef std::vector<MyRand> rand_vec_t;
+    //*/
+    static rand_vec_t rands;
     static const int n_cb = 0;
 
     void operator()(Field_t& U, const Point& n) const {
@@ -584,7 +594,7 @@ template <class C, class P, class Q> std::vector<MyRand>
     }
   };
 
-  template <class C> std::vector<MyRand> 
+  template <class C> typename kernels::RSU3Kernel<C>::rand_vec_t
   kernels::RSU3Kernel<C>::rands;
 
 

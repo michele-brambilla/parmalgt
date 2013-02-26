@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     //  gauge update
     ////
     timings["Gauge Update"].start();
-    meth::gu::euler_update(U, taug);
+    meth::gu::RK2_update(U, taug);
     timings["Gauge Update"].stop();
     ////////////////////////////////////////////////////////
     //

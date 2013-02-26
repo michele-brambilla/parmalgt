@@ -255,11 +255,21 @@ namespace meth{
 	std::vector<RandField> R;
 	int L, T;
 
-	rand_gen_(const Fld_t& U) : T(U.extent(0) - 1), 
+	rand_gen_(const Fld_t& U) : T(U.extent(0) - 1),
 				    L(U.extent(1)) {
+	  //*/
+	  // Using RANLUX
+	  long vol = (L*L*L*(T+1));
+	  std::vector<int> seeds(vol);
+	  for (long i = 0; i < vol; ++i)
+	    seeds[i] = rand();
+	  RandKernel::rands = typename RandKernel::rand_vec_t(seeds.begin(), seeds.end());
+	  /*/
+	  // Using MyRand
 	  RandKernel::rands.resize(L*L*L*(T+1));
 	  for (int i = 0; i < L*L*L*(T+1); ++i)
 	    RandKernel::rands[i].init(rand());
+	  //*/
 	  for (int k = 0; k < DIM; ++k)
 	    R.push_back(RandField(U.extents(), 1, 0, nt()));
 	}
