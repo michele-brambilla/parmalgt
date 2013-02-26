@@ -1,7 +1,8 @@
 # global includes
 
 AM_CPPFLAGS = -I${GTEST_DIR}/include -I${GTEST_DIR} -I..\
-	-I${top_srcdir} -DHAVE_TR1 -DDSFMT_MEXP=19937  -I${BOOST_DIR}
+	-I${top_srcdir} -I${top_srcdir}/include -DHAVE_TR1 \
+	-DDSFMT_MEXP=19937 -I${top_srcdir}/ranlxd
 
 # gtest stuff
 
@@ -16,13 +17,19 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 # moment
 
 bin_PROGRAMS = test_Geometry test_Bgfield test_Helper test_SU3 test_newQCDpt \
-	test_PtTypes test_LocalField test_MyMath test_Clover test_Point
+	test_PtTypes test_LocalField test_MyMath test_Clover test_Point \
+	test_ranlxdSU3
 
 test_LocalField_SOURCES = test_LocalField.cc
 test_LocalField_LDADD = lib/libgtest_main.la -lpthread
 
-test_Clover_SOURCES = test_Clover.cc ../MyMath.cc ../MyRand.cc ../Background.cc
+test_Clover_SOURCES = test_Clover.cc ../MyMath.cc ../MyRand.cc\
+	../Background.cc
 test_Clover_LDADD = lib/libgtest_main.la -lpthread
+
+test_ranlxdSU3_SOURCES = test_ranlxdSU3.cc ../MyMath.cc ../MyRand.cc\
+	../ranlxd/ranlxd.cc
+test_ranlxdSU3_LDADD = lib/libgtest_main.la -lpthread
 
 test_MyMath_SOURCES = test_MyMath.cc ../MyRand.cc ../MyMath.cc
 test_MyMath_LDADD = lib/libgtest_main.la -lpthread
