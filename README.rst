@@ -5,10 +5,12 @@ parmalgt -- A NSPT simulation program
 Quick start guide.
 ====================
 
-After you download the source code using the command
+After you download the source code using the commands
 ::
 
-  clone git@bitbucket.org:dirkhesse/parmalgt.git
+  git clone git@bitbucket.org:dirkhesse/parmalgt.git
+  git submodule init
+  git submodule update
 
 you want to generate and run the configure script,
 ::
