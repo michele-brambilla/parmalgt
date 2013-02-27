@@ -1,3 +1,3 @@
 [submodule "ranlxd"]
 	path = ranlxd
-	url = git@github.com:dhesse/ranlxd.git
+	url = http://github.com/dhesse/ranlxd.git
