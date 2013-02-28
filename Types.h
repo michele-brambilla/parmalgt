@@ -1,8 +1,12 @@
 #ifndef _TYPES_H
 #define _TYPES_H
-
 #include <config.h>
-#include <MyMath.h>
+#include <complex>
+#include <SUN.hpp>
+
+typedef sun::SU<3> SU3;
+typedef sun::SU<3>::data_t Cplx;
+
 
 #ifdef HAVE_CXX0X
 #include <array>

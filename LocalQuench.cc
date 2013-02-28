@@ -68,11 +68,6 @@ typedef pt::Direction<DIM> Direction;
 typedef fields::LocalField<ptGluon, DIM> GluonField;
 typedef GluonField::neighbors_t nt;
 
-// shorthand for fermion field
-typedef SpinColor<4> Fermion;
-typedef fields::LocalField< Fermion , DIM> ScalarFermionField;
-typedef std::vector<ScalarFermionField> FermionField;
-
 
 //
 // Make aliases for the Kernels ...

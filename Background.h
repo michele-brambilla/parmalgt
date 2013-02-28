@@ -1,8 +1,6 @@
 #ifndef _BACKGROUND_H_
 #define _BACKGROUND_H_
 
-#include "newMyQCD.h"
-/* #include "MyMath.h" */
 #include <vector>
 #include <algorithm>
 #include <numeric>
@@ -10,6 +8,7 @@
 #include <math.h>
 #include <Types.h>
 #include <MyRand.h>
+#include <iostream>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -31,10 +30,10 @@ namespace bgf {
   public:
     /// Left multiplication.
     virtual SU3 ApplyFromLeft ( const SU3 & ) const = 0;
-    virtual CVector ApplyFromLeft ( const CVector& ) const = 0;
+    //virtual CVector ApplyFromLeft ( const CVector& ) const = 0;
     /// Right multiplication.
     virtual SU3 ApplyFromRight ( const SU3 & ) const = 0;
-    virtual CVector ApplyFromRight ( const CVector & ) const = 0;
+    //virtual CVector ApplyFromRight ( const CVector & ) const = 0;
     // set to zero, or one
     virtual void set_to_one () = 0;
     virtual void set_to_zero () = 0;
@@ -56,12 +55,12 @@ namespace bgf {
     virtual SU3 ApplyFromRight ( const SU3 & U) const {
       return U;
     }
-    virtual CVector ApplyFromLeft ( const CVector & U) const {
-      return U;
-    }
-    virtual CVector ApplyFromRight ( const CVector & U) const {
-      return U;
-    }
+    //virtual CVector ApplyFromLeft ( const CVector & U) const {
+    //  return U;
+    //}
+    //virtual CVector ApplyFromRight ( const CVector & U) const {
+    //  return U;
+    //}
     template <class C> TrivialBgf & operator*= (const C&) {
       return *this;
     }
@@ -134,25 +133,24 @@ namespace bgf {
       SU3 result;
       for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
-	  result.whr[3*i + j] = v_[i] * U.whr[3*i + j];
+	  result(i, j) = v_[i] * U(i, j);
       return result;
     }
-    virtual CVector ApplyFromLeft ( const CVector & v) const {
-      CVector result;
-      for (int i = 0; i < 3; ++i)
-        result.whr[i] = v_[i] * v.whr[i];
-      return result;
-    }
+    //virtual CVector ApplyFromLeft ( const CVector & v) const {
+    //  CVector result;
+    //  for (int i = 0; i < 3; ++i)
+    //    result.whr[i] = v_[i] * v.whr[i];
+    //  return result;
+    //}
 
     double Norm() const {
       double result = 0;
 #ifdef HAVE_CXX0X
-      for (const auto& e : v_) { result += e.re*e.re + e.im*e.im; }
+      for (const auto& e : v_) { result += abs(e); }
 #else
-      for (int i = 0; i < 3; ++i)
-        result += v_[i].re*v_[i].re + v_[i].im*v_[i].im;
+      for (int i = 0; i < 3; ++i) result += abs(v_[i]);
 #endif
-      return std::sqrt(result);
+      return result;
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -171,15 +169,15 @@ namespace bgf {
       SU3 result;
       for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
-	  result.whr[3*i + j] = v_[j] * U.whr[3*i + j];
+	  result(i, j) = v_[j] * U(i, j);
       return result;
     }
-    virtual CVector ApplyFromRight ( const CVector & v) const {
-      CVector result;
-      for (int i = 0; i < 3; ++i)
-        result.whr[i] = v_[i] * v.whr[i];
-      return result;
-    }
+    //virtual CVector ApplyFromRight ( const CVector & v) const {
+    //  CVector result;
+    //  for (int i = 0; i < 3; ++i)
+    //    result.whr[i] = v_[i] * v.whr[i];
+    //  return result;
+    //}
     bool operator==(const AbelianBgf& other) const{
       return v_ == other.v_;
     }
@@ -228,14 +226,14 @@ namespace bgf {
     ///
     ///  \author Michele Brambilla <mib.mic@gmail.com>
     ///  \date Fri Feb 01 20:23:23 2013
-    template<int DIM>
-      SpinColor<DIM> operator* (const SpinColor<DIM>& alpha ) const {
-      SpinColor<DIM> result(alpha);
-      for( int mu = 0; mu < DIM; ++mu)
-	for( int col = 0; col < 3; ++col)
-	  result[mu][col] *= v_[col];
-      return result;
-    }
+    //template<int DIM>
+    //  SpinColor<DIM> operator* (const SpinColor<DIM>& alpha ) const {
+    //  SpinColor<DIM> result(alpha);
+    //  for( int mu = 0; mu < DIM; ++mu)
+    //	for( int col = 0; col < 3; ++col)
+    //	  result[mu][col] *= v_[col];
+    //  return result;
+    //}
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -308,16 +306,16 @@ namespace bgf {
     
     virtual void reH() {
 #ifdef HAVE_CXX0X
-      for ( auto& e: v_ ) e.re = 0;
+      for ( auto& e: v_ ) e.real() = 0;
 #else
-      for (int i = 0; i < 3; ++i) v_[i].re = 0;
+      for (int i = 0; i < 3; ++i) v_[i].real() = 0;
 #endif
       Trless();
     }
 
     AbelianBgf dag() const {
       AbelianBgf result(*this);
-      for (int i = 0; i < 3; ++i) result[i].im = -result[i].im;
+      for (int i = 0; i < 3; ++i) result[i] = conj(result[i]);
       return result;
     }
 
@@ -342,8 +340,8 @@ namespace bgf {
     std::vector<double>::iterator &
     buffer(std::vector<double>::iterator & i) const {
       for (const_iterator n = begin(); n!= end(); ++n){
-        *i = n->re; ++i;
-        *i = n->im; ++i;
+        *i = n->real(); ++i;
+        *i = n->imag(); ++i;
       }
       return i;
     }
@@ -378,8 +376,8 @@ namespace bgf {
     std::vector<double>::const_iterator &
     unbuffer(std::vector<double>::const_iterator & i){
       for (iterator n = begin(); n!= end(); ++n){
-        n->re = *i; ++i;
-        n->im = *i; ++i;
+        n->real() = *i; ++i;
+        n->imag() = *i; ++i;
       }
       return i;
     }
@@ -421,7 +419,7 @@ namespace bgf {
     os << "{ ";
     for (AbelianBgf::const_iterator i = b.begin();
            i != b.end(); ++i)
-      os << "(" << i->re << ", " << i->im << ") ";
+      os << "(" << i->real() << ", " << i->imag() << ") ";
     os << "}";
     return os;
   }
@@ -453,18 +451,18 @@ namespace bgf {
       SU3 result;
       for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
-	  result.whr[3*i + j] = a_ * U.whr[3*i + j];
+	  result(i,j) = a_ * U(i,j);
       return result;
     }
-    virtual CVector ApplyFromLeft ( const CVector & v) const {
-      CVector result;
-      for (int i = 0; i < 3; ++i)
-        result.whr[i] = a_ * v.whr[i];
-      return result;
-    }
+    //virtual CVector ApplyFromLeft ( const CVector & v) const {
+    //  CVector result;
+    //  for (int i = 0; i < 3; ++i)
+    //    result.whr[i] = a_ * v.whr[i];
+    //  return result;
+    //}
 
     double Norm() const {
-      return std::sqrt(a_.re*a_.re + a_.im*a_.im);
+      return abs(a_);
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -483,15 +481,15 @@ namespace bgf {
       SU3 result;
       for (int i = 0; i < 3; ++i)
 	for (int j = 0; j < 3; ++j)
-	  result.whr[3*i + j] = a_ * U.whr[3*i + j];
+	  result(i, j) = a_ * U(i, j);
       return result;
     }
-    virtual CVector ApplyFromRight ( const CVector & v) const {
-      CVector result;
-      for (int i = 0; i < 3; ++i)
-        result.whr[i] = a_ * v.whr[i];
-      return result;
-    }
+    //virtual CVector ApplyFromRight ( const CVector & v) const {
+    //  CVector result;
+    //  for (int i = 0; i < 3; ++i)
+    //    result.whr[i] = a_ * v.whr[i];
+    //  return result;
+    //}
     bool operator==(const ScalarBgf& other) const{
       return a_ == other.a_;
     }
@@ -539,23 +537,23 @@ namespace bgf {
     ///
     ///  \author Michele
     ///  \date Wed Oct 17
-    inline CVector operator* (const CVector& v ) const {
-      CVector result;
-      return result = v * a_;
-    }
-    template<int DIM>
-    inline SpinColor<DIM> operator* (const SpinColor<DIM>& v ) const {
-      SpinColor<DIM> result;
-#ifdef HAVE_CXX0X
-      for( auto it = v.begin(), r = result.begin();
-	   it != v.end(); ++it, ++r) (*r) = a_ * (*it);
-#else
-      typename SpinColor<DIM>::const_iterator i = v.begin(), e = v.end();
-      typename SpinColor<DIM>::iterator r = result.begin();
-      for (; i != e; ++i, ++r) (*r) = a_ * (*i);
-#endif
-      return result;
-    }
+    //inline CVector operator* (const CVector& v ) const {
+    //  CVector result;
+    //  return result = v * a_;
+    //}
+//    template<int DIM>
+//    inline SpinColor<DIM> operator* (const SpinColor<DIM>& v ) const {
+//      SpinColor<DIM> result;
+//#ifdef HAVE_CXX0X
+//      for( auto it = v.begin(), r = result.begin();
+//	   it != v.end(); ++it, ++r) (*r) = a_ * (*it);
+//#else
+//      typename SpinColor<DIM>::const_iterator i = v.begin(), e = v.end();
+//      typename SpinColor<DIM>::iterator r = result.begin();
+//      for (; i != e; ++i, ++r) (*r) = a_ * (*i);
+//#endif
+//      return result;
+//    }
 
 
     //////////////////////////////////////////////////////////////////////
@@ -644,8 +642,7 @@ namespace bgf {
     }
 
     ScalarBgf dag() const {
-      ScalarBgf result(*this);
-      result.a_.im = -a_.im;
+      ScalarBgf result(conj(a_));
       return result;
     }
 
@@ -669,8 +666,8 @@ namespace bgf {
 
     std::vector<double>::iterator &
     buffer(std::vector<double>::iterator & i) const {
-        *i = a_.re; ++i;
-        *i = a_.im; ++i;
+        *i = a_.real(); ++i;
+        *i = a_.imag(); ++i;
       return i;
     }
   
@@ -701,8 +698,8 @@ namespace bgf {
 
     std::vector<double>::const_iterator &
     unbuffer(std::vector<double>::const_iterator & i){
-      a_.re = *i; ++i;
-      a_.im = *i; ++i;
+      a_.real() = *i; ++i;
+      a_.imag() = *i; ++i;
       return i;
     }
 
@@ -725,7 +722,7 @@ namespace bgf {
 
   inline std::ostream& operator<<(std::ostream& os, const ScalarBgf& b){
     os << "{ ";
-    os << "(" << b.val().re << ", " << b.val().im << ") ";
+    os << "(" << b.val().real() << ", " << b.val().imag() << ") ";
     os << "}";
     return os;
   }

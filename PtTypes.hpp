@@ -2,8 +2,7 @@
 #define _PT_TYPES_H_
 
 #include <Types.h>
-#include <MyRand.h>
-#include <MyMath.h>
+#include <ranlxd.hpp>
 #include <Background.h>
 #include <PtAlgo.hpp>
 
@@ -110,14 +109,14 @@ namespace ptt {
     void write(Writer_t& o) const {
       for (const_iterator n = begin(); n!= end(); ++n)
         for (int j = 0; j < 9; ++j)
-          o.write((*n)[j]);
+          o.write((*n)(j));
     }
 
     template <class Reader_t>
     void read(Reader_t& o) {
       for (iterator n = begin(); n!= end(); ++n)
         for (int j = 0; j < 9; ++j)
-          o.read((*n)[j]);
+          o.read((*n)(j));
     }
   
     //////////////////////////////////////////////////////////////////////
@@ -194,12 +193,12 @@ namespace ptt {
     self_t& reH() {
       Cplx tr;
       for(int i = 0; i < N; i++){
-        array_[i] -= dag(array_[i]);
+        array_[i] -= array_[i].dag();
         array_[i] *= .5;
-        tr = array_[i].Tr()/3.;
-        array_[i][0] -= tr;
-        array_[i][4] -= tr;
-        array_[i][8] -= tr;
+        tr = array_[i].tr()/3.;
+        array_[i](0) -= tr;
+        array_[i](4) -= tr;
+        array_[i](8) -= tr;
       }
       return *this;
     }
@@ -242,12 +241,12 @@ namespace ptt {
 
   template <int N> inline PtMatrix<N> get_random_pt_matrix(){
     PtMatrix<N> result;
-    static MyRand r(1235431);
+    static ranlxd::Rand r(1235431);
 #ifdef HAVE_CXX0X
     for (auto& e : result) { e = SU3rand(r); }
 #else
     for (int i = 0; i < N; ++i)
-      result[i] = SU3rand(r);
+      result[i] = sun::SU3rand(r);
 #endif
     return result;
   }

@@ -1,7 +1,6 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
-#include <MyMath.h>
 #include <Types.h>
 #include <Point.hpp>
 #include <math.h>
