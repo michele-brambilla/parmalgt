@@ -22,8 +22,8 @@ you want to generate and run the configure script,
 (not we set a bunch of compiler flags in the second command). All this
 should succeed if you have
 
-* `autoconf >= 2.59`
-* `automake >= 1.06`
+* ``autoconf >= 2.59``
+* ``automake >= 1.06``
 
 installed. Next you will want to compile the code. The version without
 the gradient flow is compiled using
@@ -37,10 +37,11 @@ while for the version with Wilson you want to use
   make LocalQuenchFlow
 
 Both programs should now be ready. Their behaivours are controlled
-with the configuration files `input` and `flow_ipt` respectively. Both
-contain comments explaining the options. The execution of the programs
-will produce data files containing measured observables, with the
-extension `.bindat`. The data is in binary, if you call the command
+with the configuration files ``input`` and ``flow_ipt``
+respectively. Both contain comments explaining the options. The
+execution of the programs will produce data files containing measured
+observables, with the extension ``.bindat``. The data is in binary, if
+you call the command
 ::
 
   od -t f8 Gp.bindat
