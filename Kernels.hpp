@@ -1083,12 +1083,16 @@ private:
     // c.f. geometry and localfield for more info
     static const int n_cb = 0;
 
+    // improvement coefficents
+    typedef typename array_t<double, 2>::Type weights;
+    weights c;
+
     ptSU3 val;
     // \tilde C = - [d_eta C]
     // at the t = 0 side, we have dagger(e^C) and hence an insertion
     // of \tilde C, since C itself is purely imaginary
     BGF Ctilde;
-    explicit GammaLowerKernel (const int& L) : val(bgf::zero<BGF>()) { 
+    explicit GammaLowerKernel (const int& L, const weights& c_) : val(bgf::zero<BGF>()), c(c_) { 
       init_helper_t<BGF>()(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
@@ -1097,7 +1101,7 @@ private:
       for (Direction k(1); k.is_good(); ++k){
         // the 1x1 contribution
         tmp += (Ctilde * dag(U[n][k]) * U[n][t] * 
-                U[n + t][k] * dag( U[n + k][t] )) * (5./3);
+                U[n + t][k] * dag( U[n + k][t] )) * c[0];
         // the 2x1 contribution w\ two links @ the boundary
         // we actually have two contributions to the derivative form
         // each boundary link. However, we do not care because the
@@ -1106,11 +1110,11 @@ private:
         //  w = 2 * (3/2) * c_1 = 3*(-1/12) = -1/4
         tmp += (Ctilde * dag(U[n][k]) * dag(U[n-k][k]) 
                 * U[n-k][t] * U[n + t - k][k]
-                * U[n + t][k] * dag( U[n + k][t] )) * (-1./4);
+                * U[n + t][k] * dag( U[n + k][t] )) * 2. * (3./2.) * c[1];
         // the 1x2 contribution, with usual weight c_1
         tmp += (Ctilde * dag(U[n][k]) * U[n][t] 
                 * U[n+t][t] * U[n+t+t][k] 
-                * dag(U[n + k + t][t]) * dag(U[n + k][t])) * (-1./12);
+                * dag(U[n + k + t][t]) * dag(U[n + k][t])) * c[1];
       }
 #pragma omp critical
       val += tmp;
@@ -1135,11 +1139,15 @@ private:
     // c.f. geometry and localfield for more info
     static const int n_cb = 0;
 
+    // improvement coefficents
+    typedef typename array_t<double, 2>::Type weights;
+    weights c;
+
     ptSU3 val;
     // here, we need [d_eta C'], which is equal to -[d_eta C], hence
     // we can use Ctilde as above
     BGF Ctilde;
-    explicit GammaUpperKernel (const int& L) : val(bgf::zero<BGF>()) { 
+    explicit GammaUpperKernel (const int& L, const weights& c_) : val(bgf::zero<BGF>()), c(c_) { 
       init_helper_t<BGF>()(L, Ctilde);
     }
     void operator()(const Field_t& U, const Point& n){
@@ -1148,7 +1156,7 @@ private:
       for (Direction k(1); k.is_good(); ++k){
         // the 1x1 contribution
         tmp += (Ctilde * U[n + t][k] * dag(U[n + k][t])
-                * dag(U[n][k]) * U[n][t]) * (5./3);
+                * dag(U[n][k]) * U[n][t]) * c[0];
         // the 2x1 contribution w\ two links @ the boundary
         // we actually have two contributions to the derivative form
         // each boundary link. However, we do not care because the
@@ -1157,11 +1165,11 @@ private:
         //  w = 2 * (3/2) * c_1 = 3*(-1/12) = -1/4
         tmp += (Ctilde * U[n + t][k] * U[n + t + k][k]
                 * dag(U[n + k + k][t]) * dag(U[n + k][k])
-                * dag(U[n][k]) * U[n][t]) * (1./4);
+                * dag(U[n][k]) * U[n][t]) * 2. * (3./2.) * c[1];
         // the 1x2 contribution, with usual weight c_1
         tmp += (Ctilde * U[n + t][k] * dag(U[n + k][t])
                 * dag(U[n + k - t][t]) * dag(U[n-t][k]) 
-                * U[n - t][t] * U[n][t]) * (-1./12);
+                * U[n - t][t] * U[n][t]) * c[1];
       }
 #pragma omp critical
       val += tmp;
