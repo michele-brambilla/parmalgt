@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
-AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 -I. -I@abs_top_srcdir@/include -I${top_srcdir}/ranlxd
+AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 -I. -I@abs_top_srcdir@/include\
+	 -I${top_srcdir}/ranlxd -I${top_srcdir}/sun-sources/include
 
 ACLOCAL_AMFLAGS = -I m4
 noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
@@ -16,7 +17,7 @@ bin_PROGRAMS = LocalQuenchFlow LocalQuenchFlowTorus Fermi LocalQuench Invert
 #ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
 
-LocalQuench_SOURCES = LocalQuench.cc MyMath.cc MyRand.cc \
+LocalQuench_SOURCES = LocalQuench.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc
 
 LocalQuenchFlow_SOURCES = LocalQuenchFlow.cc MyMath.cc MyRand.cc \

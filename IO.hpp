@@ -1,9 +1,9 @@
 #ifndef _IO_H_
 #define _IO_H_
 
+#include <Types.h>
 #include <iostream>
 #include <fstream>
-#include <MyMath.h>
 #include <vector>
 #include <sstream>
 #include <uparam.hpp>
@@ -146,10 +146,10 @@ namespace io {
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Wed May 30 18:40:45 2012
     void write(const Cplx &c){
-      CheckedIo::process(c.re);
-      CheckedIo::process(c.im);
-      os.write(reinterpret_cast<char const*>(&(c.re)), sizeof(double));
-      os.write(reinterpret_cast<char const*>(&(c.im)), sizeof(double));
+      CheckedIo::process(c.real());
+      CheckedIo::process(c.imag());
+      os.write(reinterpret_cast<char const*>(&(c.real())), sizeof(double));
+      os.write(reinterpret_cast<char const*>(&(c.imag())), sizeof(double));
     }
   private:
     std::ofstream os;
@@ -209,10 +209,10 @@ namespace io {
       }
     }
     void read(Cplx& c){
-      is.read(reinterpret_cast<char*>(&(c.re)), sizeof(double));
-      is.read(reinterpret_cast<char*>(&(c.im)), sizeof(double));
-      CheckedIo::process(c.re);
-      CheckedIo::process(c.im);
+      is.read(reinterpret_cast<char*>(&(c.real())), sizeof(double));
+      is.read(reinterpret_cast<char*>(&(c.imag())), sizeof(double));
+      CheckedIo::process(c.real());
+      CheckedIo::process(c.imag());
     }
   private:
     std::ifstream is;
@@ -223,15 +223,15 @@ namespace io {
   // writing binary data to files
   
   inline void to_bin_file(std::ofstream& of, const Cplx& c){
-    of.write(reinterpret_cast<const char*>(&c.re), sizeof(double));
-    of.write(reinterpret_cast<const char*>(&c.im), sizeof(double));
+    of.write(reinterpret_cast<const char*>(&c.real()), sizeof(double));
+    of.write(reinterpret_cast<const char*>(&c.imag()), sizeof(double));
   }
   template <class ptSU3, int ORD>
   inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fname){
     std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
     to_bin_file(of, tree);
     for (int i = 0; i < ORD; ++i)
-      to_bin_file(of, U[i].Tr());
+      to_bin_file(of, U[i].tr());
     of.close();
   }
   template <class CONT>
