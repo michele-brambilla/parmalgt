@@ -1,3 +1,4 @@
+AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 -I. -I@abs_top_srcdir@/include -I${top_srcdir}/ranlxd
 
 ACLOCAL_AMFLAGS = -I m4
