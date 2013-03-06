@@ -206,7 +206,7 @@ namespace geometry {
           int l = mk_label(x);
           for(pt::Direction<DIM> mu; mu.is_good(); ++mu){
             x[mu]++;
-            neighbors[l][DIM + mu] = mk_label(x);
+            neighbors[l][DIM + (int)mu] = mk_label(x);
             x[mu] -= 2;
             neighbors[l][mu] = mk_label(x);
             x[mu]++;

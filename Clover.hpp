@@ -1,8 +1,8 @@
 #ifndef CLOVER_H_
 #define CLOVER_H_
 
+#include <Types.h>
 #include <Kernels.hpp>
-#include <MyMath.h>
 #include <Background.h>
 
 #ifdef _OPENMP
@@ -88,7 +88,7 @@ namespace clover {
     void reduce() {
       for (int i = 1; i < omp_get_max_threads(); ++i) val[0] += val[i];
       result[0] = -val[0].bgf().Tr();
-      for (int i = 1; i <= ORD; ++i) result[i] = -val[0][i-1].Tr();
+      for (int i = 1; i <= ORD; ++i) result[i] = -val[0][i-1].tr();
     }
   };
 
@@ -118,7 +118,7 @@ namespace clover {
     void reduce() {
       for (int i = 1; i < omp_get_max_threads(); ++i) val[0] += val[i];
       result[0] = -val[0].bgf().Tr();
-      for (int i = 1; i <= ORD; ++i) result[i] = -val[0][i-1].Tr();
+      for (int i = 1; i <= ORD; ++i) result[i] = -val[0][i-1].tr();
     }
   };
 }
