@@ -45,7 +45,7 @@ struct compare {
       ASSERT_TRUE(dag(fld[n-mu][mu]).bgf() == fwrp(n, -mu).bgf());
       for (int i = 0; i < ORD; ++i){
 	ASSERT_TRUE(SU3Cmp(fwrp(n, mu)[i], fld[n][mu][i])());
-	ASSERT_TRUE(SU3Cmp(fwrp(n, -mu)[i], dag(fld[n - mu][mu][i]))());
+	ASSERT_TRUE(SU3Cmp(fwrp(n, -mu)[i], (fld[n - mu][mu][i]).dag())());
       }
     }
   }

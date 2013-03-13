@@ -14,7 +14,7 @@ struct randomize {
 };
 
 TEST(Operators, AddAssign){
-  typedef typename fields::LocalField<int, 4> intField;
+  typedef fields::LocalField<int, 4> intField;
   intField::extents_t e;
   intField::neighbors_t nn;
   std::fill(e.begin(), e.end(), 10);
@@ -29,7 +29,7 @@ TEST(Operators, AddAssign){
 }
 
 TEST(Operators, SubAssign){
-  typedef typename fields::LocalField<int, 4> intField;
+  typedef fields::LocalField<int, 4> intField;
   intField::extents_t e;
   intField::neighbors_t nn;
   std::fill(e.begin(), e.end(), 10);
@@ -44,7 +44,7 @@ TEST(Operators, SubAssign){
 }
 
 TEST(Operators, InnerProduct){
-  typedef typename fields::LocalField<Cplx, 4> CplxField;
+  typedef fields::LocalField<Cplx, 4> CplxField;
   CplxField::extents_t e;
   CplxField::neighbors_t nn;
   std::fill(e.begin(), e.end(), 10);
@@ -59,7 +59,7 @@ TEST(Operators, InnerProduct){
 }
 
 TEST(Operators, ScalarProduct){
-  typedef typename fields::LocalField<Cplx, 4> CplxField;
+  typedef fields::LocalField<Cplx, 4> CplxField;
   CplxField::extents_t e;
   CplxField::neighbors_t nn;
   std::fill(e.begin(), e.end(), 10);
