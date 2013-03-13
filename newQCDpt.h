@@ -445,11 +445,11 @@ dag( const BGptSU3<B, ORD>& U ){
   BGptSU3<B, ORD> res(U);
   for (int i = 0; i < ORD; ++i){
     // transpose
-    std::swap(res[i](1), res[i](3));
-    std::swap(res[i](2), res[i](6));
-    std::swap(res[i](5), res[i](7));
+    std::swap(res[i][1], res[i][3]);
+    std::swap(res[i][2], res[i][6]);
+    std::swap(res[i][5], res[i][7]);
     // conjugate
-    for (int j = 0; j < 9; ++j) res[i](j).imag() = -res[i](j).imag();
+    for (int j = 0; j < 9; ++j) res[i][j].imag() = -res[i][j].imag();
   }
   res.bgf() = U.bgf().dag();
   return res;

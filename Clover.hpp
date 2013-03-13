@@ -23,13 +23,13 @@ namespace clover {
       typedef typename kernels::std_types<F>::direction_t Direction;
       typedef typename kernels::std_types<F>::point_t Point;
       static const int DIM = kernels::std_types<F>::n_dim;
-      F const *fld;
-      FieldWrapper(const F& f) : fld(&f) { }
+      const F& fld;
+      FieldWrapper(const F& f) : fld(f) { }
       ptSU3 operator()(const Point& n, const Direction& mu) const {
         if (mu >= DIM) {
-	  return dag((*fld)[n - (-mu)][-mu]);
+	  return dag(fld[n - (-mu)][-mu]);
 	}
-        else return (*fld)[n][mu];
+        else return fld[n][mu];
       }
       ptSU3 operator()(Point n, const Direction& mu, const Direction& nu) const {
 	ptSU3 tmp = (*this)(n, mu);

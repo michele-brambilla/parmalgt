@@ -91,10 +91,11 @@ void measure_common(GluonField &U, const std::string& rep_str){
                  "Norm" + rep_str + ".bindat");
   PlaqKernel p;
   std::list<double> pl;
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
   pl.push_back(1);
   for (auto &i : U.apply_everywhere(p).val) pl.push_back(-i.Tr().re);
   io::write_file(pl, "Plaq" + rep_str + ".bindat");
-
+#endif
 }
 
 // Stuff that makes sense only for an Abelian background field.

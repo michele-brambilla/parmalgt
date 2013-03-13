@@ -396,7 +396,7 @@ namespace kernels {
       // WARNING
       // since we use stau as a pre-factor, it looks like the random
       // matrices are normalized to sqrt(2)!
-      tmp[0] -= stau*SU3rand(rands.at(n));
+      tmp[0] -= stau*sun::SU3rand(rands.at(n));
       U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       //#pragma omp critical // TODO maybe one can use a reduce or so here
 #ifndef SF

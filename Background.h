@@ -30,10 +30,10 @@ namespace bgf {
   public:
     /// Left multiplication.
     virtual SU3 ApplyFromLeft ( const SU3 & ) const = 0;
-    //virtual CVector ApplyFromLeft ( const CVector& ) const = 0;
+    virtual CVector ApplyFromLeft ( const CVector& ) const = 0;
     /// Right multiplication.
     virtual SU3 ApplyFromRight ( const SU3 & ) const = 0;
-    //virtual CVector ApplyFromRight ( const CVector & ) const = 0;
+    virtual CVector ApplyFromRight ( const CVector & ) const = 0;
     // set to zero, or one
     virtual void set_to_one () = 0;
     virtual void set_to_zero () = 0;
@@ -55,12 +55,12 @@ namespace bgf {
     virtual SU3 ApplyFromRight ( const SU3 & U) const {
       return U;
     }
-    //virtual CVector ApplyFromLeft ( const CVector & U) const {
-    //  return U;
-    //}
-    //virtual CVector ApplyFromRight ( const CVector & U) const {
-    //  return U;
-    //}
+    virtual CVector ApplyFromLeft ( const CVector & U) const {
+      return U;
+    }
+    virtual CVector ApplyFromRight ( const CVector & U) const {
+      return U;
+    }
     template <class C> TrivialBgf & operator*= (const C&) {
       return *this;
     }
@@ -131,17 +131,17 @@ namespace bgf {
     ///  \date Tue Sep 27 11:03:50 2011
     virtual SU3 ApplyFromLeft ( const SU3 & U) const {
       SU3 result;
-      for (int i = 0; i < 3; ++i)
-	for (int j = 0; j < 3; ++j)
+      for (int i = 0; i < SU3::size; ++i)
+	for (int j = 0; j < SU3::size; ++j)
 	  result(i, j) = v_[i] * U(i, j);
       return result;
     }
-    //virtual CVector ApplyFromLeft ( const CVector & v) const {
-    //  CVector result;
-    //  for (int i = 0; i < 3; ++i)
-    //    result.whr[i] = v_[i] * v.whr[i];
-    //  return result;
-    //}
+    virtual CVector ApplyFromLeft ( const CVector & v) const {
+      CVector result;
+      for (int i = 0; i < CVector::size; ++i)
+        result[i] = v_[i] * v[i];
+      return result;
+    }
 
     double Norm() const {
       double result = 0;
@@ -167,17 +167,17 @@ namespace bgf {
     ///  \date Tue Sep 27 11:03:50 2011
     virtual SU3 ApplyFromRight ( const SU3 & U) const {
       SU3 result;
-      for (int i = 0; i < 3; ++i)
-	for (int j = 0; j < 3; ++j)
+      for (int i = 0; i < SU3::size; ++i)
+	for (int j = 0; j < SU3::size; ++j)
 	  result(i, j) = v_[j] * U(i, j);
       return result;
     }
-    //virtual CVector ApplyFromRight ( const CVector & v) const {
-    //  CVector result;
-    //  for (int i = 0; i < 3; ++i)
-    //    result.whr[i] = v_[i] * v.whr[i];
-    //  return result;
-    //}
+    virtual CVector ApplyFromRight ( const CVector & v) const {
+      CVector result;
+      for (int i = 0; i < CVector::size; ++i)
+        result[i] = v_[i] * v[i];
+      return result;
+    }
     bool operator==(const AbelianBgf& other) const{
       return v_ == other.v_;
     }
@@ -449,17 +449,14 @@ namespace bgf {
 
     virtual SU3 ApplyFromLeft ( const SU3 & U) const {
       SU3 result;
-      for (int i = 0; i < 3; ++i)
-	for (int j = 0; j < 3; ++j)
-	  result(i,j) = a_ * U(i,j);
+      for (int i = 0; i < SU3::rep_size; ++i) result[i] = a_ * U[i];
       return result;
     }
-    //virtual CVector ApplyFromLeft ( const CVector & v) const {
-    //  CVector result;
-    //  for (int i = 0; i < 3; ++i)
-    //    result.whr[i] = a_ * v.whr[i];
-    //  return result;
-    //}
+    virtual CVector ApplyFromLeft ( const CVector & v) const {
+      CVector result;
+      for (int i = 0; i < CVector::size; ++i) result[i] = a_ * v[i];
+      return result;
+    }
 
     double Norm() const {
       return abs(a_);
@@ -479,17 +476,14 @@ namespace bgf {
     ///  \date Tue Sep 27 11:03:50 2011
     virtual SU3 ApplyFromRight ( const SU3 & U) const {
       SU3 result;
-      for (int i = 0; i < 3; ++i)
-	for (int j = 0; j < 3; ++j)
-	  result(i, j) = a_ * U(i, j);
+      for (int i = 0; i < SU3::rep_size; ++i) result[i] = a_ * U[i];
       return result;
     }
-    //virtual CVector ApplyFromRight ( const CVector & v) const {
-    //  CVector result;
-    //  for (int i = 0; i < 3; ++i)
-    //    result.whr[i] = a_ * v.whr[i];
-    //  return result;
-    //}
+    virtual CVector ApplyFromRight ( const CVector & v) const {
+      CVector result;
+      for (int i = 0; i < CVector::rep_size; ++i) result[i] = a_ * v[i];
+      return result;
+    }
     bool operator==(const ScalarBgf& other) const{
       return a_ == other.a_;
     }

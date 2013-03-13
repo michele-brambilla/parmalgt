@@ -5,14 +5,14 @@ AM_CPPFLAGS = -DHAVE_TR1 -DDSFMT_MEXP=19937 -I. -I@abs_top_srcdir@/include\
 ACLOCAL_AMFLAGS = -I m4
 noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
   QCDenvNODEpt.h QCDenvNODE.h Point.hpp newQCDpt.h lattice.h \
-  PtTypes.hpp MyMath.h MyQCD.h newMyQCD.h MyRand.h Types.h dSFMT/dSFMT.h \
+  PtTypes.hpp MyQCD.h newMyQCD.h MyRand.h Types.h dSFMT/dSFMT.h \
   choices.h PtAlgo.hpp GammaStuff.h LocalField.hpp Geometry.hpp \
   Kernels.hpp uparam.hpp IO.hpp util.hpp ranlxd/ranlxd.hpp\
   include/Kernels/generic/RungeKutta.hpp
 
 dist_data_DATA = input run.sh
 
-bin_PROGRAMS = LocalQuenchFlow LocalQuenchFlowTorus Fermi LocalQuench Invert
+bin_PROGRAMS = LocalQuenchFlow LocalQuench
 
 #ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
   newQCDpt.cc Point.cc Background.cc
@@ -23,14 +23,14 @@ LocalQuench_SOURCES = LocalQuench.cc \
 LocalQuenchFlow_SOURCES = LocalQuenchFlow.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc
 
-LocalQuenchFlowTorus_SOURCES = LocalQuenchFlowTorus.cc MyMath.cc MyRand.cc \
-  newQCDpt.cc Point.cc Background.cc IO.cc
+#LocalQuenchFlowTorus_SOURCES = LocalQuenchFlowTorus.cc MyMath.cc MyRand.cc \
+#  newQCDpt.cc Point.cc Background.cc IO.cc
 
 #Fermi_SOURCES = Fermi.cc MyMath.cc MyRand.cc \
 #  newQCDpt.cc Point.cc Background.cc IO.cc
 
-Invert_SOURCES = Invert.cc MyMath.cc MyRand.cc \
-  newQCDpt.cc Point.cc Background.cc IO.cc
+#Invert_SOURCES = Invert.cc MyMath.cc MyRand.cc \
+#  newQCDpt.cc Point.cc Background.cc IO.cc
 
 if GTEST
   SUBDIRS = testing

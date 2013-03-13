@@ -109,14 +109,14 @@ namespace ptt {
     void write(Writer_t& o) const {
       for (const_iterator n = begin(); n!= end(); ++n)
         for (int j = 0; j < 9; ++j)
-          o.write((*n)(j));
+          o.write((*n)[j]);
     }
 
     template <class Reader_t>
     void read(Reader_t& o) {
       for (iterator n = begin(); n!= end(); ++n)
         for (int j = 0; j < 9; ++j)
-          o.read((*n)(j));
+          o.read((*n)[j]);
     }
   
     //////////////////////////////////////////////////////////////////////
@@ -191,15 +191,16 @@ namespace ptt {
     }
 
     self_t& reH() {
-      Cplx tr;
-      for(int i = 0; i < N; i++){
-        array_[i] -= array_[i].dag();
-        array_[i] *= .5;
-        tr = array_[i].tr()/3.;
-        array_[i](0) -= tr;
-        array_[i](4) -= tr;
-        array_[i](8) -= tr;
-      }
+      //Cplx tr;
+      //for(int i = 0; i < N; i++){
+        //array_[i] -= array_[i].dag();
+        //array_[i] *= .5;
+        //tr = array_[i].tr()/3.;
+        //array_[i](0) -= tr;
+        //array_[i](4) -= tr;
+        //array_[i](8) -= tr;
+      //}
+      for(int i = 0; i < N; i++) array_[i] = array_[i].reh();
       return *this;
     }
 

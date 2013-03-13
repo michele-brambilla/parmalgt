@@ -310,6 +310,12 @@ namespace fields {
       return f;
     }
     template <class M>
+    const M& apply_everywhere(const M& f) const {
+      for (int t = 0; t < g[0]; ++t)
+        apply_on_timeslice(f, t);
+      return f;
+    }
+    template <class M>
     void apply_everywhere_serial(M& f){
       // doesn't work because bind1st makes a copy
       // we don't want that because of local data members

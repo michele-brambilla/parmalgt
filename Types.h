@@ -3,10 +3,11 @@
 #include <config.h>
 #include <complex>
 #include <SUN.hpp>
+#include <Vector.hpp>
 
 typedef sun::SU<3> SU3;
 typedef sun::SU<3>::data_t Cplx;
-
+typedef sun::Vec<3> CVector;
 
 #ifdef HAVE_CXX0X
 #include <array>

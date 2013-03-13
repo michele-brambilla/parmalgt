@@ -56,7 +56,7 @@ namespace pt {
     typedef typename array_t<int, 2*DIM>::Type arr_t;
     typedef typename std::vector<arr_t> vec_t;
     typedef typename vec_t::const_iterator iter_t;
-    Point(int nn, const iter_t& i) : n(nn), L_begin(i) { }
+    Point(int nn, const iter_t& i) : n(nn), L_begin(i) {  }
     Point& operator+=(const Direction<DIM>& mu){
       if (mu >= DIM) return *this -= Direction<DIM>(mu % DIM);
       n = mu.template deref_fwd<const int &, 
