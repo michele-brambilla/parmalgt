@@ -10,6 +10,7 @@
 #include <uparam.hpp>
 #include <stdlib.h>
 #include <IO.hpp>
+#include <newMyQCD.h>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -199,7 +200,7 @@ int BCGstab0(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  
       beta  = (nr1 / nr) * (alpha / omega);
       p     = r + (p - Ap * omega) * beta;
       
-      std::cout << count << "\t" << x*x << "\n";
+      std::cout << count << "\t" << abs(x*x) << "\n";
     }
 
   x = Ap;
@@ -317,7 +318,7 @@ int BiCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  
       x += p * alpha + s * omega;
       r  = s - t * omega;
 
-      if (sqrt((r*r).re) < tol) {
+      if (sqrt((r*r).real()) < tol) {
         x += p * alpha;
 
 		// Ax.apply_everywhere(apply_from_x_blk);
@@ -330,13 +331,13 @@ int BiCGstab(  GluonField& U,  ScalarFermionField& src, ScalarFermionField& x,  
 
 	r0 = b - Ax;
 
-	std::cout << "#\tResidual:" << r0*r0 << "\n#----------------\n";
+	std::cout << "#\tResidual:" << abs(r0*r0) << "\n#----------------\n";
 	return 0;
       }
       
       rho_2 = rho_1;
       
-      std::cout << count << "\t|r| = " << r*r << "\n\n";
+      std::cout << count << "\t|r| = " << abs(r*r) << "\n\n";
     }
 
   return 1;
@@ -571,7 +572,7 @@ int main(int argc, char *argv[]) {
   int n = 0;
   for ( ScalarFermionField::iterator it = Xi.begin(); it != Xi.end(); ++it, ++n )
     for( Direction mu(0); mu.is_good(); ++mu) 
-      (*it)[mu].whr[0] = Cplx(rand()/(double)RAND_MAX,rand()/(double)RAND_MAX);
+      (*it)[mu][0] = Cplx(rand()/(double)RAND_MAX,rand()/(double)RAND_MAX);
 
   // Psi.push_back(ScalarFermionField(e, 1, 0, nt()));
   // test0( Xi, U, Psi[0] );
@@ -583,7 +584,7 @@ int main(int argc, char *argv[]) {
 
   Psi.push_back(ScalarFermionField(e, 1, 0, nt()));
   invertQ( Xi, U, Psi );
-  std::cout << (Xi - Psi[0])*(Xi - Psi[0]) << std::endl;
+  //std::cout << (Xi - Psi[0])*(Xi - Psi[0]) << std::endl;
 
   return 0;
 }

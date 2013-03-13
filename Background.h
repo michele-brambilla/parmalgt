@@ -9,6 +9,7 @@
 #include <Types.h>
 #include <MyRand.h>
 #include <iostream>
+#include <newMyQCD.h>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -226,14 +227,14 @@ namespace bgf {
     ///
     ///  \author Michele Brambilla <mib.mic@gmail.com>
     ///  \date Fri Feb 01 20:23:23 2013
-    //template<int DIM>
-    //  SpinColor<DIM> operator* (const SpinColor<DIM>& alpha ) const {
-    //  SpinColor<DIM> result(alpha);
-    //  for( int mu = 0; mu < DIM; ++mu)
-    //	for( int col = 0; col < 3; ++col)
-    //	  result[mu][col] *= v_[col];
-    //  return result;
-    //}
+    template<int DIM>
+      SpinColor<DIM> operator* (const SpinColor<DIM>& alpha ) const {
+      SpinColor<DIM> result(alpha);
+      for( int mu = 0; mu < DIM; ++mu)
+    	for( int col = 0; col < 3; ++col)
+    	  result[mu][col] *= v_[col];
+      return result;
+    }
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -535,19 +536,19 @@ namespace bgf {
     //  CVector result;
     //  return result = v * a_;
     //}
-//    template<int DIM>
-//    inline SpinColor<DIM> operator* (const SpinColor<DIM>& v ) const {
-//      SpinColor<DIM> result;
-//#ifdef HAVE_CXX0X
-//      for( auto it = v.begin(), r = result.begin();
-//	   it != v.end(); ++it, ++r) (*r) = a_ * (*it);
-//#else
-//      typename SpinColor<DIM>::const_iterator i = v.begin(), e = v.end();
-//      typename SpinColor<DIM>::iterator r = result.begin();
-//      for (; i != e; ++i, ++r) (*r) = a_ * (*i);
-//#endif
-//      return result;
-//    }
+    template<int DIM>
+    inline SpinColor<DIM> operator* (const SpinColor<DIM>& v ) const {
+      SpinColor<DIM> result;
+#ifdef HAVE_CXX0X
+      for( auto it = v.begin(), r = result.begin();
+	   it != v.end(); ++it, ++r) (*r) = a_ * (*it);
+#else
+      typename SpinColor<DIM>::const_iterator i = v.begin(), e = v.end();
+      typename SpinColor<DIM>::iterator r = result.begin();
+      for (; i != e; ++i, ++r) (*r) = a_ * (*i);
+#endif
+      return result;
+    }
 
 
     //////////////////////////////////////////////////////////////////////
