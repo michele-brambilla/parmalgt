@@ -36,6 +36,8 @@ void kill_handler(int s){
 const int DIM = 4;
 // perturbative order
 const int ORD = 4;
+// gauge improvement coefficient c1
+const double c_1 =  -0.331;
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -130,14 +132,23 @@ void measure(GluonField &U, const std::string& rep_str,
   //U.apply_on_timeslice(tp, T-1);
   //
 
+#ifndef IMP_ACT
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
+#else
+  GammaUpperKernel::weights imp_coeff;
+  imp_coeff[0] = 1. - 8.*c_1;
+  imp_coeff[1] = c_1;
+  GammaUpperKernel Gu(L,imp_coeff);
+  GammaLowerKernel Gl(L,imp_coeff);
+#endif
 
-  // Evaluate Gamma'
+  //  Evaluate Gamma'
   ptSU3 tmp = U.apply_on_timeslice(Gu, T-1).val
     + U.apply_on_timeslice(Gl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
                              "Gp" + rep_str + ".bindat");
+
 
   // Evaluate F*Gamma'
 //  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
@@ -206,8 +217,8 @@ std::string to_string(const T& x){
 int main(int argc, char *argv[]) {
 #ifdef IMP_ACT
   //TODO: CROSS CHECK THESE
-  StK::weights[0] = 5./3;
-  StK::weights[1] = -1./12;
+  StK::weights[0] = 1. - 8.*c_1;
+  StK::weights[1] = c_1;
 #endif
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
