@@ -303,13 +303,15 @@ public:
   /// Trace
   void Tr(Cplx *tt) const {
     for(int i = 0; i < ORD; i++)
-      tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
+      tt[i+1] = ptU_[i].tr();
+      //      tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
     tt[0] = bgf_.Tr();
   }
   std::vector<Cplx> trace() const {
     std::vector<Cplx> tt(ORD+1);
     for(int i = 0; i < ORD; i++)
-      tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
+      tt[i+1] = ptU_[i].tr();
+    //      tt[i+1] = ptU_[i].whr[0] + ptU_[i].whr[4] + ptU_[i].whr[8];
     tt[0] = bgf_.Tr();
     return tt;
   }
