@@ -268,14 +268,13 @@ namespace geometry {
     /// 
     pt::Point<DIM> yield() {
       pt::Point<DIM> result = x_current;
-      int mu = 0 == mu_exclude ? 1 : 0;
+      int mu = (0 == mu_exclude) ? 1 : 0;
       do {
           x_current += pt::Direction<DIM>(mu);
           counters[mu]++;
         if (counters[mu] == extents[mu] - SKIP){
           counters[mu] = 0;
           // this uses periodicity !!
-          x_current += pt::Direction<DIM>(mu);
           for (int n = 0; n < SKIP; ++n)
             x_current += pt::Direction<DIM>(mu);
           if (++mu == mu_exclude) ++mu;
