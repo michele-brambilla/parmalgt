@@ -221,8 +221,77 @@ namespace geometry {
     }
   };
   
+
+  namespace new_iter {
+    ////////////////////////////////////////////////////////////
+    //
+    //  Increment fuctions.
+    //
+    //  These are policies how to increment the individual
+    /// dimensions when iterating
+    //
+    //  \date      Tue Apr  9 16:27:53 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+
+    template <int DIM>
+    struct ConstPolicy {
+      ConstPolicy (int) {}
+      void next(const pt::Point<DIM>&, const pt::Direction<DIM>&) { }
+      void reset(void) { }
+      bool overflow(void) { return true; }
+    };
+
+    template <int DIM>
+    struct PeriodicPolicy {
+      int curr, max;
+      PeriodicPolicy (int m) : curr(0), max(m) { }
+      void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
+        curr++;
+        p += mu;
+      }
+      void reset(void) { curr = 0; }
+      bool overflow(void) { return curr >= max; }
+    };
+
+    template <int DIM, class P, class N>
+    struct Pair {
+      P policy;
+      N next;
+      bool good;
+      template <class InputIterator>
+      Pair (InputIterator L) :
+      policy(*(L++)), next(L), good(true) { }
+      bool advance(pt::Point<DIM>& p,
+                   pt::Direction<DIM> mu =
+                   pt::Direction<DIM>(0)){
+        policy.next(p, mu);
+        if (policy.overflow()){
+          policy.reset();
+          good = next.advance(p, ++mu);
+        }
+        return good;
+      }
+      bool is_good() { return good; }
+    };
+
+    template <int DIM>
+    struct End {
+       template <class InputIterator>
+      End(InputIterator) { }
+      bool advance(pt::Point<DIM>&,
+                   pt::Direction<DIM>&) { return false; }
+      bool is_good() { return false; }
+    };
+
+#define TWO_POLICY_ITER(A, B) \
+    Pair<2, A, Pair<2, B, End<2> > >
+
+    typedef TWO_POLICY_ITER(PeriodicPolicy<2>,
+                            PeriodicPolicy<2>) PeriodicTwoDimIter;
+  }
+
   // specializations for four dimensions ...
-  
+
   template <> template <>
   int Geometry<4>::bin<0>(const pt::Point<4>&) const { return 0; }
   template <> template <>
@@ -254,11 +323,11 @@ namespace geometry {
     /// \param mu The direction to keep fixed, called \f$\mu\f$ int
     ///          the class escription.
     /// \param e Extents of the underlying Geometry.
-    SliceIterator (const pt::Point<DIM> &x, 
+    SliceIterator (const pt::Point<DIM> &x,
                    const pt::Direction<DIM> mu,
                    const typename Geometry<DIM>::extents_t& e,
                    const int& stepsize = 1) :
-      x_current(x), mu_exclude(mu), extents(e), counters(), 
+      x_current(x), mu_exclude(mu), extents(e), counters(),
       good_flag(true) { }
 
     /// Return the next point.

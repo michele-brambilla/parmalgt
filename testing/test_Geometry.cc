@@ -96,6 +96,24 @@ TEST(SliceIteratorTest, CrossCheckKnownValuesBulkOnly){
   ASSERT_EQ(0, known.size());
 }
 
+TEST(NewIterator, TwoPeriodicPol){
+  geometry::Geometry<2>::extents_t e, x;
+  e[1] = 3; e[0] = 3;
+  x[0] = 0; x[1] = 0;
+  geometry::new_iter::PeriodicTwoDimIter i(e.begin());
+  geometry::Geometry<2> g(e);
+  pt::Point<2> p = g.mk_point(x);
+  do {
+    std::cout << g.coords(p)[0] << " " << g.coords(p)[1] << "\n";
+    i.advance(p);
+  } while (i.is_good());
+  //do {
+  //  std::cout << i.policy.curr << " " << i.next.policy.curr << "\n";
+  //  i.advance(x.begin());
+  //  //std::cout << x[0] << " " << x[1] << "\n";
+  //} while(i.is_good());
+}
+
 TEST(Geometry, ManualVsDirectionAccess){
   geometry::Geometry<DIM>::extents_t e;
   std::fill(e.begin(), e.end(), SIZE);
