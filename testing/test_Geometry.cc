@@ -31,6 +31,71 @@ TEST(Geometry, Neighbors){
         }
 };
 
+TEST(SliceIteratorTest, CrossCheckKnownValues){
+  geometry::Geometry<DIM>::extents_t e;
+  std::fill(e.begin(), e.end(), SIZE);
+  geometry::Geometry<DIM> g(e);
+  geometry::Geometry<DIM>::raw_pt_t n;
+  // create a list with all points at time SIZE / 2
+  typedef std::list<pt::Point<DIM> > list_t;
+  list_t known;
+  n[0] = SIZE / 2;
+  for (n[1] = 0; n[1] < SIZE; ++n[1])
+    for (n[2] = 0; n[2] < SIZE; ++n[2])
+      for (n[3] = 0; n[3] < SIZE; ++n[3])
+        known.push_back(g.mk_point(n));
+  // try to re-create that list using a SliceIterator...
+  geometry::SliceIterator<DIM, 0>
+    s_iter(g.mk_point(n), pt::Direction<DIM>(0), e);
+  do {
+    // is iter.yield() in the list?
+    pt::Point<DIM> tmp = s_iter.yield();
+    list_t::iterator findr = std::find(known.begin(),
+                                       known.end(),
+                                       tmp);
+    geometry::Geometry<DIM>::raw_pt_t m(g.coords(tmp));
+    ASSERT_TRUE(findr != known.end()) << m[0] << ","
+                                      << m[1] << ","
+                                      << m[2] << ","
+                                      << m[3] << ",";
+    known.erase(findr);
+  } while (s_iter.is_good());
+  ASSERT_EQ(0, known.size());
+}
+
+TEST(SliceIteratorTest, CrossCheckKnownValuesBulkOnly){
+  geometry::Geometry<DIM>::extents_t e;
+  std::fill(e.begin(), e.end(), SIZE);
+  geometry::Geometry<DIM> g(e);
+  geometry::Geometry<DIM>::raw_pt_t n;
+  // create a list with all points at time SIZE / 2
+  typedef std::list<pt::Point<DIM> > list_t;
+  list_t known;
+  n[0] = SIZE / 2;
+  for (n[1] = 1; n[1] < SIZE-1; ++n[1])
+    for (n[2] = 1; n[2] < SIZE-1; ++n[2])
+      for (n[3] = 1; n[3] < SIZE-1; ++n[3])
+        known.push_back(g.mk_point(n));
+  n[1] = 1; n[2] = 1; n[3] = 1;
+  // try to re-create that list using a SliceIterator...
+  geometry::SliceIterator<DIM, 2>
+    s_iter(g.mk_point(n), pt::Direction<DIM>(0), e);
+  do {
+    // is iter.yield() in the list?
+    pt::Point<DIM> tmp = s_iter.yield();
+    list_t::iterator findr = std::find(known.begin(),
+                                       known.end(),
+                                       tmp);
+    geometry::Geometry<DIM>::raw_pt_t m(g.coords(tmp));
+    ASSERT_TRUE(findr != known.end()) << m[0] << ","
+                                      << m[1] << ","
+                                      << m[2] << ","
+                                      << m[3] << ",";
+    known.erase(findr);
+  } while (s_iter.is_good());
+  ASSERT_EQ(0, known.size());
+}
+
 TEST(Geometry, ManualVsDirectionAccess){
   geometry::Geometry<DIM>::extents_t e;
   std::fill(e.begin(), e.end(), SIZE);
