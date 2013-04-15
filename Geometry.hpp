@@ -233,18 +233,18 @@ namespace geometry {
     //  \date      Tue Apr  9 16:27:53 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
 
-    template <int DIM>
     struct ConstPolicy {
       ConstPolicy (int) {}
+      template <int DIM>
       void next(const pt::Point<DIM>&, const pt::Direction<DIM>&) { }
       void reset(void) { }
       bool overflow(void) { return true; }
     };
 
-    template <int DIM>
     struct PeriodicPolicy {
       int curr, max;
       PeriodicPolicy (int m) : curr(0), max(m) { }
+      template <int DIM>
       void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
         curr++;
         p += mu;
@@ -253,8 +253,9 @@ namespace geometry {
       bool overflow(void) { return curr >= max; }
     };
 
-    template <int DIM, class P, class N>
+    template <class P, class N>
     struct Pair {
+      static const int DIM = N::DIM + 1;
       P policy;
       N next;
       bool good;
@@ -263,32 +264,38 @@ namespace geometry {
       policy(*(L++)), next(L), good(true) { }
       bool advance(pt::Point<DIM>& p,
                    pt::Direction<DIM> mu =
-                   pt::Direction<DIM>(0)){
-        policy.next(p, mu);
+                   pt::Direction<DIM>(DIM-1)){
+        return adv<DIM>(p, mu);
+      }
+      template <int M>
+      bool adv(pt::Point<M>& p,
+                pt::Direction<M> mu){
+                 policy.template next<M>(p, mu);
         if (policy.overflow()){
           policy.reset();
-          good = next.advance(p, ++mu);
+          good = next.template adv<M>(p, --mu);
         }
         return good;
       }
       bool is_good() { return good; }
     };
 
-    template <int DIM>
     struct End {
-       template <class InputIterator>
+      static const int DIM = 0;
+      template <class InputIterator>
       End(InputIterator) { }
-      bool advance(pt::Point<DIM>&,
-                   pt::Direction<DIM>&) { return false; }
+      template <int N>
+      bool adv(pt::Point<N>&,
+               pt::Direction<N>&) { return false; }
       bool is_good() { return false; }
     };
 
-#define RAW_TWO_POLICY_ITER(I, A, B)             \
-    Pair<I, A<I>, Pair<I, B<I>, End<I> > >
 #define TWO_POLICY_ITER(A, B)                   \
-    RAW_TWO_POLICY_ITER(2, A, B)
+    Pair<A, Pair<B, End> >
 #define THREE_POLICY_ITER(A, B, C)                \
-    Pair< 3, A<3>, RAW_TWO_POLICY_ITER(3, B, C) >
+    Pair< A, TWO_POLICY_ITER(B, C) >
+#define FOUR_POLICY_ITER(A, B, C, D)              \
+    Pair< A, THREE_POLICY_ITER(B, C, D) >
 
     typedef TWO_POLICY_ITER(PeriodicPolicy,
                             PeriodicPolicy) PeriodicTwoDimIter;

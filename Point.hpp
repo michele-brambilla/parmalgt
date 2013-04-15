@@ -27,6 +27,7 @@ namespace pt {
   public:
     explicit Direction(const int& m = 0) : mu(m) { }
     Direction& operator++() { ++mu; return *this; }
+    Direction& operator--() { --mu; return *this; }
     bool is_good() const { return mu < DIM; }
     operator int() const { return mu; }
     template <typename A, typename B>
