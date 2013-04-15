@@ -253,6 +253,22 @@ namespace geometry {
       bool overflow(void) { return curr >= max; }
     };
 
+    template <int N>
+    struct BulkPolicy {
+      int curr, max;
+      BulkPolicy (int m) : curr(0), max(m-N){ }
+      template <int DIM>
+      void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
+        curr++;
+        p += mu;
+        if (curr >= max){
+          for (int i = 0; i < N; ++i) p += mu;
+        }
+      }
+      void reset(void) { curr = 0; }
+      bool overflow(void) { return curr >= max; }
+    };
+
     template <class P, class N>
     struct Pair {
       static const int DIM = N::DIM + 1;
@@ -302,6 +318,11 @@ namespace geometry {
     typedef THREE_POLICY_ITER(PeriodicPolicy,
                               PeriodicPolicy,
                               ConstPolicy) PeriodicConstThreeDimIter;
+    typedef FOUR_POLICY_ITER(PeriodicPolicy, PeriodicPolicy,
+                             PeriodicPolicy, ConstPolicy) TimeSliceIter;
+    typedef FOUR_POLICY_ITER(BulkPolicy<2>, PeriodicPolicy,
+                             PeriodicPolicy, ConstPolicy) ZBulkTimeSliceIter;
+
   }
 
   // specializations for four dimensions ...

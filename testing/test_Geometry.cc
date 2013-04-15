@@ -4,7 +4,7 @@
 #include "Geometry.hpp"
 
 const int DIM = 4;
-const int SIZE = 8;
+const int SIZE = 4;
 
 
 TEST(Geometry, Neighbors){
@@ -45,20 +45,21 @@ TEST(SliceIteratorTest, CrossCheckKnownValues){
       for (n[3] = 0; n[3] < SIZE; ++n[3])
         known.push_back(g.mk_point(n));
   // try to re-create that list using a SliceIterator...
-  geometry::SliceIterator<DIM, 0>
-    s_iter(g.mk_point(n), pt::Direction<DIM>(0), e);
+  geometry::new_iter::TimeSliceIter s_iter(e.begin());
+  pt::Point<DIM> x = g.mk_point(n);
   do {
     // is iter.yield() in the list?
-    pt::Point<DIM> tmp = s_iter.yield();
+    //pt::Point<DIM> tmp = s_iter.yield();
     list_t::iterator findr = std::find(known.begin(),
                                        known.end(),
-                                       tmp);
-    geometry::Geometry<DIM>::raw_pt_t m(g.coords(tmp));
+                                       x);
+    geometry::Geometry<DIM>::raw_pt_t m(g.coords(x));
     ASSERT_TRUE(findr != known.end()) << m[0] << ","
                                       << m[1] << ","
                                       << m[2] << ","
-                                      << m[3] << ",";
+                                      << m[3];
     known.erase(findr);
+    s_iter.advance(x);
   } while (s_iter.is_good());
   ASSERT_EQ(0, known.size());
 }
@@ -72,17 +73,18 @@ TEST(SliceIteratorTest, CrossCheckKnownValuesBulkOnly){
   typedef std::list<pt::Point<DIM> > list_t;
   list_t known;
   n[0] = SIZE / 2;
-  for (n[1] = 1; n[1] < SIZE-1; ++n[1])
-    for (n[2] = 1; n[2] < SIZE-1; ++n[2])
+  for (n[1] = 0; n[1] < SIZE; ++n[1])
+    for (n[2] = 0; n[2] < SIZE; ++n[2])
       for (n[3] = 1; n[3] < SIZE-1; ++n[3])
         known.push_back(g.mk_point(n));
   n[1] = 1; n[2] = 1; n[3] = 1;
   // try to re-create that list using a SliceIterator...
-  geometry::SliceIterator<DIM, 2>
-    s_iter(g.mk_point(n), pt::Direction<DIM>(0), e);
+  //geometry::SliceIterator<DIM, 2>
+  //  s_iter(g.mk_point(n), pt::Direction<DIM>(0), e);
+  geometry::new_iter::ZBulkTimeSliceIter s_iter(e.begin());
+  pt::Point<DIM> tmp = g.mk_point(n);
   do {
     // is iter.yield() in the list?
-    pt::Point<DIM> tmp = s_iter.yield();
     list_t::iterator findr = std::find(known.begin(),
                                        known.end(),
                                        tmp);
@@ -90,8 +92,10 @@ TEST(SliceIteratorTest, CrossCheckKnownValuesBulkOnly){
     ASSERT_TRUE(findr != known.end()) << m[0] << ","
                                       << m[1] << ","
                                       << m[2] << ","
-                                      << m[3] << ",";
+                                      << m[3];
+
     known.erase(findr);
+    s_iter.advance(tmp);
   } while (s_iter.is_good());
   ASSERT_EQ(0, known.size());
 }
@@ -103,27 +107,26 @@ TEST(NewIterator, TwoPeriodicPol){
   geometry::new_iter::PeriodicTwoDimIter i(e.begin());
   geometry::Geometry<2> g(e);
   pt::Point<2> p = g.mk_point(x);
+  int count = 0;
   do {
-    std::cout << g.coords(p)[0] << " " << g.coords(p)[1] << "\n";
+    ASSERT_EQ(g.coords(p)[0], count / 3);
+    ASSERT_EQ(g.coords(p)[1], count++ % 3);
     i.advance(p);
   } while (i.is_good());
-  //do {
-  //  std::cout << i.policy.curr << " " << i.next.policy.curr << "\n";
-  //  i.advance(x.begin());
-  //  //std::cout << x[0] << " " << x[1] << "\n";
-  //} while(i.is_good());
 }
 
 TEST(NewIterator, ThreePeriodicConstPol){
   geometry::Geometry<3>::extents_t e, x;
   e[1] = 3; e[0] = 3; e[2] = 3;
-  x[0] = 2; x[1] = 0; x[2] = 1;
+  x[0] = 2; x[1] = 0; x[2] = 0;
   geometry::new_iter::PeriodicConstThreeDimIter i(e.begin());
   geometry::Geometry<3> g(e);
   pt::Point<3> p = g.mk_point(x);
+  int count = 0;
   do {
-    std::cout << g.coords(p)[0]  << " " << g.coords(p)[1]
-              << " " << g.coords(p)[2] << "\n";
+    ASSERT_EQ(g.coords(p)[0], 2);
+    ASSERT_EQ(g.coords(p)[1], count / 3);
+    ASSERT_EQ(g.coords(p)[2], count++ % 3);
     i.advance(p);
   } while (i.is_good());
 }
