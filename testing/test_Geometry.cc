@@ -114,6 +114,20 @@ TEST(NewIterator, TwoPeriodicPol){
   //} while(i.is_good());
 }
 
+TEST(NewIterator, ThreePeriodicConstPol){
+  geometry::Geometry<3>::extents_t e, x;
+  e[1] = 3; e[0] = 3; e[2] = 3;
+  x[0] = 2; x[1] = 0; x[2] = 1;
+  geometry::new_iter::PeriodicConstThreeDimIter i(e.begin());
+  geometry::Geometry<3> g(e);
+  pt::Point<3> p = g.mk_point(x);
+  do {
+    std::cout << g.coords(p)[0]  << " " << g.coords(p)[1]
+              << " " << g.coords(p)[2] << "\n";
+    i.advance(p);
+  } while (i.is_good());
+}
+
 TEST(Geometry, ManualVsDirectionAccess){
   geometry::Geometry<DIM>::extents_t e;
   std::fill(e.begin(), e.end(), SIZE);

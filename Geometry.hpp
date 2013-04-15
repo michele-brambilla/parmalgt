@@ -283,11 +283,18 @@ namespace geometry {
       bool is_good() { return false; }
     };
 
-#define TWO_POLICY_ITER(A, B) \
-    Pair<2, A, Pair<2, B, End<2> > >
+#define RAW_TWO_POLICY_ITER(I, A, B)             \
+    Pair<I, A<I>, Pair<I, B<I>, End<I> > >
+#define TWO_POLICY_ITER(A, B)                   \
+    RAW_TWO_POLICY_ITER(2, A, B)
+#define THREE_POLICY_ITER(A, B, C)                \
+    Pair< 3, A<3>, RAW_TWO_POLICY_ITER(3, B, C) >
 
-    typedef TWO_POLICY_ITER(PeriodicPolicy<2>,
-                            PeriodicPolicy<2>) PeriodicTwoDimIter;
+    typedef TWO_POLICY_ITER(PeriodicPolicy,
+                            PeriodicPolicy) PeriodicTwoDimIter;
+    typedef THREE_POLICY_ITER(PeriodicPolicy,
+                              PeriodicPolicy,
+                              ConstPolicy) PeriodicConstThreeDimIter;
   }
 
   // specializations for four dimensions ...
