@@ -45,7 +45,7 @@ TEST(SliceIteratorTest, CrossCheckKnownValues){
       for (n[3] = 0; n[3] < SIZE; ++n[3])
         known.push_back(g.mk_point(n));
   // try to re-create that list using a SliceIterator...
-  geometry::detail::TimeSliceIter<4>::type s_iter(e.begin());
+  geometry::detail::TimeSliceIterList<4>::type s_iter(e.begin());
   pt::Point<DIM> x = g.mk_point(n);
   do {
     // is iter.yield() in the list?

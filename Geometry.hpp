@@ -22,11 +22,20 @@ namespace geometry {
     //  Increment Policies.
     //
     //  These are policies how to increment the individual
-    /// dimensions when iterating
+    //  dimensions when iterating. The final iterator will then be a
+    //  collection of such policies, one for each direction.
     //
     //  \date      Tue Apr  9 16:27:53 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
 
+
+    ////////////////////////////////////////////////////////////
+    //
+    //  Constant policy. This just keeps the corresponding component
+    //  constant.
+    //
+    //  \date      Tue Apr 16 11:16:09 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     struct ConstPolicy {
       ConstPolicy (int) {}
       template <int DIM>
@@ -35,6 +44,13 @@ namespace geometry {
       bool overflow(void) { return true; }
     };
 
+    ////////////////////////////////////////////////////////////
+    //
+    //  Periodic policy. Makes use of the underlying periodicty of the
+    //  geometry and keeps on increasing.
+    //
+    //  \date      Tue Apr 16 11:16:46 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     struct PeriodicPolicy {
       int curr, max;
       PeriodicPolicy (int m) : curr(0), max(m) { }
@@ -47,22 +63,34 @@ namespace geometry {
       bool overflow(void) { return curr >= max; }
     };
 
+    ////////////////////////////////////////////////////////////
+    //
+    //  Bulk policy. A special from of the periodic policy. Will skip
+    //  N points when it wraps around.
+    //
+    //  \date      Tue Apr 16 11:17:23 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <int N>
-    struct BulkPolicy {
-      int curr, max;
-      BulkPolicy (int m) : curr(0), max(m-N){ }
+    struct BulkPolicy : public PeriodicPolicy {
+      BulkPolicy (int m) : PeriodicPolicy(m-N){ }
       template <int DIM>
       void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
-        curr++;
-        p += mu;
-        if (curr >= max){
+        PeriodicPolicy::next(p, mu);
+        if (curr >= max)
           for (int i = 0; i < N; ++i) p += mu;
-        }
       }
-      void reset(void) { curr = 0; }
-      bool overflow(void) { return curr >= max; }
     };
 
+    ////////////////////////////////////////////////////////////
+    //
+    //  A pair to be used similar to Alexandrescu's typelist to
+    //  collect the policies direciton by direciton. We will make a
+    //  list like so:
+    //    Pair < FirstItem, Pair < SecondItem,
+    //             ... Pair <LastItem , End > ... >
+    //
+    //  \date      Tue Apr 16 11:18:03 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class P, class N>
     struct Pair {
       static const int DIM = N::DIM + 1;
@@ -90,6 +118,12 @@ namespace geometry {
       bool is_good() { return good; }
     };
 
+    ////////////////////////////////////////////////////////////
+    //
+    //  "End" flag for the lists.
+    //
+    //  \date      Tue Apr 16 11:22:50 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     struct End {
       static const int DIM = 0;
       template <class InputIterator>
@@ -114,16 +148,29 @@ namespace geometry {
                               ConstPolicy) PeriodicConstThreeDimIter;
     typedef FOUR_POLICY_ITER(BulkPolicy<2>, PeriodicPolicy,
                              PeriodicPolicy, ConstPolicy) RawZBulkTimeSliceIter;
+    ////////////////////////////////////////////////////////////
+    //
+    //  Template class to make a time silce iterator with arbitrary
+    //  number of dimensions.
+    //
+    //  \date      Tue Apr 16 11:23:10 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <int D>
-    struct TimeSliceIter {
-      typedef Pair<PeriodicPolicy, typename TimeSliceIter<D-1>::type > type;
+    struct TimeSliceIterList {
+      typedef Pair<PeriodicPolicy, typename TimeSliceIterList<D-1>::type > type;
     };
 
     template <>
-    struct TimeSliceIter<1> {
+    struct TimeSliceIterList<1> {
       typedef Pair<ConstPolicy, End> type;
     };
 
+    ////////////////////////////////////////////////////////////
+    //
+    //  Wrapper class containing a point.
+    //
+    //  \date      Tue Apr 16 11:25:19 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
   }
 
   template<int DIM, int SKIP> class SliceIterator;
