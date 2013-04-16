@@ -220,38 +220,6 @@ namespace fields {
     pt::Point<DIM> mk_point(const raw_pt& n){
       return g.mk_point(n);
     }
-    geometry::SliceIterator<DIM, 0> mk_slice_iterator 
-    (const pt::Direction<DIM> mu, const int& xi){
-      return g.template mk_slice_iterator<0>(mu, xi);
-    }
-    geometry::SliceIterator<DIM, 2> mk_bulk_slice_iterator
-    (const pt::Direction<DIM> mu, const int& xi){
-      return g.mk_slice_iterator<2>(mu, xi, 1);
-    }
-    template <class M>
-    void measure_on_slice(M& f, 
-                          const pt::Direction<DIM>& d,
-                          const int& xi){
-      geometry::SliceIterator<DIM, 1> iter =
-        g.template mk_slice_iterator<1>(d, xi, 0);
-      while (iter.is_good()) f(*this, iter.yield());
-    }
-    template <class M>
-    void measure_on_slice_with_bnd(M& f, 
-                          const pt::Direction<DIM>& d,
-                          const int& xi){
-      geometry::SliceIterator<DIM, 0> iter =
-        g.template mk_slice_iterator<0>(d, xi, 0);
-      while (iter.is_good()) f(*this, iter.yield());
-    }
-    template <class M>
-    void apply_on_slice_with_bnd(M& f, 
-                          const pt::Direction<DIM>& d,
-                          const int& xi){
-      geometry::SliceIterator<DIM, 0> iter =
-        g.template mk_slice_iterator<0>(d, xi, 0);
-      while (iter.is_good()) f(*this, iter.yield());
-    }
 
     template <class M>
     M& apply_on_timeslice(M& f, const int& t){
