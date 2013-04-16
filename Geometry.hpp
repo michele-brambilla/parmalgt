@@ -8,6 +8,8 @@
 
 namespace geometry {
 
+  template <int DIM> class Geometry;
+
   namespace detail {
     template <int N>
     inline int product (const typename array_t<int, N>::Type &v){
@@ -39,9 +41,10 @@ namespace geometry {
     struct ConstPolicy {
       ConstPolicy (int) {}
       template <int DIM>
-      void next(const pt::Point<DIM>&, const pt::Direction<DIM>&) { }
-      void reset(void) { }
-      bool overflow(void) { return true; }
+      void next(const pt::Point<DIM>&, const pt::Direction<DIM>&) const { }
+      void reset(void) const { }
+      bool overflow(void) const { return true; }
+      bool operator == (const ConstPolicy&) const { return true; }
     };
 
     ////////////////////////////////////////////////////////////
@@ -60,7 +63,10 @@ namespace geometry {
         p += mu;
       }
       void reset(void) { curr = 0; }
-      bool overflow(void) { return curr >= max; }
+      bool overflow(void) const { return curr >= max; }
+      bool operator == (const PeriodicPolicy& other) const {
+        return curr == other.curr && max == other.max;
+      }
     };
 
     ////////////////////////////////////////////////////////////
@@ -115,7 +121,11 @@ namespace geometry {
         }
         return good;
       }
-      bool is_good() { return good; }
+      bool is_good() const { return good; }
+      bool operator == (const Pair& other) const {
+        return policy == other.policy && good == other.good
+          && next == other.next;
+      }
     };
 
     ////////////////////////////////////////////////////////////
@@ -132,6 +142,7 @@ namespace geometry {
       bool adv(pt::Point<N>&,
                pt::Direction<N>&) { return false; }
       bool is_good() { return false; }
+      bool operator == (const End& other) const { return true; }
     };
 
 #define TWO_POLICY_ITER(A, B)                   \
@@ -171,6 +182,36 @@ namespace geometry {
     //
     //  \date      Tue Apr 16 11:25:19 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+
+    template <int D, class IteratorList>
+    class Iterator {
+    public:
+      typedef typename pt::Point<D> Point;
+      Iterator(const Iterator& other) : x(other.x), i(other.i) { }
+      Iterator(const Point& n,
+               const typename Geometry<D>::extents_t& e) :
+        x(n), i(e.begin()) { }
+      const Point& operator*() const { return x; }
+      bool operator == (const Iterator& other) const {
+        return x == other.x && i == other.i;
+      }
+      bool operator != (const Iterator& other) const {
+        return ! (*this == other);
+      }
+      Iterator& operator ++() {
+        i.advance(x);
+        return *this;
+      }
+      Iterator operator ++(int) {
+        Iterator tmp(*this);
+        i.advance(x);
+        return tmp;
+      }
+      bool is_good() const { return i.is_good(); }
+    private:
+      Point x;
+      IteratorList i;
+    };
   }
 
   template<int DIM, int SKIP> class SliceIterator;
@@ -376,18 +417,9 @@ namespace geometry {
   };
 
 
-  template <int DIM>
-  class TimeSliceIter {
-  public:
-    TimeSliceIter(const int& t, const typename Geometry<DIM>::extents_t& e):
-      x(Geometry<DIM>(e).mk_point(Geometry<DIM>::extents_t())){
-      for (int i = 0; i < t; ++i) x += pt::Direction<DIM>(0);
-    }
-  private:
-    pt::Point<DIM> x;
-    //detail::
-  };
-
+  //  A short hand / specialization
+  typedef detail::Iterator
+  <4, detail::TimeSliceIterList<4>::type > TimeSliceIter;
 
   // specializations for four dimensions ...
 
