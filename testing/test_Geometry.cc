@@ -45,7 +45,7 @@ TEST(SliceIteratorTest, CrossCheckKnownValues){
       for (n[3] = 0; n[3] < SIZE; ++n[3])
         known.push_back(g.mk_point(n));
   // try to re-create that list using a SliceIterator...
-  geometry::new_iter::TimeSliceIter s_iter(e.begin());
+  geometry::detail::TimeSliceIter<4>::type s_iter(e.begin());
   pt::Point<DIM> x = g.mk_point(n);
   do {
     // is iter.yield() in the list?
@@ -81,7 +81,7 @@ TEST(SliceIteratorTest, CrossCheckKnownValuesBulkOnly){
   // try to re-create that list using a SliceIterator...
   //geometry::SliceIterator<DIM, 2>
   //  s_iter(g.mk_point(n), pt::Direction<DIM>(0), e);
-  geometry::new_iter::ZBulkTimeSliceIter s_iter(e.begin());
+  geometry::detail::RawZBulkTimeSliceIter s_iter(e.begin());
   pt::Point<DIM> tmp = g.mk_point(n);
   do {
     // is iter.yield() in the list?
@@ -104,7 +104,7 @@ TEST(NewIterator, TwoPeriodicPol){
   geometry::Geometry<2>::extents_t e, x;
   e[1] = 3; e[0] = 3;
   x[0] = 0; x[1] = 0;
-  geometry::new_iter::PeriodicTwoDimIter i(e.begin());
+  geometry::detail::PeriodicTwoDimIter i(e.begin());
   geometry::Geometry<2> g(e);
   pt::Point<2> p = g.mk_point(x);
   int count = 0;
@@ -119,7 +119,7 @@ TEST(NewIterator, ThreePeriodicConstPol){
   geometry::Geometry<3>::extents_t e, x;
   e[1] = 3; e[0] = 3; e[2] = 3;
   x[0] = 2; x[1] = 0; x[2] = 0;
-  geometry::new_iter::PeriodicConstThreeDimIter i(e.begin());
+  geometry::detail::PeriodicConstThreeDimIter i(e.begin());
   geometry::Geometry<3> g(e);
   pt::Point<3> p = g.mk_point(x);
   int count = 0;

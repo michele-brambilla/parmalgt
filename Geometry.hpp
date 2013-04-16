@@ -15,12 +15,119 @@ namespace geometry {
       for (typename array_t<int, N>::Type::const_iterator i = v.begin(); i !=
              v.end(); ++i) p *= *i;
       return p;
-    }    
+    }
+
+    ////////////////////////////////////////////////////////////
+    //
+    //  Increment Policies.
+    //
+    //  These are policies how to increment the individual
+    /// dimensions when iterating
+    //
+    //  \date      Tue Apr  9 16:27:53 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+
+    struct ConstPolicy {
+      ConstPolicy (int) {}
+      template <int DIM>
+      void next(const pt::Point<DIM>&, const pt::Direction<DIM>&) { }
+      void reset(void) { }
+      bool overflow(void) { return true; }
+    };
+
+    struct PeriodicPolicy {
+      int curr, max;
+      PeriodicPolicy (int m) : curr(0), max(m) { }
+      template <int DIM>
+      void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
+        curr++;
+        p += mu;
+      }
+      void reset(void) { curr = 0; }
+      bool overflow(void) { return curr >= max; }
+    };
+
+    template <int N>
+    struct BulkPolicy {
+      int curr, max;
+      BulkPolicy (int m) : curr(0), max(m-N){ }
+      template <int DIM>
+      void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
+        curr++;
+        p += mu;
+        if (curr >= max){
+          for (int i = 0; i < N; ++i) p += mu;
+        }
+      }
+      void reset(void) { curr = 0; }
+      bool overflow(void) { return curr >= max; }
+    };
+
+    template <class P, class N>
+    struct Pair {
+      static const int DIM = N::DIM + 1;
+      P policy;
+      N next;
+      bool good;
+      template <class InputIterator>
+      Pair (InputIterator L) :
+      policy(*(L++)), next(L), good(true) { }
+      bool advance(pt::Point<DIM>& p,
+                   pt::Direction<DIM> mu =
+                   pt::Direction<DIM>(DIM-1)){
+        return adv<DIM>(p, mu);
+      }
+      template <int M>
+      bool adv(pt::Point<M>& p,
+                pt::Direction<M> mu){
+                 policy.template next<M>(p, mu);
+        if (policy.overflow()){
+          policy.reset();
+          good = next.template adv<M>(p, --mu);
+        }
+        return good;
+      }
+      bool is_good() { return good; }
+    };
+
+    struct End {
+      static const int DIM = 0;
+      template <class InputIterator>
+      End(InputIterator) { }
+      template <int N>
+      bool adv(pt::Point<N>&,
+               pt::Direction<N>&) { return false; }
+      bool is_good() { return false; }
+    };
+
+#define TWO_POLICY_ITER(A, B)                   \
+    Pair<A, Pair<B, End> >
+#define THREE_POLICY_ITER(A, B, C)                \
+    Pair< A, TWO_POLICY_ITER(B, C) >
+#define FOUR_POLICY_ITER(A, B, C, D)              \
+    Pair< A, THREE_POLICY_ITER(B, C, D) >
+
+    typedef TWO_POLICY_ITER(PeriodicPolicy,
+                            PeriodicPolicy) PeriodicTwoDimIter;
+    typedef THREE_POLICY_ITER(PeriodicPolicy,
+                              PeriodicPolicy,
+                              ConstPolicy) PeriodicConstThreeDimIter;
+    typedef FOUR_POLICY_ITER(BulkPolicy<2>, PeriodicPolicy,
+                             PeriodicPolicy, ConstPolicy) RawZBulkTimeSliceIter;
+    template <int D>
+    struct TimeSliceIter {
+      typedef Pair<PeriodicPolicy, typename TimeSliceIter<D-1>::type > type;
+    };
+
+    template <>
+    struct TimeSliceIter<1> {
+      typedef Pair<ConstPolicy, End> type;
+    };
+
   }
 
   template<int DIM, int SKIP> class SliceIterator;
 
-  
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -170,8 +277,8 @@ namespace geometry {
     /// Local lattice extends.
     extents_t extents;
     /// Stores the nearest neighbors.  Given a point \f$n\f$,
-    /// neighbors[n][DIM + mu] is the coordinate of 
-    /// \f$ n + \hat \mu \f$, neighbors[n][mu] the one of 
+    /// neighbors[n][DIM + mu] is the coordinate of
+    /// \f$ n + \hat \mu \f$, neighbors[n][mu] the one of
     /// \f$ n - \hat \mu \f$, with \f$ \mu = 0,\ldots, DIM\f$.
 
     std::vector<typename array_t<int, 2*DIM>::Type> neighbors;
@@ -220,110 +327,20 @@ namespace geometry {
       }
     }
   };
-  
 
-  namespace new_iter {
-    ////////////////////////////////////////////////////////////
-    //
-    //  Increment fuctions.
-    //
-    //  These are policies how to increment the individual
-    /// dimensions when iterating
-    //
-    //  \date      Tue Apr  9 16:27:53 2013
-    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
 
-    struct ConstPolicy {
-      ConstPolicy (int) {}
-      template <int DIM>
-      void next(const pt::Point<DIM>&, const pt::Direction<DIM>&) { }
-      void reset(void) { }
-      bool overflow(void) { return true; }
-    };
+  template <int DIM>
+  class TimeSliceIter {
+  public:
+    TimeSliceIter(const int& t, const typename Geometry<DIM>::extents_t& e):
+      x(Geometry<DIM>(e).mk_point(Geometry<DIM>::extents_t())){
+      for (int i = 0; i < t; ++i) x += pt::Direction<DIM>(0);
+    }
+  private:
+    pt::Point<DIM> x;
+    //detail::
+  };
 
-    struct PeriodicPolicy {
-      int curr, max;
-      PeriodicPolicy (int m) : curr(0), max(m) { }
-      template <int DIM>
-      void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
-        curr++;
-        p += mu;
-      }
-      void reset(void) { curr = 0; }
-      bool overflow(void) { return curr >= max; }
-    };
-
-    template <int N>
-    struct BulkPolicy {
-      int curr, max;
-      BulkPolicy (int m) : curr(0), max(m-N){ }
-      template <int DIM>
-      void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
-        curr++;
-        p += mu;
-        if (curr >= max){
-          for (int i = 0; i < N; ++i) p += mu;
-        }
-      }
-      void reset(void) { curr = 0; }
-      bool overflow(void) { return curr >= max; }
-    };
-
-    template <class P, class N>
-    struct Pair {
-      static const int DIM = N::DIM + 1;
-      P policy;
-      N next;
-      bool good;
-      template <class InputIterator>
-      Pair (InputIterator L) :
-      policy(*(L++)), next(L), good(true) { }
-      bool advance(pt::Point<DIM>& p,
-                   pt::Direction<DIM> mu =
-                   pt::Direction<DIM>(DIM-1)){
-        return adv<DIM>(p, mu);
-      }
-      template <int M>
-      bool adv(pt::Point<M>& p,
-                pt::Direction<M> mu){
-                 policy.template next<M>(p, mu);
-        if (policy.overflow()){
-          policy.reset();
-          good = next.template adv<M>(p, --mu);
-        }
-        return good;
-      }
-      bool is_good() { return good; }
-    };
-
-    struct End {
-      static const int DIM = 0;
-      template <class InputIterator>
-      End(InputIterator) { }
-      template <int N>
-      bool adv(pt::Point<N>&,
-               pt::Direction<N>&) { return false; }
-      bool is_good() { return false; }
-    };
-
-#define TWO_POLICY_ITER(A, B)                   \
-    Pair<A, Pair<B, End> >
-#define THREE_POLICY_ITER(A, B, C)                \
-    Pair< A, TWO_POLICY_ITER(B, C) >
-#define FOUR_POLICY_ITER(A, B, C, D)              \
-    Pair< A, THREE_POLICY_ITER(B, C, D) >
-
-    typedef TWO_POLICY_ITER(PeriodicPolicy,
-                            PeriodicPolicy) PeriodicTwoDimIter;
-    typedef THREE_POLICY_ITER(PeriodicPolicy,
-                              PeriodicPolicy,
-                              ConstPolicy) PeriodicConstThreeDimIter;
-    typedef FOUR_POLICY_ITER(PeriodicPolicy, PeriodicPolicy,
-                             PeriodicPolicy, ConstPolicy) TimeSliceIter;
-    typedef FOUR_POLICY_ITER(BulkPolicy<2>, PeriodicPolicy,
-                             PeriodicPolicy, ConstPolicy) ZBulkTimeSliceIter;
-
-  }
 
   // specializations for four dimensions ...
 
