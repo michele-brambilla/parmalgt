@@ -206,7 +206,10 @@ TEST(Geometry, CheckerBoard){
               i->erase(f);
             }
           }
-          ASSERT_EQ(found, true);
+          EXPECT_TRUE(found) << n[0] <<  ","
+                             << n[1] <<  ","
+                             << n[2] <<  ","
+                             << n[3] <<  "\n";
           ///////////////////////////////
           /// N = 1
           found = false;
@@ -222,7 +225,7 @@ TEST(Geometry, CheckerBoard){
               i->erase(f);
             }
           }
-          ASSERT_EQ(found, true);
+          ASSERT_TRUE(found);
           ///////////////////////////////
           /// N = 2
           found = false;
@@ -238,7 +241,7 @@ TEST(Geometry, CheckerBoard){
               i->erase(f);
             }
           }
-          ASSERT_EQ(found, true);
+          ASSERT_TRUE(found);
           ///////////////////////////////
           /// N = 3
           found = false;
@@ -281,7 +284,7 @@ TEST(Geometry, CheckerBoard){
     for (slice3::iterator i = cb3.nca(t).begin();
          i != cb3.nca(t).end(); ++i)
       ASSERT_TRUE(i->empty());
-  
+
 }
 TEST(Geometry, Periodicity){
   geometry::Geometry<DIM>::extents_t e;

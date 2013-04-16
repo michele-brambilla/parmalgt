@@ -190,7 +190,7 @@ namespace geometry {
       Iterator(const Iterator& other) : x(other.x), i(other.i) { }
       Iterator(const Point& n,
                const typename Geometry<D>::extents_t& e) :
-        x(n), i(e.begin()) { }
+        x(n), i(e.rbegin()) { }
       const Point& operator*() const { return x; }
       bool operator == (const Iterator& other) const {
         return x == other.x && i == other.i;
@@ -249,11 +249,11 @@ namespace geometry {
     /// Constructor.
     /// Only needs lattice extents as input. We recommend using a
     /// helper function to create the parameter.
-    Geometry (const extents_t &lattice_extents)
+    explicit Geometry (const extents_t &lattice_extents)
     : extents(lattice_extents),
       V(detail::product<DIM>(lattice_extents)),
-      neighbors (detail::product<DIM>(lattice_extents), 
-                  typename array_t<int, 2*DIM>::Type()) { 
+      neighbors (detail::product<DIM>(lattice_extents),
+                  typename array_t<int, 2*DIM>::Type()) {
       // initialize neighbors
       fill_neighbors();
       // boundary volumes
@@ -295,7 +295,6 @@ namespace geometry {
       raw_pt_t n;
       std::fill(n.begin(), n.end(), 1);
       n[mu] = xi;
-      
     }
     pt::Point<DIM> mk_point(const raw_pt_t &n) const {
       return pt::Point<DIM>(mk_label(n), neighbors.begin());
@@ -465,7 +464,7 @@ namespace geometry {
     /// Note you should not call this if is_good() returns false.
     ///
     /// Typical use case:
-    /// 
+    ///
     pt::Point<DIM> yield() {
       pt::Point<DIM> result = x_current;
       int mu = (0 == mu_exclude) ? 1 : 0;
@@ -523,13 +522,16 @@ namespace geometry {
     typedef std::vector<v_slice> v_lattice; // all time slices
     explicit CheckerBoard (const Geometry<D>& g) :
       lat(g[0] + 1, l_slice(g.template n_bins<N>())), v_lat(g[0] + 1) {
+      typename geometry::Geometry<D>::raw_pt_t n;
       for (int t = 0; t <= g[0]; ++t){
-        geometry::SliceIterator<D, 0> iter =
-          g.template mk_slice_iterator<0>(pt::Direction<D>(0), t, 0);
-        while (iter.is_good()){
-          Point p = iter.yield();
+        n[0] = t;
+        n[1] = 0; n[2] = 0; n[3] = 0;
+        geometry::TimeSliceIter x(g.mk_point(n), g.get_extents());
+        do {
+          Point p = *x;
           lat[t].at(g.template bin<N>(p)).push_back(p);
-        }
+                    << " entries long\n";*/
+        } while ((++x).is_good());
         for (typename l_slice::const_iterator i = lat[t].begin();
              i != lat[t].end(); ++i)
           v_lat[t].push_back(v_bin(i->begin(), i->end()));
