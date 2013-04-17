@@ -223,41 +223,11 @@ namespace fields {
 
     template <class M>
     M& apply_on_timeslice(M& f, const int& t){
-      // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
-      geometry::CheckerBoard<DIM, M::n_cb> cb(g);
-      for (typename slice::const_iterator s = cb[t].begin();
-           s != cb[t].end(); ++s){
-        // here, we have to do a nasty workaround
-        // parallel for does not like lists, which is what I used in
-        // the CheckerBoard class. This is e.g. great for the test
-        // case of the CB class and foremost for the case that we have
-        // some overlap at the edges (i.e. if CHECKER_BOARD_SIZE % L
-        // != 0). Here, however a vector would be nice. Let's see...
-        // FIXME: This is nasty!!
-        //std::vector<pt::Point<DIM> > v(s->begin(), s->end());
-        int N = s->size();
-#pragma omp parallel for
-        for (int i = 0; i < N; ++i)
-          f(*this, (*s)[i]);
-      }
-      return f;
+      return apply_on_timeslice_impl(f, t, ParCheck<M>());
     }
     template <class M>
     M& apply_on_timeslice(M& f, const int& t) const {
-      // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
-      static geometry::CheckerBoard<DIM, M::n_cb> cb(g);
-      for (typename slice::const_iterator s = cb[t].begin();
-           s != cb[t].end(); ++s){
-        int N = s->size();
-#pragma omp parallel for
-        for (int i = 0; i < N; ++i)
-          f(*this, (*s)[i]);
-      }
-      return f;
+      return apply_on_timeslice_impl(f, t, ParCheck<M>());;
     }
     template <class M>
     M& apply_everywhere(M& f){
@@ -282,15 +252,6 @@ namespace fields {
       for (int t = 0; t < g[0]; ++t)
         apply_on_timeslice(f, t);
       return f;
-    }
-    template <class M>
-    void apply_everywhere_serial(M& f){
-      // doesn't work because bind1st makes a copy
-      // we don't want that because of local data members
-      // such as the fstreams in the disk reader/writer
-      //std::for_each(g.begin(), g.end(), std::bind1st(f, *this));
-      for(pt::Point<DIM> n = g.begin(), e = g.end(); n != e; ++n)
-        f(*this, n);
     }
 #ifdef MPI
     MPI_Request test_send_fwd_z(){
@@ -365,6 +326,73 @@ namespace fields {
     }
     
   private:
+    ////////////////////////////////////////////////////////////
+    //
+    //  Some magic to make the auto-parallelization (or the lack of
+    //  parallelization work.
+    //
+    //  \date      Wed Apr 17 14:08:24 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+    struct True {};
+    struct False {};
+    // Set ParCheck<T> for any type T to true.
+    template <class C, class Dummy = void>
+    struct ParCheck : True { };
+    // Set ParCheck<T> for a type that has a
+    //  typedef void NoPar;
+    // to false, using partial specializaiton
+    template <class C>
+    struct ParCheck<C, typename C::NoPar> : False { };
+    ////////////////////////////////////////////////////////////
+    //
+    //  Now for the actual apply on timeslice functions
+    //
+    //  \date      Wed Apr 17 14:11:24 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+    template <class M>
+    M& apply_on_timeslice_impl(M& f, const int& t, True){
+      // parallelize with a simple checker-board scheme ...
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
+      geometry::CheckerBoard<DIM, M::n_cb> cb(g);
+      for (typename slice::const_iterator s = cb[t].begin();
+           s != cb[t].end(); ++s){
+        int N = s->size();
+#pragma omp parallel for
+        for (int i = 0; i < N; ++i)
+          f(*this, (*s)[i]);
+      }
+      return f;
+    }
+    template <class M>
+    M& apply_on_timeslice_impl(M& f, const int& t, True) const {
+      // parallelize with a simple checker-board scheme ...
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
+      static geometry::CheckerBoard<DIM, M::n_cb> cb(g);
+      for (typename slice::const_iterator s = cb[t].begin();
+           s != cb[t].end(); ++s){
+        int N = s->size();
+#pragma omp parallel for
+        for (int i = 0; i < N; ++i)
+          f(*this, (*s)[i]);
+      }
+      return f;
+    }
+    template <class M>
+    M& apply_on_timeslice_impl(M& f, const int& t, False){
+      typename geometry::Geometry<DIM>::raw_pt_t n;
+      n[0] = t; n[1] = 0; n[2] = 0; n[3] = 0;
+      geometry::TimeSliceIter x(g.mk_point(n), g.get_extents());
+      do { f(*this, *x); } while ((++x).is_good());
+    }
+    template <class M>
+    M& apply_on_timeslice_impl(M& f, const int& t, False) const {
+      typename geometry::Geometry<DIM>::raw_pt_t n;
+      n[0] = t; n[1] = 0; n[2] = 0; n[3] = 0;
+      geometry::TimeSliceIter x(g.mk_point(n), g.get_extents());
+      do { f(*this, *x); } while ((++x).is_good());
+    }
     geometry::Geometry<DIM> g;
     rep_t rep;
     int n_th; // number of threads

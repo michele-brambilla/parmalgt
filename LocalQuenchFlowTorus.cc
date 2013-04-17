@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
   // initialzie the background field of U or read config
   if ( p["read"] != "none" ) {
     FileReaderKernel fr(p);
-    U.apply_everywhere_serial(fr);
+    U.apply_everywhere(fr);
   }
 
   ////////////////////////////////////////////////////////////////////
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
   // write the gauge configuration
   if ( p["write"] != "none"){
     FileWriterKernel fw(p);
-    U.apply_everywhere_serial(fw);
+    U.apply_everywhere(fw);
   }
   // write out timings
   of.open(("run.info"+rank_str).c_str(), std::ios::app);

@@ -1273,6 +1273,9 @@ private:
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
+    // This may NOT be executed in parallel, so ...
+    typedef void NoPar;
+
     explicit FileWriterKernel (uparam::Param& p) : o(p) { }
 
     void operator()(Field_t& U, const Point& n){
@@ -1307,6 +1310,9 @@ private:
     typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
+
+    // This may NOT be executed in parallel, so ...
+    typedef void NoPar;
 
     explicit FileReaderKernel (uparam::Param& p) : i(p) { }
 
