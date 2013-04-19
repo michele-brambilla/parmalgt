@@ -93,7 +93,7 @@ namespace kernels {
   
 
   /// struct to extract information on the field from the field type.
-  template <class Field_t> 
+  template <class Field_t>
   struct std_types {
     typedef typename Field_t::data_t ptGluon_t;
     typedef typename ptGluon_t::pt_su3_t ptSU3_t;
@@ -104,7 +104,6 @@ namespace kernels {
     static const int n_dim = Field_t::dim;
     typedef pt::Point<n_dim> point_t;
     typedef pt::Direction<n_dim> direction_t;
-
   };
 
   template <class Field_t>
@@ -871,6 +870,45 @@ private:
     }
   
 };
+
+  template <class Field_t, class OutputIterator>
+  struct Buffer {
+    // collect info about the field
+    static const int n_dim = Field_t::dim;
+    typedef pt::Point<n_dim> point_t;
+    typedef pt::Direction<n_dim> direction_t;
+
+    // This may NOT be executed in parallel, so ...
+    typedef void NoPar;
+    
+    // iterator to the positon where the next write goes
+    OutputIterator oi;
+    
+    Buffer(OutputIterator o) : oi(o) { }
+
+    void operator()(Field_t& U, const point_t& n){
+      *(oi++) = U[n];
+    }
+  };
+  template <class Field_t, class InputIterator>
+  struct Unbuffer {
+    // collect info about the field
+    static const int n_dim = Field_t::dim;
+    typedef pt::Point<n_dim> point_t;
+    typedef pt::Direction<n_dim> direction_t;
+
+    // This may NOT be executed in parallel, so ...
+    typedef void NoPar;
+    
+    // iterator to the positon where the next write goes
+    InputIterator ii;
+    
+    Unbuffer(InputIterator i) : ii(i) { }
+
+    void operator()(Field_t& U, const point_t& n){
+      U[n] = *(ii++); // incremented inside the buffer function
+    }
+  };
 
 // Measure the average paquette
   template <class Field_t>

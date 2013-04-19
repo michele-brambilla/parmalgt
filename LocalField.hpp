@@ -419,7 +419,7 @@ namespace fields {
     M& apply_on_timeslice_impl(M& f, const int& t, False){
       typename geometry::Geometry<DIM>::raw_pt_t n;
       n[0] = t;
-      for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i);
+      for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i, g);
       Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
@@ -427,7 +427,7 @@ namespace fields {
     M& apply_on_timeslice_impl(M& f, const int& t, False) const {
       typename geometry::Geometry<DIM>::raw_pt_t n;
       n[0] = t;
-      for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i);
+      for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i, g);
       Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
