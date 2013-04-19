@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <numeric>
-#include <MyRand.h>
+/* #include <ranlxd.hpp> */
 #include <iostream>
 #include <Types.h>
 #include <Background.h>
@@ -283,14 +283,14 @@ public:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:46:17 2012
 
-  void randomize() {
-    static MyRand r(1235431);
-    bgf_ = bgf::random();
-    for (int i = 0; i < ORD; ++i)
-      for (int j = 0; j < 3; ++j)
-        for (int k = 0; k < 3; ++k)
-          ptU_[i](j, k) = Cplx(r.Rand(), r.Rand());
-  };
+  /* void randomize() { */
+  /*   static ranlxd::Rand r(1235431); */
+  /*   bgf_ = bgf::random(); */
+  /*   for (int i = 0; i < ORD; ++i) */
+  /*     for (int j = 0; j < 3; ++j) */
+  /*       for (int k = 0; k < 3; ++k) */
+  /*         ptU_[i](j, k) = Cplx(r.Rand(), r.Rand()); */
+  /* }; */
 
   void id(){
     std::fill(begin(),end(),SU3());

@@ -1,10 +1,13 @@
-#include <LocalGluonField.hpp>
+#include <LocalField.hpp>
 #include <Background.h>
 #include <Geometry.hpp>
 #include <algorithm>
 #include <newQCDpt.h>
 #include <mpi.h>
 #include <iostream>
+#include <Methods.hpp>
+
+#include <Wormhole.hpp>
 
 const int DIM = 4;
 const int ORD = 6;
@@ -20,12 +23,13 @@ typedef GluonField::neighbors_t nt;
 struct MeasTrace {
   std::vector<double> traces;
   MeasTrace() : traces(ORD + 1, 0) { }
+  static const int n_cb = 0;
   void operator()(GluonField& U,
                   const pt::Point<DIM>& n){
     for (pt::Direction<DIM> mu; mu.is_good(); ++mu){
-      traces[0] += U[n][mu].bgf().Tr().re;
+      traces[0] += U[n][mu].bgf().Tr().real();
       for (int i = 0; i < ORD; ++i) 
-        traces[i+1] += U[n][mu][i].Tr().re;
+        traces[i+1] += U[n][mu][i].tr().real();
     }
   }
 };
@@ -73,12 +77,14 @@ int main(int argc, char *argv[]) {
   int zdown = (!rank) ? numprocs - 1 : rank - 1;
   nt n = neighbors(0,0,0,0,0,0, zup, zdown);
   GluonField U(e, 1, rank, n);  
+  meth::gu::detail::rand_gen_<GluonField> r(U);
   if (rank == 0){
-    U.randomize();
+    r.update();
     U.test_send_fwd_z();
     std::cout << "real parts traces sent:\n";
     MeasTrace m;
-    U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
+    // U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
+    U.apply_everywhere_with_bnd(m);
     for (int i = 0; i <= ORD; ++i)
       std::cout << i << "\t" << m.traces[i] << std::endl;
   }
@@ -86,7 +92,8 @@ int main(int argc, char *argv[]) {
     U.test_rec_bkw_z();
     std::cout << "real parts of traces received:\n";
     MeasTrace m;
-    U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
+    //    U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
+    U.apply_everywhere_with_bnd(m);
     for (int i = 0; i <= ORD; ++i)
       std::cout << i << "\t" << m.traces[i] << std::endl;
   }
