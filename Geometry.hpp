@@ -39,13 +39,13 @@ namespace geometry {
     //  \date      Tue Apr 16 11:16:09 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     struct ConstPolicy {
-      ConstPolicy (int) {}
+      explicit ConstPolicy (int) { }
       template <int DIM>
       void next(const pt::Point<DIM>&, const pt::Direction<DIM>&) const { }
       void reset(void) const { }
       bool overflow(void) const { return true; }
       bool operator == (const ConstPolicy&) const { return true; }
-      static const int n_start = 0;
+      static int get_start(int) { return 0; }
     };
 
     ////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ namespace geometry {
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     struct PeriodicPolicy {
       int curr, max;
-      PeriodicPolicy (int m) : curr(0), max(m) { }
+      explicit PeriodicPolicy (int m) : curr(0), max(m) { }
       template <int DIM>
       void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
         curr++;
@@ -68,7 +68,7 @@ namespace geometry {
       bool operator == (const PeriodicPolicy& other) const {
         return curr == other.curr && max == other.max;
       }
-      static const int n_start = 0;
+      static int get_start(int) { return 0; }
     };
 
     ////////////////////////////////////////////////////////////
@@ -80,14 +80,22 @@ namespace geometry {
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <int N>
     struct BulkPolicy : public PeriodicPolicy {
-      BulkPolicy (int m) : PeriodicPolicy(m-N){ }
+      explicit BulkPolicy (int m) : PeriodicPolicy(m-N) { };
       template <int DIM>
       void next(pt::Point<DIM> &p , const pt::Direction<DIM> &mu) {
         PeriodicPolicy::next(p, mu);
         if (curr >= max)
           for (int i = 0; i < N; ++i) p += mu;
       }
-      static const int n_start = N/2;
+      static int get_start(int) { return N/2; }
+    };
+
+    struct ZeroBoundaryPolicy : public ConstPolicy {
+      explicit ZeroBoundaryPolicy (int i) : ConstPolicy(i) { }
+    };
+    struct TBoundaryPolicy : public ConstPolicy {
+      explicit TBoundaryPolicy(int i) : ConstPolicy(i) { }
+      static int get_start(const int& m) { return m - 1; }
     };
 
     ////////////////////////////////////////////////////////////
@@ -107,13 +115,14 @@ namespace geometry {
       N next;
       bool good;
       template <class InputIterator>
-      Pair (InputIterator L) :
+      explicit Pair (InputIterator L) :
       policy(*(L++)), next(L), good(true) { }
-      static int get_start(int M) {
+      template <int D>
+      static int get_start(int M, const Geometry<D>& g) {
         if (M == DIM-1)
-          return P::n_start;
+          return P::get_start(g[M]);
         else
-          return N::get_start(M);
+          return N::get_start(M, g);
       }
       bool advance(pt::Point<DIM>& p,
                    pt::Direction<DIM> mu =
@@ -146,13 +155,14 @@ namespace geometry {
     struct End {
       static const int DIM = 0;
       template <class InputIterator>
-      End(InputIterator) { }
+      explicit End(InputIterator) { }
       template <int N>
       bool adv(pt::Point<N>&,
                pt::Direction<N>&) { return false; }
       bool is_good() { return false; }
       bool operator == (const End& other) const { return true; }
-      static int get_start(int N) { return 0; }
+      template <int D>
+      static int get_start(int N, const Geometry<D>&) { return 0; }
     };
 
 #define TWO_POLICY_ITER(A, B)                   \
@@ -187,8 +197,24 @@ namespace geometry {
     };
 
     // Michele:
-    template <int D> struct BulkIterList{
+    template <int D> struct BulkIterList {
       typedef Pair<BulkPolicy<2>, typename TimeSliceIterList<D-1>::type > type;
+    };
+
+    ////////////////////////////////////////////////////////////
+    //
+    //  Iterator for the boundaries in z-direction
+    //
+    //  \date      Fri Apr 19 11:58:21 2013
+    //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+
+    template <int D> struct ZeroBndIterList {
+      typedef Pair<ZeroBoundaryPolicy,
+                   typename TimeSliceIterList<D-1>::type > type;
+    };
+    template <int D> struct TBndIterList {
+      typedef Pair<TBoundaryPolicy,
+                   typename TimeSliceIterList<D-1>::type > type;
     };
 
     ////////////////////////////////////////////////////////////
@@ -210,8 +236,8 @@ namespace geometry {
       bool operator == (const Iterator& other) const {
         return x == other.x && i == other.i;
       }
-      static int get_start(int N){ 
-        return IteratorList::get_start(N);
+      static int get_start(int N, const Geometry<D>& g){ 
+        return IteratorList::get_start(N,g);
       }
       bool operator != (const Iterator& other) const {
         return ! (*this == other);
@@ -405,6 +431,10 @@ namespace geometry {
   <4, detail::TimeSliceIterList<4>::type > TimeSliceIter;
   typedef detail::Iterator
   <4, detail::BulkIterList<4>::type > BulkIterator;
+  typedef detail::Iterator
+  <4, detail::ZeroBndIterList<4>::type > ZeroBndIterator;
+  typedef detail::Iterator
+  <4, detail::TBndIterList<4>::type > TBndIterator;
   // specializations for four dimensions ...
 
   template <> template <>
@@ -441,7 +471,7 @@ namespace geometry {
       typename geometry::Geometry<D>::raw_pt_t n;
       for (int t = 0; t <= g[0]; ++t){
         n[0] = t;
-        for (int i = 1; i < N; ++i) n[i] = Iter::get_start(i);
+        for (int i = 1; i < N; ++i) n[i] = Iter::get_start(i, g);
         Iter x(g.mk_point(n), g.get_extents());
         do {
           lat[t].at(g.template bin<N>(*x)).push_back(*x);

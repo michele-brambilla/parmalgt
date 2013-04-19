@@ -318,3 +318,74 @@ TEST(Geometry, ReverseLabelFn){
         for (; n[3] < SIZE; ++n[3])
           ASSERT_EQ(n, g.coords(g.mk_point(n)));
 }
+
+////////////////////////////////////////////////////////////
+//
+//  Test for the boundary iterators.
+//
+//  \date      Fri Apr 19 12:01:08 2013
+//  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
+
+TEST(Iterator, ZeroBnd){
+  typedef geometry::ZeroBndIterator Iterator;
+  geometry::Geometry<DIM>::extents_t e;
+  std::fill(e.begin(), e.end(), SIZE);
+  geometry::Geometry<DIM> g(e);
+  geometry::Geometry<DIM>::raw_pt_t n;
+  // create a list with all points at time SIZE / 2
+  typedef std::list<pt::Point<DIM> > list_t;
+  list_t known;
+  n[0] = SIZE / 2; n[3] = 0;
+  for (n[1] = 0; n[1] < SIZE; ++n[1])
+    for (n[2] = 0; n[2] < SIZE; ++n[2])
+      known.push_back(g.mk_point(n));
+  for (int i = 1; i < DIM; ++i) n[i] = Iterator::get_start(i, g);
+  // try to re-create that list using a SliceIterator...
+  Iterator i(g.mk_point(n), e);
+  do {
+    // is iter.yield() in the list?
+    list_t::iterator findr = std::find(known.begin(),
+                                       known.end(),
+                                       *i);
+    geometry::Geometry<DIM>::raw_pt_t m(g.coords(*i));
+    ASSERT_TRUE(findr != known.end()) << m[0] << ","
+                                      << m[1] << ","
+                                      << m[2] << ","
+                                      << m[3];
+
+    known.erase(findr);
+  } while ((++i).is_good());
+  ASSERT_EQ(0, known.size());
+}
+
+TEST(Iterator, TBnd){
+  typedef geometry::TBndIterator Iterator;
+  geometry::Geometry<DIM>::extents_t e;
+  std::fill(e.begin(), e.end(), SIZE);
+  geometry::Geometry<DIM> g(e);
+  geometry::Geometry<DIM>::raw_pt_t n;
+  // create a list with all points at time SIZE / 2
+  typedef std::list<pt::Point<DIM> > list_t;
+  list_t known;
+  n[0] = SIZE / 2; n[3] = SIZE-1;
+  for (n[1] = 0; n[1] < SIZE; ++n[1])
+    for (n[2] = 0; n[2] < SIZE; ++n[2])
+      known.push_back(g.mk_point(n));
+  for (int i = 1; i < DIM; ++i) n[i] = Iterator::get_start(i, g);
+  // try to re-create that list using a SliceIterator...
+  Iterator i(g.mk_point(n), e);
+  do {
+    // is iter.yield() in the list?
+    list_t::iterator findr = std::find(known.begin(),
+                                       known.end(),
+                                       *i);
+    geometry::Geometry<DIM>::raw_pt_t m(g.coords(*i));
+    ASSERT_TRUE(findr != known.end()) << m[0] << ","
+                                      << m[1] << ","
+                                      << m[2] << ","
+                                      << m[3];
+
+    known.erase(findr);
+  } while ((++i).is_good());
+  ASSERT_EQ(0, known.size());
+}
