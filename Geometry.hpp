@@ -45,6 +45,7 @@ namespace geometry {
       void reset(void) const { }
       bool overflow(void) const { return true; }
       bool operator == (const ConstPolicy&) const { return true; }
+      static const int n_start = 0;
     };
 
     ////////////////////////////////////////////////////////////
@@ -67,6 +68,7 @@ namespace geometry {
       bool operator == (const PeriodicPolicy& other) const {
         return curr == other.curr && max == other.max;
       }
+      static const int n_start = 0;
     };
 
     ////////////////////////////////////////////////////////////
@@ -85,6 +87,7 @@ namespace geometry {
         if (curr >= max)
           for (int i = 0; i < N; ++i) p += mu;
       }
+      static const int n_start = N/2;
     };
 
     ////////////////////////////////////////////////////////////
@@ -106,6 +109,12 @@ namespace geometry {
       template <class InputIterator>
       Pair (InputIterator L) :
       policy(*(L++)), next(L), good(true) { }
+      static int get_start(int M) {
+        if (M == DIM-1)
+          return P::n_start;
+        else
+          return N::get_start(M);
+      }
       bool advance(pt::Point<DIM>& p,
                    pt::Direction<DIM> mu =
                    pt::Direction<DIM>(DIM-1)){
@@ -143,6 +152,7 @@ namespace geometry {
                pt::Direction<N>&) { return false; }
       bool is_good() { return false; }
       bool operator == (const End& other) const { return true; }
+      static int get_start(int N) { return 0; }
     };
 
 #define TWO_POLICY_ITER(A, B)                   \
@@ -176,6 +186,11 @@ namespace geometry {
       typedef Pair<ConstPolicy, End> type;
     };
 
+    // Michele:
+    template <int D> struct BulkIterList{
+      typedef Pair<BulkPolicy<2>, typename TimeSliceIterList<D-1>::type > type;
+    };
+
     ////////////////////////////////////////////////////////////
     //
     //  Wrapper class containing a point.
@@ -194,6 +209,9 @@ namespace geometry {
       const Point& operator*() const { return x; }
       bool operator == (const Iterator& other) const {
         return x == other.x && i == other.i;
+      }
+      static int get_start(int N){ 
+        return IteratorList::get_start(N);
       }
       bool operator != (const Iterator& other) const {
         return ! (*this == other);
@@ -385,7 +403,8 @@ namespace geometry {
   //  A short hand / specialization
   typedef detail::Iterator
   <4, detail::TimeSliceIterList<4>::type > TimeSliceIter;
-
+  typedef detail::Iterator
+  <4, detail::BulkIterList<4>::type > BulkIterator;
   // specializations for four dimensions ...
 
   template <> template <>
@@ -404,7 +423,7 @@ namespace geometry {
   ///  in LocalField.
   ///
   ///  DH, 7th Nov. 2012
-  template <int D, int N>
+  template <int D, int N, class Iter>
   class CheckerBoard {
   public:
     typedef pt::Point<D> Point; // single point
@@ -422,8 +441,8 @@ namespace geometry {
       typename geometry::Geometry<D>::raw_pt_t n;
       for (int t = 0; t <= g[0]; ++t){
         n[0] = t;
-        n[1] = 0; n[2] = 0; n[3] = 0;
-        geometry::TimeSliceIter x(g.mk_point(n), g.get_extents());
+        for (int i = 1; i < N; ++i) n[i] = Iter::get_start(i);
+        Iter x(g.mk_point(n), g.get_extents());
         do {
           lat[t].at(g.template bin<N>(*x)).push_back(*x);
         } while ((++x).is_good());

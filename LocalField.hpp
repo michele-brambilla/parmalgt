@@ -9,7 +9,7 @@
 #include <iostream>
 #include <numeric>
 #include <vector>
-#ifdef MPI
+#ifdef USE_MPI
 #include <mpi.h>
 #endif
 #include <algorithm>
@@ -183,7 +183,7 @@ namespace fields {
                 const neighbors_t& mpi_neighbors) : 
       g(e), rep(g.vol()), n_th(number_of_threads), pid(mpi_process_id),
       neighbors(mpi_neighbors){
-#ifdef MPI
+#ifdef USE_MPI
       /// constuct the buffers for communication
       for (int i = 0; i < DIM; ++i){
         send_buffer.push_back
@@ -223,11 +223,23 @@ namespace fields {
 
     template <class M>
     M& apply_on_timeslice(M& f, const int& t){
-      return apply_on_timeslice_impl(f, t, ParCheck<M>());
+      return apply_on_timeslice_impl
+        <M, geometry::TimeSliceIter>(f, t, ParCheck<M>());
     }
     template <class M>
     M& apply_on_timeslice(M& f, const int& t) const {
-      return apply_on_timeslice_impl(f, t, ParCheck<M>());;
+      return apply_on_timeslice_impl
+        <M, geometry::TimeSliceIter>(f, t, ParCheck<M>());;
+    }
+    template <class M>
+    M& apply_on_timeslice_bulk(M& f, const int& t){
+      return apply_on_timeslice_impl
+        <M, geometry::BulkIterator>(f, t, ParCheck<M>());
+    }
+    template <class M>
+    M& apply_on_timeslice_bulk(M& f, const int& t) const {
+      return apply_on_timeslice_impl
+        <M, geometry::BulkIterator>(f, t, ParCheck<M>());;
     }
     template <class M>
     M& apply_everywhere(M& f){
@@ -253,7 +265,31 @@ namespace fields {
         apply_on_timeslice(f, t);
       return f;
     }
-#ifdef MPI
+    template <class M>
+    M& apply_everywhere_bulk(M& f){
+      for (int t = 0; t < g[0]; ++t)
+        apply_on_timeslice_bulk(f, t);
+      return f;
+    }
+    template <class M>
+    M& apply_everywhere_bulk(M& f) const {
+      for (int t = 0; t < g[0]; ++t)
+        apply_on_timeslice(f, t);
+      return f;
+    }
+    template <class M>
+    const M& apply_everywhere_bulk(const M& f){
+      for (int t = 0; t < g[0]; ++t)
+        apply_on_timeslice_bulk(f, t);
+      return f;
+    }
+    template <class M>
+    const M& apply_everywhere_bulk(const M& f) const {
+      for (int t = 0; t < g[0]; ++t)
+        apply_on_timeslice_bulk(f, t);
+      return f;
+    }
+#ifdef USE_MPI
     MPI_Request test_send_fwd_z(){
       write_slice_to_buffer(pt::Direction<DIM>(3), 4,
                             send_buffer[3].second);
@@ -349,12 +385,12 @@ namespace fields {
     //
     //  \date      Wed Apr 17 14:11:24 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
-    template <class M>
+    template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True){
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
-      geometry::CheckerBoard<DIM, M::n_cb> cb(g);
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
+      geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
            s != cb[t].end(); ++s){
         int N = s->size();
@@ -364,12 +400,12 @@ namespace fields {
       }
       return f;
     }
-    template <class M>
+    template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True) const {
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb>::v_bin bin;
-      static geometry::CheckerBoard<DIM, M::n_cb> cb(g);
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
+      static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
            s != cb[t].end(); ++s){
         int N = s->size();
@@ -379,18 +415,20 @@ namespace fields {
       }
       return f;
     }
-    template <class M>
+    template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, False){
       typename geometry::Geometry<DIM>::raw_pt_t n;
-      n[0] = t; n[1] = 0; n[2] = 0; n[3] = 0;
-      geometry::TimeSliceIter x(g.mk_point(n), g.get_extents());
+      n[0] = t;
+      for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i);
+      Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
-    template <class M>
+    template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, False) const {
       typename geometry::Geometry<DIM>::raw_pt_t n;
-      n[0] = t; n[1] = 0; n[2] = 0; n[3] = 0;
-      geometry::TimeSliceIter x(g.mk_point(n), g.get_extents());
+      n[0] = t;
+      for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i);
+      Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
     geometry::Geometry<DIM> g;
