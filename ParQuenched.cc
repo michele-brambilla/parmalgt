@@ -7,7 +7,7 @@
 #include <iostream>
 #include <Methods.hpp>
 
-#include <Wormhole.hpp>
+#include <Communicator.hpp>
 
 const int DIM = 4;
 const int ORD = 6;
@@ -63,37 +63,41 @@ int main(int argc, char *argv[]) {
   geometry::Geometry<DIM>::extents_t e;
   // we want a L = 4 lattice
   std::fill(e.begin(), e.end(), 4);
-  // initialize parallel enviornment
-  int rank , numprocs;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (numprocs != 2){
-    std::cout << "Please start the test program with two processes!\n";
-    return 1;
-  }
-  // tell the process which are the neighbors
-  int zup = (rank == numprocs - 1) ? 0 : rank + 1;
-  int zdown = (!rank) ? numprocs - 1 : rank - 1;
-  nt n = neighbors(0,0,0,0,0,0, zup, zdown);
-  GluonField U(e, 1, rank, n);  
+  // // initialize parallel enviornment
+  // int rank , numprocs;
+  // MPI_Init(&argc, &argv);
+  // MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+  // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  // if (numprocs != 2){
+  //   std::cout << "Please start the test program with two processes!\n";
+  //   return 1;
+  // }
+  // // tell the process which are the neighbors
+  // int zup = (rank == numprocs - 1) ? 0 : rank + 1;
+  // int zdown = (!rank) ? numprocs - 1 : rank - 1;
+  // nt n = neighbors(0,0,0,0,0,0, zup, zdown);
+  const int buff_sz = 1;
+  comm::Communicator<GluonField> comm(e);
+  comm.init(argc,argv);
+  GluonField U(e, 1);  
+  // GluonField U(e, 1, rank, n);  
   meth::gu::detail::rand_gen_<GluonField> r(U);
-  if (rank == 0){
+  if (comm.rank() == 0){
     r.update();
-    U.test_send_fwd_z();
+    // U.test_send_fwd_z();
     std::cout << "real parts traces sent:\n";
     MeasTrace m;
     // U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
-    U.apply_everywhere_with_bnd(m);
+    U.apply_everywhere(m);
     for (int i = 0; i <= ORD; ++i)
       std::cout << i << "\t" << m.traces[i] << std::endl;
   }
   else {
-    U.test_rec_bkw_z();
+    // U.test_rec_bkw_z();
     std::cout << "real parts of traces received:\n";
     MeasTrace m;
     //    U.measure_on_slice_with_bnd(m, pt::Direction<DIM>(3), 4);
-    U.apply_everywhere_with_bnd(m);
+    U.apply_everywhere(m);
     for (int i = 0; i <= ORD; ++i)
       std::cout << i << "\t" << m.traces[i] << std::endl;
   }

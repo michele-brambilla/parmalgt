@@ -92,6 +92,18 @@ namespace dirac {
 namespace kernels {
   
 
+
+  template <class Field_t> 
+  struct base_types {
+    typedef typename Field_t::data_t data_t;
+    static const int order = data_t::order;
+    static const int n_dim = Field_t::dim;
+    typedef pt::Point<n_dim> point_t;
+    typedef pt::Direction<n_dim> direction_t;
+  };
+
+
+
   /// struct to extract information on the field from the field type.
   template <class Field_t> 
   struct std_types {
