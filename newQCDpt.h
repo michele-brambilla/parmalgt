@@ -105,21 +105,6 @@ public:
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
-  ///  Write everything to a double vector.
-  ///
-  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
-  ///  \date Sun Mar 25 14:52:57 2012
-
-  std::vector<double>::iterator &
-    buffer(std::vector<double>::iterator & i) const {
-    bgf_.buffer(i);
-    ptU_.buffer(i);
-    return i;
-  }
-
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
   ///  Write to file.
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
@@ -134,21 +119,6 @@ public:
     void read(Reader_t& i) {
     bgf_.read(i);
     ptU_.read(i);
-  }
-
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
-  ///  Read from buffer
-  ///
-  ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
-  ///  \date Mon Mar 26 16:44:30 2012
-
-  std::vector<double>::const_iterator &
-  unbuffer(std::vector<double>::const_iterator & i){
-    bgf_.unbuffer(i);
-    ptU_.unbuffer(i);
-    return i;
   }
 
   explicit BGptSU3(const B& bgf) : bgf_(bgf) { }
@@ -588,10 +558,11 @@ public:
 
 
   // buffer
-  std::vector<double>::iterator&
-  buffer (  std::vector<double>::iterator& j ) const {
-    for (const_iterator i = begin(); i != end(); ++i)
-      i->buffer(j);
+  template <class OutputIterator>
+  OutputIterator&
+  buffer (  OutputIterator& j ) const {
+    for (const_iterator i = begin(); i != end(); ++i, ++j)
+      *j = *i;
     return j;
   }
 
@@ -610,10 +581,10 @@ public:
   }
 
   // unbuffer
-  std::vector<double>::const_iterator&
-  unbuffer (  std::vector<double>::const_iterator& j ) {
-    for (iterator i = begin(); i != end(); ++i)
-      i->unbuffer(j);
+  template <class InputIterator> InputIterator&
+  unbuffer (  InputIterator& j ) {
+    for (iterator i = begin(); i != end(); ++i, ++j)
+      *i = *j;
     return j;
   }
 

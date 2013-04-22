@@ -2,6 +2,7 @@
 #include <LocalField.hpp>
 #include <cstdlib>
 #include <Helper.h>
+#include <Kernels.hpp>
 
 template <class Field_t>
 struct randomize {
@@ -72,3 +73,27 @@ TEST(Operators, ScalarProduct){
          b = B.begin(); a != e; ++a, ++b)
     ASSERT_TRUE(Cmp(*a, *b * alpha)());
 }
+
+TEST(Buffer, BufferAndUnbuffer){
+  typedef fields::LocalField<int, 4> intField;
+  const int L = 10;
+  intField::extents_t e;
+  intField::neighbors_t nn;
+  std::fill(e.begin(), e.end(), L);
+  geometry::Geometry<4> g(e);
+  intField A(e,1,0,nn), B(e,1,0,nn);
+  A.apply_everywhere(randomize<intField>(123));
+  std::vector<int> buffer(L*L*L);
+  typedef kernels::Buffer<intField, std::vector<int>::iterator> Buffer_k;
+  typedef kernels::Unbuffer<intField, std::vector<int>::const_iterator> Unbuffer_k;
+  Buffer_k buf(buffer.begin());
+  Unbuffer_k unbuf(buffer.begin());
+  A.apply_on_timeslice(buf, 4);
+  B.apply_on_timeslice(unbuf, 4);
+  e[0] = 4;
+  geometry::TimeSliceIter i(g.mk_point(e), g.get_extents());
+  do {
+    ASSERT_EQ(A[*i], B[*i]);
+  } while((++i).is_good());
+}
+
