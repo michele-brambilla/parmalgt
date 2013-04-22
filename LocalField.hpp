@@ -12,6 +12,7 @@
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
+#include <Communicator.hpp>
 #include <algorithm>
 #ifdef _OPENMP
 #include <omp.h>
@@ -23,6 +24,14 @@ namespace fields {
   }
 }
 #endif
+
+namespace kernels {
+  template <class Field_t, class OutputIterator>
+  struct Buffer;
+
+  template <class Field_t, class InputIterator>
+  struct Unbuffer;
+}
 
 
 //////////////////////////////////////////////////////////////////////
@@ -38,13 +47,13 @@ namespace fields {
 namespace fields {
 
   namespace detail {
-    
+
     template <class Field_t> class inplace_add {
     public:
       static const int dim = Field_t::dim;
       inplace_add(const Field_t &F) : other(&F) { }
       void operator()(Field_t& F, const pt::Point<dim>& n) const {
-        F[n] += (*other)[n];
+	F[n] += (*other)[n];
       }
       static const int n_cb = 0;
     private:
@@ -57,7 +66,7 @@ namespace fields {
       static const int dim = Field_t::dim;
       inplace_sub(const Field_t &F) : other(&F) { }
       void operator()(Field_t& F, const pt::Point<dim>& n) const {
-        F[n] -= (*other)[n];
+	F[n] -= (*other)[n];
       }
      static const int n_cb = 0;
     private:
@@ -65,13 +74,13 @@ namespace fields {
       Field_t const * other;
     };
 
-    template <class Field_t, class Scalar_t> 
+    template <class Field_t, class Scalar_t>
     class inplace_smul {
     public:
       static const int dim = Field_t::dim;
       inplace_smul(const Scalar_t &s) : other(s) { }
       void operator()(Field_t& F, const pt::Point<dim>& n) const {
-        F[n] *= other;
+	F[n] *= other;
       }
       static const int n_cb = 0;
     private:
@@ -82,26 +91,26 @@ namespace fields {
 
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
-    ///  
+    ///
     ///  The name makes sense for vectors: in this case is
     ///  "inner product" in strict sense. For matrices
     ///  it means whatever is the definition of operator*
-    ///  
+    ///
     ///  \author Michele Brambilla <mib.mic@gmail.com>
     ///  \date Thu Jan 17 10:40:05 2013
     template <class Field_t> class inner_prod {
     public:
       static const int dim = Field_t::dim;
       static const int n_cb = 0;
-      inner_prod(const Field_t &F) : 
-        result(omp_get_max_threads(), Cplx(0,0)), other(&F) { }
+      inner_prod(const Field_t &F) :
+      result(omp_get_max_threads(), Cplx(0,0)), other(&F) { }
 
       void operator()(const Field_t& F, const pt::Point<dim>& n) {
-        result[omp_get_thread_num()] += F[n] * (*other)[n];
+	result[omp_get_thread_num()] += F[n] * (*other)[n];
       }
 
       Cplx reduce() const {
-        return std::accumulate(result.begin(), result.end(), Cplx(0,0));
+	return std::accumulate(result.begin(), result.end(), Cplx(0,0));
       }
     private:
       inner_prod(const inner_prod&) { } // no copy allowed
@@ -112,27 +121,27 @@ namespace fields {
 
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
-    ///  
+    ///
     ///  In case of vectors this the element-by-element
     ///  product (defined according to opertator^).
-    ///  For matrices it means whatever is the definition 
+    ///  For matrices it means whatever is the definition
     ///  of operator^
-    ///  
+    ///
     ///  \author Michele Brambilla <mib.mic@gmail.com>
     ///  \date Thu Jan 17 10:40:05 2013
     template <class Field_t> class prod {
     public:
       static const int dim = Field_t::dim;
       static const int n_cb = 0;
-      prod(const Field_t &F) : 
-        result(omp_get_max_threads(), Cplx(0,0)), other(&F) { }
+      prod(const Field_t &F) :
+      result(omp_get_max_threads(), Cplx(0,0)), other(&F) { }
 
       void operator()(const Field_t& F, const pt::Point<dim>& n) {
-        result[omp_get_thread_num()] += F[n] ^ (*other)[n];
+	result[omp_get_thread_num()] += F[n] ^ (*other)[n];
       }
 
       Cplx reduce() const {
-        return std::accumulate(result.begin(), result.end(), Cplx(0,0));
+	return std::accumulate(result.begin(), result.end(), Cplx(0,0));
       }
     private:
       prod(const prod&) { } // no copy allowed
@@ -153,7 +162,7 @@ namespace fields {
   ///  By local we mean that it resides on one node. One
   ///  LocalGluonField instance is always associated with one MPI
   ///  process, but will generally spawn multiple threads such that
-  ///  the advantages of a cluster using nodes with 
+  ///  the advantages of a cluster using nodes with
   ///  modern CPUs with several cores each may be fully exploited.
   ///
   ///  \tparam BGF The background field class to be used.
@@ -168,6 +177,7 @@ namespace fields {
   template <class F, int DIM>
   class LocalField {
   public:
+    typedef LocalField<F,DIM> self_t;
     typedef F data_t;
     static const int dim = DIM;
     typedef std::vector< data_t > rep_t;
@@ -178,27 +188,11 @@ namespace fields {
     typedef typename geometry::Geometry<DIM>::extents_t extents_t;
     typedef typename geometry::Geometry<DIM>::raw_pt_t raw_pt;
     LocalField (const extents_t& e,
-                const int& number_of_threads,
-                const int& mpi_process_id,
-                const neighbors_t& mpi_neighbors) : 
-      g(e), rep(g.vol()), n_th(number_of_threads), pid(mpi_process_id),
-      neighbors(mpi_neighbors){
-#ifdef USE_MPI
-      /// constuct the buffers for communication
-      for (int i = 0; i < DIM; ++i){
-        send_buffer.push_back
-          (std::make_pair ( std::vector<double> 
-                            ( g.bnd_vol(i)*data_t::storage_size ),
-                            std::vector<double> 
-                            ( g.bnd_vol(i)*data_t::storage_size ) ) );
-        rec_buffer.push_back
-          (std::make_pair ( std::vector<double> 
-                            ( g.bnd_vol(i)*data_t::storage_size ),
-                            std::vector<double> 
-                            ( g.bnd_vol(i)*data_t::storage_size ) ) );
-
-      }
-#endif
+		const int& number_of_threads,
+		const int& mpi_process_id,
+		const neighbors_t& mpi_neighbors) :
+      g(e), rep(g.vol()), n_th(number_of_threads), comm(e),
+      pid(comm.rank()),neighbors(comm.nb()){
     }
     int vol() const { return g.vol(); }
     int extent(const int& i) const {
@@ -211,7 +205,7 @@ namespace fields {
     const data_t& operator[](const pt::Point<DIM> &n) const {
       return n.template deref<rep_t>(rep);
     }
-    
+
     iterator begin() { return rep.begin(); };
     iterator end() { return rep.end(); };
     const_iterator begin() const { return rep.begin(); };
@@ -224,91 +218,81 @@ namespace fields {
     template <class M>
     M& apply_on_timeslice(M& f, const int& t){
       return apply_on_timeslice_impl
-        <M, geometry::TimeSliceIter>(f, t, ParCheck<M>());
+	<M, geometry::TimeSliceIter>(f, t, ParCheck<M>());
     }
     template <class M>
     M& apply_on_timeslice(M& f, const int& t) const {
       return apply_on_timeslice_impl
-        <M, geometry::TimeSliceIter>(f, t, ParCheck<M>());;
+	<M, geometry::TimeSliceIter>(f, t, ParCheck<M>());;
     }
     template <class M>
     M& apply_on_timeslice_bulk(M& f, const int& t){
+#ifdef USE_MPI
+      buffer();
+      comm();
+      unbuffer();
+#endif
       return apply_on_timeslice_impl
-        <M, geometry::BulkIterator>(f, t, ParCheck<M>());
+	<M, geometry::BulkIterator>(f, t, ParCheck<M>());
     }
     template <class M>
     M& apply_on_timeslice_bulk(M& f, const int& t) const {
+#ifdef USE_MPI
+      buffer();
+      comm();
+      unbuffer();
+#endif
       return apply_on_timeslice_impl
-        <M, geometry::BulkIterator>(f, t, ParCheck<M>());;
+	<M, geometry::BulkIterator>(f, t, ParCheck<M>());;
     }
     template <class M>
     M& apply_everywhere(M& f){
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice(f, t);
+	apply_on_timeslice(f, t);
       return f;
     }
     template <class M>
     M& apply_everywhere(M& f) const {
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice(f, t);
+	apply_on_timeslice(f, t);
       return f;
     }
     template <class M>
     const M& apply_everywhere(const M& f){
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice(f, t);
+	apply_on_timeslice(f, t);
       return f;
     }
     template <class M>
     const M& apply_everywhere(const M& f) const {
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice(f, t);
+	apply_on_timeslice(f, t);
       return f;
     }
     template <class M>
     M& apply_everywhere_bulk(M& f){
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice_bulk(f, t);
+	apply_on_timeslice_bulk(f, t);
       return f;
     }
     template <class M>
     M& apply_everywhere_bulk(M& f) const {
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice(f, t);
+	apply_on_timeslice(f, t);
       return f;
     }
     template <class M>
     const M& apply_everywhere_bulk(const M& f){
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice_bulk(f, t);
+	apply_on_timeslice_bulk(f, t);
       return f;
     }
     template <class M>
     const M& apply_everywhere_bulk(const M& f) const {
       for (int t = 0; t < g[0]; ++t)
-        apply_on_timeslice_bulk(f, t);
+	apply_on_timeslice_bulk(f, t);
       return f;
     }
-#ifdef USE_MPI
-    MPI_Request test_send_fwd_z(){
-      write_slice_to_buffer(pt::Direction<DIM>(3), 4,
-                            send_buffer[3].second);
-      MPI_Request r;
-      MPI_Isend(&send_buffer[3].second[0],
-                send_buffer[3].second.size(),
-                MPI_DOUBLE, neighbors[3].second, 0, MPI_COMM_WORLD, &r);
-      return r;
-    }
-    void test_rec_bkw_z(){
-      MPI_Status status;
-      MPI_Recv(&rec_buffer[3].first[0],
-      rec_buffer[3].first.size(),
-               MPI_DOUBLE, neighbors[3].first, 0, MPI_COMM_WORLD,
-               &status);
-      read_slice_from_buffer(pt::Direction<DIM>(3), 0,
-                             rec_buffer[3].first);
-    }
-#endif
 
     // Added: MB on Fri 2, 2012
 
@@ -349,18 +333,18 @@ namespace fields {
       return (result *= other);
     }
     // DH: maybe call this prod instead?
-    Cplx operator*(const LocalField& other) const { 
+    Cplx operator*(const LocalField& other) const {
       detail::inner_prod<LocalField> p(other);
       return apply_everywhere(p).reduce();
     }
 
     ///  \author Michele Brambilla <mib.mic@gmail.com>
     ///  \date Thu Jan 10 20:47:14 2013
-    Cplx operator^(const LocalField& other) const { 
+    Cplx operator^(const LocalField& other) const {
       detail::prod<LocalField> p(other);
       return apply_everywhere(p).reduce();
     }
-    
+
   private:
     ////////////////////////////////////////////////////////////
     //
@@ -392,11 +376,11 @@ namespace fields {
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
       geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
-           s != cb[t].end(); ++s){
-        int N = s->size();
+	   s != cb[t].end(); ++s){
+	int N = s->size();
 #pragma omp parallel for
-        for (int i = 0; i < N; ++i)
-          f(*this, (*s)[i]);
+	for (int i = 0; i < N; ++i)
+	  f(*this, (*s)[i]);
       }
       return f;
     }
@@ -407,11 +391,11 @@ namespace fields {
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
       static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
-           s != cb[t].end(); ++s){
-        int N = s->size();
+	   s != cb[t].end(); ++s){
+	int N = s->size();
 #pragma omp parallel for
-        for (int i = 0; i < N; ++i)
-          f(*this, (*s)[i]);
+	for (int i = 0; i < N; ++i)
+	  f(*this, (*s)[i]);
       }
       return f;
     }
@@ -431,30 +415,44 @@ namespace fields {
       Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
+
+
+    ///////////////////////////////
+    //
+    // Buffer and unbuffer data for communications. Are iterators
+    // correct?
+    //
+    template <class M>
+    M& buffer()
+    {
+      pt::Direction<DIM> mu(3);
+      // whi doesn't accept std::vector<data_t>::iterator as second
+      // template parameter?
+      kernels::Buffer<self_t,typename std::vector<F>::iterator>
+	buff_f(comm.send_buff[int(mu)].first.begin());
+      apply_on_timeslice_impl<M,geometry::ZeroBndIterator>(buff_f);
+      kernels::Buffer<self_t,typename std::vector<F>::iterator>
+	buff_s(comm.send_buff[int(mu)].second.begin());
+      apply_on_timeslice_impl<M,geometry::TBndIterator>(buff_s);
+    }
+    template <class M>
+    M& unbuffer()
+    {
+      pt::Direction<DIM> mu(3);
+      kernels::Unbuffer<self_t,typename std::vector<F>::iterator>
+	buff_f(comm.recv_buff[int(mu)].first.begin());
+      apply_on_timeslice_impl<M,geometry::ZeroBndIterator>(buff_f);
+      kernels::Unbuffer<self_t,typename std::vector<F>::iterator>
+	buff_s(comm.recv_buff[int(mu)].second.begin());
+      apply_on_timeslice_impl<M,geometry::TBndIterator>(buff_s);
+    }
+
     geometry::Geometry<DIM> g;
     rep_t rep;
     int n_th; // number of threads
     int pid; // MPI process id
     neighbors_t neighbors;
-    /// Buffer for communication
-    std::vector< std::pair<std::vector<double>, 
-                           std::vector<double> > > send_buffer;
-    std::vector< std::pair<std::vector<double>, 
-                           std::vector<double> > > rec_buffer;
-    void write_slice_to_buffer(const pt::Direction<DIM>& mu, const int &xi,
-                               std::vector<double>& buff){
-      std::vector<double>::iterator i = buff.begin();
-      geometry::SliceIterator<DIM, 0> iter = 
-        g.template mk_slice_iterator<0>(mu, xi);
-      while (iter.is_good()) rep[iter.yield()].buffer(i);
-    }
-    void read_slice_from_buffer(const pt::Direction<DIM>& mu, const int &xi,
-                                std::vector<double>& buff){
-      std::vector<double>::const_iterator i = buff.begin();
-      geometry::SliceIterator<DIM, 0> iter = 
-        g.template mk_slice_iterator<0>(mu, xi);
-      while (iter.is_good()) rep[iter.yield()].unbuffer(i);
-    }
+    comm::Communicator<self_t> comm;
   };
 }
 

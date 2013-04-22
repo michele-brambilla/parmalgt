@@ -201,6 +201,7 @@ namespace geometry {
       typedef Pair<BulkPolicy<2>, typename TimeSliceIterList<D-1>::type > type;
     };
 
+
     ////////////////////////////////////////////////////////////
     //
     //  Iterator for the boundaries in z-direction
