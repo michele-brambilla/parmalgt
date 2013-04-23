@@ -104,11 +104,6 @@ namespace comm {
 
     };
 
-    ~Communicator() {
-      MPI_Barrier(MPI_COMM_WORLD);
-      MPI_Finalize();
-    }
-
     const int& rank() { return rank_; }
     const nb_t& nb() { return nb_; }
     const int& numprocs() { return numprocs_; }
@@ -160,6 +155,12 @@ namespace comm {
 		   &status);
 	}
     }
+
+    void finalize() {
+      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Finalize();
+    }
+
 
     // Check if any communication is still on its way
     bool test() { return false; }
