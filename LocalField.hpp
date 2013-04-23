@@ -217,13 +217,31 @@ namespace fields {
 
     template <class M>
     M& apply_on_timeslice(M& f, const int& t){
+#ifdef USE_MPI
+      buffer(t);
+      comm.do_it();
+      unbuffer(t);
+      return apply_on_timeslice_impl
+	<M, geometry::BulkIterator>(f, t, ParCheck<M>());
+#else
       return apply_on_timeslice_impl
 	<M, geometry::TimeSliceIter>(f, t, ParCheck<M>());
+#endif
     }
     template <class M>
     M& apply_on_timeslice(M& f, const int& t) const {
+#ifdef USE_MPI
+      // buffer(t);
+      // comm();
+      // unbuffer(t);
       return apply_on_timeslice_impl
-	<M, geometry::TimeSliceIter>(f, t, ParCheck<M>());;
+	<M, geometry::BulkIterator>(f, t, ParCheck<M>());
+#else
+      return apply_on_timeslice_impl
+	<M, geometry::TimeSliceIter>(f, t, ParCheck<M>());
+#endif
+      // return apply_on_timeslice_impl
+      // 	<M, geometry::TimeSliceIter>(f, t, ParCheck<M>());;
     }
     template <class M>
     M& apply_on_timeslice_bulk(M& f, const int& t){
@@ -344,7 +362,7 @@ namespace fields {
       detail::prod<LocalField> p(other);
       return apply_everywhere(p).reduce();
     }
-
+    
   private:
     ////////////////////////////////////////////////////////////
     //
@@ -422,29 +440,32 @@ namespace fields {
     // Buffer and unbuffer data for communications. Are iterators
     // correct?
     //
-    template <class M>
-    M& buffer()
+    void buffer(const int& t) const
     {
       pt::Direction<DIM> mu(3);
-      // whi doesn't accept std::vector<data_t>::iterator as second
-      // template parameter?
-      kernels::Buffer<self_t,typename std::vector<F>::iterator>
-	buff_f(comm.send_buff[int(mu)].first.begin());
-      apply_on_timeslice_impl<M,geometry::ZeroBndIterator>(buff_f);
-      kernels::Buffer<self_t,typename std::vector<F>::iterator>
-	buff_s(comm.send_buff[int(mu)].second.begin());
-      apply_on_timeslice_impl<M,geometry::TBndIterator>(buff_s);
+      typedef typename kernels::Buffer<self_t, typename std::vector<F>::const_iterator> bk_t;
+      bk_t buff_f(comm.send_buff()[int(mu)].first.begin());
+      apply_on_timeslice_impl<bk_t, geometry::ZeroBndIterator>(buff_f, t, ParCheck<bk_t>());
+      bk_t buff_s(comm.send_buff()[int(mu)].second.begin());
+      apply_on_timeslice_impl<bk_t, geometry::TBndIterator>(buff_s, t, ParCheck<bk_t>());
     }
-    template <class M>
-    M& unbuffer()
+    void buffer(const int& t)
     {
       pt::Direction<DIM> mu(3);
-      kernels::Unbuffer<self_t,typename std::vector<F>::iterator>
-	buff_f(comm.recv_buff[int(mu)].first.begin());
-      apply_on_timeslice_impl<M,geometry::ZeroBndIterator>(buff_f);
-      kernels::Unbuffer<self_t,typename std::vector<F>::iterator>
-	buff_s(comm.recv_buff[int(mu)].second.begin());
-      apply_on_timeslice_impl<M,geometry::TBndIterator>(buff_s);
+      typedef typename kernels::Buffer<self_t, typename std::vector<F>::iterator> bk_t;
+      bk_t buff_f(comm.send_buff()[int(mu)].first.begin());
+      apply_on_timeslice_impl<bk_t, geometry::ZeroBndIterator>(buff_f, t, ParCheck<bk_t>());
+      bk_t buff_s(comm.send_buff()[int(mu)].second.begin());
+      apply_on_timeslice_impl<bk_t, geometry::TBndIterator>(buff_s, t, ParCheck<bk_t>());
+    }
+    void unbuffer(const int& t)
+    {
+      pt::Direction<DIM> mu(3);
+      typedef typename kernels::Unbuffer<self_t, typename std::vector<F>::iterator> uk_t;
+      uk_t ubuff_f(comm.recv_buff()[int(mu)].first.begin());
+      apply_on_timeslice_impl<uk_t, geometry::ZeroBndIterator>(ubuff_f, t, ParCheck<uk_t>());
+      uk_t ubuff_s(comm.recv_buff()[int(mu)].second.begin());
+      apply_on_timeslice_impl<uk_t, geometry::TBndIterator>(ubuff_s, t, ParCheck<uk_t>());
     }
 
     geometry::Geometry<DIM> g;

@@ -73,6 +73,11 @@ namespace comm {
       MPI_Comm_size(MPI_COMM_WORLD, &numprocs_);
       MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
 
+      if( rank_ == 0)
+	std::cout << "number of MPI processes: " << numprocs_ << std::endl;
+
+      MPI_Barrier(MPI_COMM_WORLD);
+
       // initialize neighbors *** only z direction ***
       nb_[0].first  = rank_;
       nb_[0].second = rank_;
@@ -80,58 +85,79 @@ namespace comm {
       nb_[1].second = rank_;
       nb_[2].first  = rank_;
       nb_[2].second = rank_;
-      nb_[3].first  = (rank_ == numprocs_ - 1) ? 0 : rank_ + 1;
-      nb_[3].second = (!rank_) ? numprocs_ - 1 : rank_ - 1;
+      nb_[3].first  = (rank_+1)%numprocs_;
+      nb_[3].second = (rank_+numprocs_-1)%numprocs_;     
+      // nb_[3].first  = (rank_ == numprocs_ - 1) ? 0 : rank_ + 1;
+      // nb_[3].second = (!rank_) ? numprocs_ - 1 : rank_ - 1;
+      
+      if( rank_ == 1)
+	for(int mu(0); mu < DIM; ++mu)
+	    std::cout << "neighbour in direction " << mu
+		      << "+ is rank "              << nb_[mu].first
+		      << std::endl
+		      << "neighbour in direction " << mu
+		      << "- is rank "              << nb_[mu].second
+		      << std::endl
+		      << std::endl;
+
+      MPI_Barrier(MPI_COMM_WORLD);
+
     };
 
     ~Communicator() {
+      MPI_Barrier(MPI_COMM_WORLD);
       MPI_Finalize();
     }
 
     const int& rank() { return rank_; }
     const nb_t& nb() { return nb_; }
-    const buffer_t& send_buff() { return send_buff_; }
-    const buffer_t& recv_buff() { return recv_buff_; }
+    const int& numprocs() { return numprocs_; }
+    buffer_t& send_buff() { return send_buff_; }
+    buffer_t& recv_buff() { return recv_buff_; }
 
     // Performs communication
-    void operator()() {
-      MPI_Request* r;
+    // void operator()() {
+    void do_it() {
+      MPI_Request r;
       for( Direction mu(0); mu.is_good(); ++mu)
-	if (nb[int(mu)].second != rank) {
+	if (nb_[int(mu)].second != rank_) {
 
-	  MPI_Isend(&send_buff[int(mu)].first[0],
-		    send_buff[int(mu)].first.size()*data_t::storage_size,
+	  MPI_Isend(&send_buff_[int(mu)].first[0],
+		    send_buff_[int(mu)].first.size()*data_t::storage_size,
 		    MPI_DOUBLE, nb_[int(mu)].first,
 		    int(mu), MPI_COMM_WORLD, &r);
 
-	  MPI_Isend(&send_buff[int(mu)].second[0],
-		    send_buff[int(mu)].second.size()*data_t::storage_size,
+	  MPI_Isend(&send_buff_[int(mu)].second[0],
+		    send_buff_[int(mu)].second.size()*data_t::storage_size,
 		    MPI_DOUBLE, nb_[int(mu)].second,
 		    int(mu)+DIM, MPI_COMM_WORLD, &r);
-	  // std::cout << "rank " << rank
-	  //	    << "sends data on direction " << int(mu)
-	  //	    << "to rank " << nb[int(mu)].second
-	  //	    << std::endl;
+	  std::cout << "rank " << rank()
+	  	    << " sends data on direction " << int(mu)
+	  	    << " to rank " << nb()[int(mu)].second
+	  	    << std::endl;
 	}
 
+      
+
       for( Direction mu(0); mu.is_good(); ++mu)
-	if (nb[int(mu)].first != rank) {
+	if (nb_[int(mu)].first != rank_) {
+
+	  std::cout << "rank " << rank()
+	  	    << " receives data along direction " << int(mu)
+	  	    << " from rank " << nb()[int(mu)].second
+	  	    << std::endl;
+	  MPI_Barrier(MPI_COMM_WORLD);
 
 	  MPI_Status status;
-	  MPI_Recv(&recv_buff[int(mu)].first[0],
-		   recv_buff[int(mu)].first.size()*data_t::storage_size,
+	  MPI_Recv(&recv_buff_[int(mu)].first[0],
+		   recv_buff_[int(mu)].first.size()*data_t::storage_size,
 		   MPI_DOUBLE, nb_[int(mu)].first, int(mu)+DIM, MPI_COMM_WORLD,
 		   &status);
 
-	  MPI_Recv(&recv_buff[int(mu)].second[0],
-		   recv_buff[int(mu)].second.size()*data_t::storage_size,
+	  MPI_Recv(&recv_buff_[int(mu)].second[0],
+		   recv_buff_[int(mu)].second.size()*data_t::storage_size,
 		   MPI_DOUBLE, nb_[int(mu)].second, int(mu), MPI_COMM_WORLD,
 		   &status);
-
-	  // std::cout << "rank " << rank
-	  //	    << "receives data along direction " << int(mu)
-	  //	    << "from rank " << nb[int(mu)].second
-	  //	    << std::endl;
 	}
     }
 
@@ -139,7 +165,9 @@ namespace comm {
     bool test() { return false; }
 
   };
-
+  template<class Field_t> int Communicator<Field_t>::rank_;
+  template<class Field_t> typename Communicator<Field_t>::nb_t Communicator<Field_t>::nb_;
+  template<class Field_t> int Communicator<Field_t>::numprocs_;
 }
 
 #endif //COMMUNICATOR_H

@@ -224,18 +224,19 @@ int main(int argc, char *argv[]) {
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);
   signal(SIGINT, kill_handler);
-  int rank;
-#ifdef USE_MPI
-  MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  std::string rank_str = "." + to_string(rank);
-#else
+
+  ////////////////////////////////////////////////////////////////////
+  //
+  // initialize MPI communicator
+  comm::Communicator<GluonField>::init(argc,argv);
+
   std::string rank_str = "";
-#endif
+
   ////////////////////////////////////////////////////////////////////
   // read the parameters
   uparam::Param p;
-  p.read("input" + rank_str);
+  //  p.read("input" + rank_str);
+  p.read("input");
   std::ofstream of(("run.info"+rank_str).c_str(), std::ios::app);
   of << "INPUT PARAMETERS:\n";
   p.print(of);
@@ -272,6 +273,8 @@ int main(int argc, char *argv[]) {
     GUK<PrTK>::type::rands[i].init(rand());
   }
 #endif
+
+
   ////////////////////////////////////////////////////////////////////
   //
   // lattice setup
@@ -279,12 +282,16 @@ int main(int argc, char *argv[]) {
   geometry::Geometry<DIM>::extents_t e;
   // we want a T x L^3 lattice
   std::fill(e.begin(), e.end(), L);
+#ifdef USE_MPI
+  e[DIM-1] = L/comm::Communicator<GluonField>::numprocs_ + 2;
+#endif
   // for SF boundary: set the time extend to T + 1
   e[0] = T + 1;
   // initialize background field get method
   bgf::get_abelian_bgf(0, 0, T, L, s);
   // we will have just one field
   GluonField U(e, 1, 0, nt());
+  // U.comm.init(argc,argv);
   ////////////////////////////////////////////////////////////////////
   //
   // initialzie the background field of U or read config

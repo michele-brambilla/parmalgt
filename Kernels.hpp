@@ -898,7 +898,7 @@ private:
     
     Buffer(OutputIterator o) : oi(o) { }
 
-    void operator()(Field_t& U, const point_t& n){
+    void operator()(Field_t& U, const point_t& n) {
       *(oi++) = U[n];
     }
   };
