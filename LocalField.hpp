@@ -231,9 +231,9 @@ namespace fields {
     template <class M>
     M& apply_on_timeslice(M& f, const int& t) const {
 #ifdef USE_MPI
-      // buffer(t);
-      // comm();
-      // unbuffer(t);
+      buffer(t);
+      comm();
+      unbuffer(t);
       return apply_on_timeslice_impl
 	<M, geometry::BulkIterator>(f, t, ParCheck<M>());
 #else
@@ -363,6 +363,10 @@ namespace fields {
       return apply_everywhere(p).reduce();
     }
     
+    comm::Communicator<self_t>& get_communicator() { return comm; }
+
+    // void do_buffer(const int& t) { buffer(t); }
+
   private:
     ////////////////////////////////////////////////////////////
     //
@@ -375,6 +379,7 @@ namespace fields {
     struct False {};
     // Set ParCheck<T> for any type T to true.
     template <class C, class Dummy = void>
+    // template <class C, class Dummy = void>
     struct ParCheck : True { };
     // Set ParCheck<T> for a type that has a
     //  typedef void NoPar;
@@ -389,6 +394,7 @@ namespace fields {
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True){
+      // std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True)" << std::endl;
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
@@ -404,6 +410,7 @@ namespace fields {
     }
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True) const {
+      // std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True) const" << std::endl;
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
@@ -418,10 +425,14 @@ namespace fields {
       return f;
     }
     template <class M, class Iter>
-    M& apply_on_timeslice_impl(M& f, const int& t, False){
+    M& apply_on_timeslice_impl(M& f, const int& t, False) {
       typename geometry::Geometry<DIM>::raw_pt_t n;
       n[0] = t;
       for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i, g);
+      // std::cout << "Iterator begins at: (";
+      // for (int i = 0; i < DIM; ++i) 
+      // 	std::cout << n[i] << ",";
+      // std::cout << ")\n";
       Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
@@ -430,6 +441,10 @@ namespace fields {
       typename geometry::Geometry<DIM>::raw_pt_t n;
       n[0] = t;
       for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i, g);
+      // std::cout << "Iterator begins at: (";
+      // for (int i = 0; i < DIM; ++i) 
+      // 	std::cout << n[i] << ",";
+      // std::cout << ")\n";
       Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
@@ -440,32 +455,54 @@ namespace fields {
     // Buffer and unbuffer data for communications. Are iterators
     // correct?
     //
-    void buffer(const int& t) const
-    {
+    void buffer(const int& t) const {
       pt::Direction<DIM> mu(3);
       typedef typename kernels::Buffer<self_t, typename std::vector<F>::const_iterator> bk_t;
       bk_t buff_f(comm.send_buff()[int(mu)].first.begin());
-      apply_on_timeslice_impl<bk_t, geometry::ZeroBndIterator>(buff_f, t, ParCheck<bk_t>());
       bk_t buff_s(comm.send_buff()[int(mu)].second.begin());
-      apply_on_timeslice_impl<bk_t, geometry::TBndIterator>(buff_s, t, ParCheck<bk_t>());
+      // apply_on_timeslice_impl<bk_t, geometry::ZeroBndIterator>(buff_f, t, ParCheck<bk_t>());
+      // apply_on_timeslice_impl<bk_t, geometry::TBndIterator>(buff_s, t, ParCheck<bk_t>());
+      raw_pt n;
+      n[0] = t; n[3] = 1;
+      for (n[1] = 0; n[1] < g[1]; ++n[1])
+	for (n[2] = 0; n[2] < g[2]; ++n[2])
+	  buff_f(*this,mk_point(n));
+      n[0] = t; n[3] = g[3]-1;
+      for (n[1] = 0; n[1] < g[1]; ++n[1])
+	for (n[2] = 0; n[2] < g[2]; ++n[2])
+	  buff_s(*this,mk_point(n));
     }
-    void buffer(const int& t)
-    {
+    void buffer(const int& t) {
       pt::Direction<DIM> mu(3);
       typedef typename kernels::Buffer<self_t, typename std::vector<F>::iterator> bk_t;
       bk_t buff_f(comm.send_buff()[int(mu)].first.begin());
-      apply_on_timeslice_impl<bk_t, geometry::ZeroBndIterator>(buff_f, t, ParCheck<bk_t>());
       bk_t buff_s(comm.send_buff()[int(mu)].second.begin());
-      apply_on_timeslice_impl<bk_t, geometry::TBndIterator>(buff_s, t, ParCheck<bk_t>());
+      // apply_on_timeslice_impl<bk_t, geometry::ZeroBndIterator>(buff_f, t, ParCheck<bk_t>());
+      // apply_on_timeslice_impl<bk_t, geometry::TBndIterator>(buff_s, t, ParCheck<bk_t>());
+      raw_pt n = {t,0,0,1};
+      for (n[1] = 0; n[1] < g[1]; ++n[1])
+	for (n[2] = 0; n[2] < g[2]; ++n[2])
+	  buff_f(*this,mk_point(n));
+      n[3] = g[3]-2;
+      for (n[1] = 0; n[1] < g[1]; ++n[1])
+	for (n[2] = 0; n[2] < g[2]; ++n[2])
+	  buff_s(*this,mk_point(n));
     }
-    void unbuffer(const int& t)
-    {
+    void unbuffer(const int& t) {
       pt::Direction<DIM> mu(3);
       typedef typename kernels::Unbuffer<self_t, typename std::vector<F>::iterator> uk_t;
       uk_t ubuff_f(comm.recv_buff()[int(mu)].first.begin());
-      apply_on_timeslice_impl<uk_t, geometry::ZeroBndIterator>(ubuff_f, t, ParCheck<uk_t>());
       uk_t ubuff_s(comm.recv_buff()[int(mu)].second.begin());
-      apply_on_timeslice_impl<uk_t, geometry::TBndIterator>(ubuff_s, t, ParCheck<uk_t>());
+      // apply_on_timeslice_impl<uk_t, geometry::ZeroBndIterator>(ubuff_f, t, ParCheck<uk_t>());
+      // apply_on_timeslice_impl<uk_t, geometry::TBndIterator>(ubuff_s, t, ParCheck<uk_t>());
+      raw_pt n = {t,0,0,0};
+      for (n[1] = 0; n[1] < g[1]; ++n[1])
+	for (n[2] = 0; n[2] < g[2]; ++n[2])
+	  ubuff_f(*this,mk_point(n));
+      n[3] = g[3]-1;
+      for (n[1] = 0; n[1] < g[1]; ++n[1])
+	for (n[2] = 0; n[2] < g[2]; ++n[2])
+	  ubuff_s(*this,mk_point(n));
     }
 
     geometry::Geometry<DIM> g;

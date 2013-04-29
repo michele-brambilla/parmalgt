@@ -18,10 +18,13 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 # moment
 
 bin_PROGRAMS = test_Geometry test_Bgfield test_Helper test_newQCDpt \
-	test_PtTypes test_LocalField test_Clover
+	test_PtTypes test_LocalField test_Clover test_Communicator
 
 test_LocalField_SOURCES = test_LocalField.cc
 test_LocalField_LDADD = lib/libgtest_main.la -lpthread
+
+test_Communicator_SOURCES = test_Communicator.cc
+test_Communicator_LDADD = lib/libgtest_main.la
 
 test_Clover_SOURCES = test_Clover.cc ../MyRand.cc\
 	../Background.cc
