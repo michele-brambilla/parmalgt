@@ -493,16 +493,8 @@ namespace fields {
       typedef typename kernels::Unbuffer<self_t, typename std::vector<F>::iterator> uk_t;
       uk_t ubuff_f(comm.recv_buff()[int(mu)].first.begin());
       uk_t ubuff_s(comm.recv_buff()[int(mu)].second.begin());
-      // apply_on_timeslice_impl<uk_t, geometry::ZeroBndIterator>(ubuff_f, t, ParCheck<uk_t>());
-      // apply_on_timeslice_impl<uk_t, geometry::TBndIterator>(ubuff_s, t, ParCheck<uk_t>());
-      raw_pt n = {t,0,0,0};
-      for (n[1] = 0; n[1] < g[1]; ++n[1])
-	for (n[2] = 0; n[2] < g[2]; ++n[2])
-	  ubuff_f(*this,mk_point(n));
-      n[3] = g[3]-1;
-      for (n[1] = 0; n[1] < g[1]; ++n[1])
-	for (n[2] = 0; n[2] < g[2]; ++n[2])
-	  ubuff_s(*this,mk_point(n));
+      apply_on_timeslice_impl<uk_t, geometry::ZeroBndIterator>(ubuff_f, t, ParCheck<uk_t>());
+      apply_on_timeslice_impl<uk_t, geometry::TBndIterator>(ubuff_s, t, ParCheck<uk_t>());
     }
 
     geometry::Geometry<DIM> g;
