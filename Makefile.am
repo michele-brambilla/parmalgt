@@ -12,10 +12,13 @@ noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
 
 dist_data_DATA = input run.sh
 
-bin_PROGRAMS = LocalQuenchFlow LocalQuench Invert
+bin_PROGRAMS = LocalQuenchFlow LocalQuench Invert Quench
 
 #ParQuenched_SOURCES = ParQuenched.cc \
 #  newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc
+
+Quench_SOURCES = Quench.cc \
+  newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc
 
 LocalQuench_SOURCES = LocalQuench.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc

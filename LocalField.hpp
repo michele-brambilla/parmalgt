@@ -11,8 +11,19 @@
 #include <vector>
 #ifdef USE_MPI
 #include <mpi.h>
-#endif
 #include <Communicator.hpp>
+#else
+namespace comm {
+  template<class C>
+  struct Communicator {
+    typedef typename C::extents_t extents_t;
+    typedef typename C::neighbors_t nb_t;
+    Communicator(const extents_t& e) { }
+    const int& rank() { return 0; }
+    const nb_t& nb() { return nb_t(); }
+  };
+}
+#endif
 #include <algorithm>
 #ifdef _OPENMP
 #include <omp.h>
@@ -362,9 +373,8 @@ namespace fields {
       detail::prod<LocalField> p(other);
       return apply_everywhere(p).reduce();
     }
-    
-    comm::Communicator<self_t>& get_communicator() { return comm; }
 
+    comm::Communicator<self_t>& get_communicator() { return comm; }
     // void do_buffer(const int& t) { buffer(t); }
 
   private:

@@ -27,7 +27,7 @@ namespace comm {
 
   // Rules for communications
   namespace detail {
-
+    
     ////////////////////////////////
     //
     // naming
@@ -48,89 +48,16 @@ namespace comm {
       typedef typename comm_types<M,DIM>::nb_t nb_t;
       typedef typename comm_types<M,DIM>::buffer_t buffer_t;
       typedef typename comm_types<M,DIM>::request_t request_t;
+      const int send_sz = sizeof(M);
 
       Send(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
       
       void operator()(const int& dir, const int& tag, std::vector<request_t>& r) {
-	MPI_Isend(&buff[dir].first[0],
-		  buff[dir].first.size()*M::storage_size,
-		  MPI_DOUBLE, nb[dir].first,
-		  tag, MPI_COMM_WORLD, &r[dir].first);
-	MPI_Isend(&buff[dir].second[0],
-		  buff[dir].second.size()*M::storage_size,
-		  MPI_DOUBLE, nb[dir].second,
+	MPI_Isend(&buff[dir].first[0],buff[dir].first.size()*send_sz,
+		  MPI_BYTE, nb[dir].first,tag, MPI_COMM_WORLD, &r[dir].first);
+	MPI_Isend(&buff[dir].second[0],buff[dir].second.size()*send_sz,
+		  MPI_BYTE, nb[dir].second,
 		  tag+DIM, MPI_COMM_WORLD, &r[dir].second);	
-      }
-    private:
-      buffer_t& buff;
-      nb_t& nb;
-    };
-
-    template<int DIM>
-    struct Send<int, DIM> {
-      typedef typename comm_types<int,DIM>::nb_t nb_t;
-      typedef typename comm_types<int,DIM>::buffer_t buffer_t;
-      typedef typename comm_types<int,DIM>::request_t request_t;
-
-      Send(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
-
-      void operator()(const int& dir, const int& tag, std::vector<request_t>& r) {
-	MPI_Isend(&buff[dir].first[0],
-		  buff[dir].first.size(),
-		  MPI_INT, nb[dir].first,
-		  tag, MPI_COMM_WORLD, &r[dir].first);
-	MPI_Isend(&buff[dir].second[0],
-		  buff[dir].second.size(),
-		  MPI_INT, nb[dir].second,
-		  tag+DIM, MPI_COMM_WORLD, &r[dir].second);	
-      }
-    private:
-      buffer_t& buff;
-      nb_t& nb;
-    };
-
-    template<int DIM>
-    struct Send<double, DIM> {
-      typedef typename comm_types<double,DIM>::nb_t nb_t;
-      typedef typename comm_types<double,DIM>::buffer_t buffer_t;
-      typedef typename comm_types<double,DIM>::request_t request_t;
-
-      Send(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
-
-      void operator()(const int& dir, const int& tag, std::vector<request_t>& r) {
-	MPI_Isend(&buff[dir].first[0],
-		  buff[dir].first.size(),
-		  MPI_DOUBLE, nb[dir].first,
-		  tag, MPI_COMM_WORLD, &r[dir].first);
-	MPI_Isend(&buff[dir].second[0],
-		  buff[dir].second.size(),
-		  MPI_DOUBLE, nb[dir].second,
-		  tag+DIM, MPI_COMM_WORLD, &r[dir].second);	
-      }
-    private:
-      buffer_t& buff;
-      nb_t& nb;
-    };
-
-    template<int DIM>
-    struct Send<std::complex<double>, DIM> {
-      typedef typename comm_types<std::complex<double>,DIM>::nb_t nb_t;
-      typedef typename comm_types<std::complex<double>,DIM>::buffer_t buffer_t;
-      typedef typename comm_types<std::complex<double>,DIM>::request_t request_t;
-
-      Send(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
-
-      void operator()(const int& dir, const int& tag, std::vector<request_t>& r) {
-	if( MPI_Isend(&buff[dir].first[0],
-		      buff[dir].first.size(),
-		      MPI_COMPLEX, nb[dir].first,
-		      tag, MPI_COMM_WORLD, &r[dir].first) != MPI_SUCCESS )
-	  std::cout << "MPI failure" << std::endl;
-	if( MPI_Isend(&buff[dir].second[0],
-		      buff[dir].second.size(),
-		      MPI_COMPLEX, nb[dir].second,
-		      tag+DIM, MPI_COMM_WORLD, &r[dir].second) != MPI_SUCCESS )
-	  std::cout << "MPI failure" << std::endl;
       }
     private:
       buffer_t& buff;
@@ -145,93 +72,22 @@ namespace comm {
       typedef typename comm_types<M,DIM>::nb_t nb_t;
       typedef typename comm_types<M,DIM>::buffer_t buffer_t;
       typedef typename comm_types<M,DIM>::status_t status_t;
+      const int send_sz = sizeof(M);
       
       Recv(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
 
       void operator()(const int& dir, const int& tag, std::vector<status_t>& status) {
-	MPI_Recv(&buff[dir].first[0],
-		 buff[dir].first.size()*M::storage_size,
-		 MPI_DOUBLE, nb[dir].first, tag+DIM, MPI_COMM_WORLD,
+	MPI_Recv(&buff[dir].first[0],buff[dir].first.size()*send_sz,
+		 MPI_BYTE, nb[dir].first, tag+DIM, MPI_COMM_WORLD,
 		 &status[dir].first);
-	MPI_Recv(&buff[dir].second[0],
-		 buff[dir].second.size()*M::storage_size,
-		 MPI_DOUBLE, nb[dir].second, tag, MPI_COMM_WORLD,
+	MPI_Recv(&buff[dir].second[0],buff[dir].second.size()*send_sz,
+		 MPI_BYTE, nb[dir].second, tag, MPI_COMM_WORLD,
 		 &status[dir].second);
       }
     private:
       buffer_t& buff;
       nb_t& nb;
     };
-
-    template<int DIM>
-    struct Recv<int,DIM> {
-      typedef typename comm_types<int,DIM>::nb_t nb_t;
-      typedef typename comm_types<int,DIM>::buffer_t buffer_t;
-      typedef typename comm_types<int,DIM>::status_t status_t;
-      
-      Recv(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
-
-      void operator()(const int& dir, const int& tag, std::vector<status_t>& status) {
-	MPI_Recv(&buff[dir].first[0],
-		 buff[dir].first.size(),
-		 MPI_INT, nb[dir].first, tag+DIM, MPI_COMM_WORLD,
-		 &status[dir].first);
-	MPI_Recv(&buff[dir].second[0],
-		 buff[dir].second.size(),
-		 MPI_INT, nb[dir].second, tag, MPI_COMM_WORLD,
-		 &status[dir].second);
-      }
-    private:
-      buffer_t& buff;
-      nb_t& nb;
-    };
-
-    template<int DIM>
-    struct Recv<double,DIM> {
-      typedef typename comm_types<double,DIM>::nb_t nb_t;
-      typedef typename comm_types<double,DIM>::buffer_t buffer_t;
-      typedef typename comm_types<double,DIM>::status_t status_t;
-      
-      Recv(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
-
-      void operator()(const int& dir, const int& tag, std::vector<status_t>& status) {
-	MPI_Recv(&buff[dir].first[0],
-		 buff[dir].first.size(),
-		 MPI_DOUBLE, nb[dir].first, tag+DIM, MPI_COMM_WORLD,
-		 &status[dir].first);
-	MPI_Recv(&buff[dir].second[0],
-		 buff[dir].second.size(),
-		 MPI_DOUBLE, nb[dir].second, tag, MPI_COMM_WORLD,
-		 &status[dir].second);
-      }
-    private:
-      buffer_t& buff;
-      nb_t& nb;
-    };
-
-    template<int DIM>
-    struct Recv<std::complex<double>,DIM> {
-      typedef typename comm_types<std::complex<double>,DIM>::nb_t nb_t;
-      typedef typename comm_types<std::complex<double>,DIM>::buffer_t buffer_t;
-      typedef typename comm_types<std::complex<double>,DIM>::status_t status_t;
-      
-      Recv(buffer_t& buffer, nb_t& neighbors) : buff(buffer), nb(neighbors) { }
-
-      void operator()(const int& dir, const int& tag, std::vector<status_t>& status) {
-	MPI_Recv(&buff[dir].first[0],
-		 buff[dir].first.size(),
-		 MPI_COMPLEX, nb[dir].first, tag+DIM, MPI_COMM_WORLD,
-		 &status[dir].first);
-	MPI_Recv(&buff[dir].second[0],
-		 buff[dir].second.size(),
-		 MPI_COMPLEX, nb[dir].second, tag, MPI_COMM_WORLD,
-		 &status[dir].second);
-      }
-    private:
-      buffer_t& buff;
-      nb_t& nb;
-    };
-
 
   }
 
@@ -360,37 +216,24 @@ namespace comm {
       for( Direction mu(0); mu.is_good(); ++mu)
 	if (nb_[int(mu)].second != rank_) {
 	  s(int(mu),int(mu),request);
-
-	  // std::cout << "rank " << rank()
-	  // 	    << " sends data on direction " << int(mu)
-	  // 	    << " to rank " << nb()[int(mu)].second
-	  // 	    << std::endl;
 	}
 
       
       detail::Recv<data_t,DIM> r(recv_buff_, nb_);
       for( Direction mu(0); mu.is_good(); ++mu)
 	if (nb_[int(mu)].first != rank_) {
-
 	  r(int(mu),int(mu),status);
-
-	  // std::cout << "rank " << rank()
-	  // 	    << " receives data along direction " << int(mu)
-	  // 	    << " from rank " << nb()[int(mu)].second
-	  // 	    << std::endl;
 	  MPI_Barrier(MPI_COMM_WORLD);
-
+	  
 	}
-
+      
       for( Direction mu(0); mu.is_good(); ++mu)
-	if (nb_[int(mu)].first != rank_)
-	  {
+	if (nb_[int(mu)].first != rank_) {
 	    MPI_Wait (&request[int(mu)].first,&status[int(mu)].first) ;
 	    MPI_Wait (&request[int(mu)].second,&status[int(mu)].second) ;
 	  }
       MPI_Barrier(MPI_COMM_WORLD);
       
-      // std::cout << "Rank " << rank() << " finished communications" << std::endl;
     }
 
     static void finalize() {
@@ -411,9 +254,35 @@ namespace comm {
   template<class Field_t> int Communicator<Field_t>::rank_;
   template<class Field_t> typename Communicator<Field_t>::nb_t Communicator<Field_t>::nb_;
   template<class Field_t> int Communicator<Field_t>::numprocs_;
+  
+  template<class T>
+  struct Reduce {
+    Reduce(const T& value) : x(value) {
+      MPI_Comm_size(MPI_COMM_WORLD, &np_);      
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
+      rbuf = new T[np_];
+    };
+    T& operator()() {
+      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Gather( (void*)&x,sz_t,MPI_BYTE,rbuf,sz_t,MPI_BYTE,0,MPI_COMM_WORLD);
+      // for(int i=0;i<np();++i) std::cout << rbuf[i] << "\t";
+      // std::cout << std::endl;
+      for(int i=1;i<np();++i)
+      	rbuf[0] += rbuf[i];
+      return rbuf[0];
+    }
+    const int& rank() { return rank_; }
+    const int& np()   { return np_; }
+  private:
+    const int sz_t = sizeof(T);
+    const T& x;
+    int np_;
+    int rank_;
+    T* rbuf;
+  };
 
-  // template<class Field_t> std::vector<typename Communicator<Field_t>::status_t> Communicator<Field_t>::status;
-  // template<class Field_t> std::vector<typename Communicator<Field_t>::request_t> Communicator<Field_t>::request;
 }
 
+
 #endif //COMMUNICATOR_H
+
