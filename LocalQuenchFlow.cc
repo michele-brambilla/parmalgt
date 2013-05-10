@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <IO.hpp>
 #include <Clover.hpp>
+#include <Kernels/generic/Plaquette.hpp>
 #include <Methods.hpp>
 #ifdef _OPENMP
 #include <omp.h>
@@ -26,6 +27,7 @@
 #endif
 
 int L;
+int T;
 
 bool soft_kill = false;
 int got_signal = 100;
@@ -38,11 +40,11 @@ void kill_handler(int s){
 // space-time dimensions
 const int DIM = 4;
 // perturbative order
-const int ORD = 6;
+const int ORD = 4;
 
 // some short-hands
-typedef bgf::ScalarBgf Bgf_t; // background field
-//typedef bgf::AbelianBgf Bgf_t; // background field
+//typedef bgf::ScalarBgf Bgf_t; // background field
+typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
 typedef ptt::PtMatrix<ORD> ptsu3; // algebra variables
 typedef BGptGluon<Bgf_t, ORD, DIM> ptGluon; // gluon
@@ -61,8 +63,10 @@ typedef GluonField::neighbors_t nt;
 typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
 
 // ... and for the measurements ...
-typedef kernels::MeasureNormKernel<GluonField> MeasureNormKernel;
-typedef kernels::PlaqKernel<GluonField> PlaqKernel;
+typedef kernels::GammaUpperKernel<GluonField, kernels::init_helper_gamma> GammaUpperKernel;
+typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_gamma> GammaLowerKernel;
+typedef kernels::GammaUpperKernel<GluonField, kernels::init_helper_vbar> VbarUpperKernel;
+typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_vbar> VbarLowerKernel;
 
 // ... and for the checkpointing.
 typedef kernels::FileWriterKernel<GluonField> FileWriterKernel;
@@ -72,23 +76,18 @@ typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
 
 // Stuff we want to measure in any case
 void measure_common(GluonField &U, const std::string& rep_str){
-  // Norm of the Gauge Field
-  //MeasureNormKernel m;
-  //io::write_file(U.apply_everywhere(m).reduce(),
-  //               "SFNorm" + rep_str + ".bindat");
-  PlaqKernel p;
-  std::list<double> pl, E0, E1;
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-  pl.push_back(1);
-  for (auto &i : U.apply_everywhere(p).val) pl.push_back(-i.tr().real());
-  io::write_file(pl, "SFPlaq" + rep_str + ".bindat");
-#endif
   clover::E0m<GluonField> e0m;
   clover::E0s<GluonField> e0s;
   U.apply_on_timeslice(e0m, L/2).reduce();
   U.apply_on_timeslice(e0s, L/2).reduce();
   io::write_file(e0m.result, "E0m.bindat");
   io::write_file(e0s.result, "E0s.bindat");
+  plaq::Spatial<GluonField> ps;
+  plaq::Temporal<GluonField> pt;
+  U.apply_on_timeslice(ps, L/2).reduce();
+  U.apply_on_timeslice(pt, L/2).reduce();
+  io::write_file(ps.result, "Es_p.bindat");
+  io::write_file(pt.result, "Em_p.bindat");
 }
 
 // Stuff that makes sense only for an Abelian background field.
@@ -103,6 +102,24 @@ void measure(GluonField &U, const std::string& rep_str,
   measure_common(U, rep_str);
 }
 
+// Measurements for couplings
+void measure_coupling(GluonField &U, const std::string& rep_str){
+  // Gamma'
+  GammaUpperKernel Gu(L);
+  GammaLowerKernel Gl(L);
+  ptSU3 tmp = U.apply_on_timeslice(Gu, T-1).val
+    + U.apply_on_timeslice(Gl, 0).val;
+  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+                             "Gp" + rep_str + ".bindat");
+  // vbar
+  VbarUpperKernel Vu(L);
+  VbarLowerKernel Vl(L);
+  tmp = U.apply_on_timeslice(Vu, T-1).val
+    - U.apply_on_timeslice(Vl, 0).val;
+  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+                             "Vbar" + rep_str + ".bindat");
+
+}
 // timing
 
 struct Timer {
@@ -162,14 +179,15 @@ int main(int argc, char *argv[]) {
   of.close();
   L = atoi(p["L"].c_str());  // Spatial lattice size
   int s = atoi(p["s"].c_str());  // s parameter, T = L - s
+  T = L-s; // temporal lattice size
   double alpha = atof(p["alpha"].c_str());  // gauge fixing parameter
   double taug = atof(p["taug"].c_str()); // integration step size
   double tauf = atof(p["tauf"].c_str());
   int NRUN = atoi(p["NRUN"].c_str()); // Total # of gauge updates
   int NFLOW = atoi(p["NFLOW"].c_str()); // # of wilson flow steps
   int FLOW_FREQ = atoi(p["FLOW_FREQ"].c_str()); // after how many steps shall we flow?
+  int FLOW_MEAS_FREQ = atoi(p["FLOW_MEAS_FREQ"].c_str()); // freq. of meas. in flow
   int MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str()); // freq. of meas.
-  int T = L-s; // temporal lattice size
   // also write the number of space-time dimensions
   // and perturbative order to the parameters, to
   // make sure they are written in the .info file 
@@ -230,6 +248,15 @@ int main(int argc, char *argv[]) {
     meth::gf::sf_gauge_fixing(U, alpha);
     timings["Gauge Fixing"].stop();
 
+    ////////////////////////////////////////////////////////////
+    //
+    //  measurement of the coupling
+    if(! (i_ % MEAS_FREQ) ){
+       timings["measurements"].start();
+       measure_coupling(U, "");
+       timings["measurements"].stop();
+    }
+
     ////////////////////////////////////////////////////////
     //
     //  Wilson Flow
@@ -242,9 +269,10 @@ int main(int argc, char *argv[]) {
         timings["Wilson flow"].start();
 	meth::wflow::RK2_flow(Up, tauf);
 	timings["Wilson flow"].stop();
-	if ( ! (j_ % MEAS_FREQ) ){
+	if ( ! (j_ % FLOW_MEAS_FREQ) ){
 	  timings["measurements"].start();
 	  measure(Up, rank_str, Bgf_t());
+          measure_coupling(Up, "_flow");
 	  timings["measurements"].stop();
 	}
       }

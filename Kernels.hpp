@@ -906,7 +906,7 @@ private:
     Unbuffer(InputIterator i) : ii(i) { }
 
     void operator()(Field_t& U, const point_t& n){
-      U[n] = *(ii++); // incremented inside the buffer function
+      U[n] = *(ii++);
     }
   };
 
@@ -943,40 +943,6 @@ private:
     }
   };
   
-  // Measure the temporal paquette
-  template <class Field_t>
-  struct TemporalPlaqKernel {
-
-    // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
-
-    // checker board hyper cube size
-    // c.f. geometry and localfield for more info
-    static const int n_cb = 0;
-
-    ptSU3 val;
-
-    TemporalPlaqKernel () : val(bgf::zero<BGF>()) { }
-    
-    void operator()(Field_t& U, const Point& n){
-      Direction t(0);
-      ptSU3 tmp(bgf::zero<BGF>());
-      for (Direction k(1); k.is_good(); ++k)
-        tmp += U[n][t] * U[n + t][k] * 
-	  dag( U[n][k] * U[n + k][t] );
-#pragma omp critical
-      val += tmp;
-    }
-    
-  }; 
-
   // Kernel to construct the gauge fixing function at t = 0
   template <class Field_t>
   struct GFMeasKernel {
