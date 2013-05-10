@@ -7,10 +7,16 @@
 #include <vector>
 #include <sstream>
 #include <uparam.hpp>
-
-
+#ifdef USE_MPI
+#include <mpi.h>
+#endif
 // Note the MD5 Copyright notice in the 
 // implementation file IO.cc!
+
+
+namespace comm {
+  template<class T> struct Reduce;
+}
 
 namespace io {
 
@@ -27,6 +33,43 @@ namespace io {
       unsigned u[8 * unsigned_per_double];
       unsigned char c[8 * char_per_double];
     };
+
+
+    //////////////////////////////////////////
+    //
+    // MB: actual writing
+    inline void to_bin_file(std::ofstream& of, const Cplx& c){
+      of.write(reinterpret_cast<const char*>(&c.real()), sizeof(double));
+      of.write(reinterpret_cast<const char*>(&c.imag()), sizeof(double));
+    }
+    template <class ptSU3, int ORD>
+    inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fname){
+      std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+      to_bin_file(of, tree);
+      for (int i = 0; i < ORD; ++i)
+	to_bin_file(of, U[i].tr());
+      of.close();
+    }
+    template <class CONT>
+    inline void write_file(const CONT& c, const std::string& fname){
+      std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+      for (typename CONT::const_iterator i = c.begin(), j = c.end(); i != j; ++i)
+	of.write(reinterpret_cast<const char*>(&(*i)), sizeof(typename CONT::value_type));
+      of.close();
+    }
+    template <class CONT>
+    inline void write_ptSUN(const CONT& c, const std::string& fname){
+      std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
+      Cplx tmp = c.bgf().Tr();
+      to_bin_file(of, tmp);
+      for (typename CONT::const_iterator i = c.begin(), j = c.end(); i != j; ++i){
+	tmp = i->Tr();
+	of.write(reinterpret_cast<const char*>(&tmp), sizeof(Cplx));
+      }
+      of.close();
+    }
+
+
   }
 
   class CheckedIo;
@@ -228,29 +271,39 @@ namespace io {
   }
   template <class ptSU3, int ORD>
   inline void write_file(const ptSU3& U, const Cplx& tree, const std::string& fname){
-    std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
-    to_bin_file(of, tree);
-    for (int i = 0; i < ORD; ++i)
-      to_bin_file(of, U[i].tr());
-    of.close();
+#ifdef USE_MPI
+    comm::Reduce<ptSU3> reduce(U);
+    ptSU3 A = reduce();
+    if(reduce.rank()==0)
+      detail::write_file<ptSU3,ORD>(U,tree,fname);
+    MPI_Barrier(MPI_COMM_WORLD);
+#else
+    detail::write_file<ptSU3,ORD>(U,tree,fname);
+#endif
   }
   template <class CONT>
   inline void write_file(const CONT& c, const std::string& fname){
-    std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
-    for (typename CONT::const_iterator i = c.begin(), j = c.end(); i != j; ++i)
-      of.write(reinterpret_cast<const char*>(&(*i)), sizeof(typename CONT::value_type));
-    of.close();
+#ifdef USE_MPI
+    comm::Reduce<CONT> reduce(c);
+    CONT s = reduce();
+    if(reduce.rank()==0) 
+      detail::write_file<CONT>(c,fname);
+    MPI_Barrier(MPI_COMM_WORLD);
+#else
+    detail::write_file<CONT>(c,fname);
+#endif
   }
   template <class CONT>
   inline void write_ptSUN(const CONT& c, const std::string& fname){
-    std::ofstream of(fname.c_str(), std::ios_base::app |  std::ios_base::binary);
-    Cplx tmp = c.bgf().Tr();
-    to_bin_file(of, tmp);
-    for (typename CONT::const_iterator i = c.begin(), j = c.end(); i != j; ++i){
-      tmp = i->Tr();
-      of.write(reinterpret_cast<const char*>(&tmp), sizeof(Cplx));
-    }
-    of.close();
+#ifdef USE_MPI
+    comm::Reduce<CONT> reduce(c);
+    CONT s = reduce();
+    if(reduce.rank()==0)
+      detail::write_ptSUN<CONT>(c,fname);
+    MPI_Barrier(MPI_COMM_WORLD);
+#else
+    detail::write_ptSUN<CONT>(c,fname);
+#endif
   }
 }
 

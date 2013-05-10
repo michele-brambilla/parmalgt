@@ -11,6 +11,13 @@
 #include <limits>
 
 
+namespace sun {
+  template <int N> complex operator^( const Vec<N>& A, const Vec<N>& B){
+    complex result;
+    for (int i = 0; i < N; ++i) result += A[i]*conj(B[i]);
+    return result;
+  }
+}
 
 template <int DIM>
   class SpinColor {
@@ -115,8 +122,8 @@ template <int DIM>
   ///
   ///  \author Michele Brambilla <mib.mic@gmail.com>
   ///  \date Wed Jan 09 12:56:58 2013
-  Cplx operator*(const self_t& other) const{
-    Cplx result;
+  complex operator*(const self_t& other) const{
+    complex result;
     for (int i = 0; i < psi_.size(); ++i)
       for (int j = 0; j < 3; ++j)
         result += psi_[i][j] * other[i][j];
@@ -129,9 +136,10 @@ template <int DIM>
   ///
   ///  \author Michele Brambilla <mib.mic@gmail.com>
   ///  \date Wed Jan 09 12:58:12 2013
-  Cplx operator^(const self_t& other) const{
-    Cplx result;
-    for (int i = 0; i < psi_.size(); ++i) result += psi_[i] ^ other[i];
+  complex operator^(const self_t& other) const{
+    complex result;
+    /* for (int i = 0; i < psi_.size(); ++i) result += conj(psi_[i]) * other[i]; */
+    for (int i = 0; i < psi_.size(); ++i) result += (psi_[i] ^ other[i]);
     return result;
   }
 

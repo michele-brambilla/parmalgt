@@ -201,6 +201,7 @@ namespace geometry {
       typedef Pair<BulkPolicy<2>, typename TimeSliceIterList<D-1>::type > type;
     };
 
+
     ////////////////////////////////////////////////////////////
     //
     //  Iterator for the boundaries in z-direction
@@ -471,7 +472,7 @@ namespace geometry {
       typename geometry::Geometry<D>::raw_pt_t n;
       for (int t = 0; t <= g[0]; ++t){
         n[0] = t;
-        for (int i = 1; i < N; ++i) n[i] = Iter::get_start(i, g);
+        for (int i = 1; i < D; ++i) n[i] = Iter::get_start(i, g);
         Iter x(g.mk_point(n), g.get_extents());
         do {
           lat[t].at(g.template bin<N>(*x)).push_back(*x);

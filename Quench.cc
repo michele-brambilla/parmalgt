@@ -58,7 +58,7 @@ double taug;
 double alpha;
 
 // some short-hands
-// typedef bgf::ScalarBgf Bgf_t; // background field
+//typedef bgf::ScalarBgf Bgf_t; // background field
 typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
 typedef ptt::PtMatrix<ORD> ptsu3; // algebra variables
@@ -112,10 +112,11 @@ typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
 
 // Stuff we want to measure in any case
 void measure_common(GluonField &U, const std::string& rep_str){
-  // Norm of the Gauge Field
+  //  Norm of the Gauge Field
   MeasureNormKernel m;
-  io::write_file(U.apply_everywhere(m).reduce(),
-                 "Norm" + rep_str + ".bindat");
+  Norm<ORD+1> res;
+  io::write_file(res,"Norm.bindat");
+  // io::write_file(res,"Norm" + rep_str + ".bindat");
 }
 
 // Stuff that makes sense only for an Abelian background field.
@@ -144,27 +145,32 @@ void measure(GluonField &U, const std::string& rep_str,
 #endif
 
   //  Evaluate Gamma'
-  ptSU3 tmp = U.apply_on_timeslice(Gu, T-1).val
+  ptSU3 tmp;
+  tmp = U.apply_on_timeslice(Gu, T-1).val
     + U.apply_on_timeslice(Gl, 0).val;
+  
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
-                             "Gp" + rep_str + ".bindat");
-
-
+			     "Gp.bindat");
+  
+  // io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+  // 			     "Gp" + rep_str + ".bindat");
+  
+  
   // Evaluate F*Gamma'
-//  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
-//  for (int i = 0; i <= ORD; ++i)
-//    for (int j = 0; j <= i; ++j)
-//      gf[i] += g[j] * f[i - j];
-//
-//  io::write_file(gf, "FGamm" + rep_str + ".bindat");
-//
-//  VbarUpperKernel Vu(L);
-//  VbarLowerKernel Vl(L);
-//
-//  // Evaluate vbar
-//  tmp = U.apply_on_timeslice(Vu, T-1).val
-//    - U.apply_on_timeslice(Vl, 0).val;
-//  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
+  //  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
+  //  for (int i = 0; i <= ORD; ++i)
+  //    for (int j = 0; j <= i; ++j)
+  //      gf[i] += g[j] * f[i - j];
+  //
+  //  io::write_file(gf, "FGamm" + rep_str + ".bindat");
+  //
+  //  VbarUpperKernel Vu(L);
+  //  VbarLowerKernel Vl(L);
+  //
+  //  // Evaluate vbar
+  //  tmp = U.apply_on_timeslice(Vu, T-1).val
+  //    - U.apply_on_timeslice(Vl, 0).val;
+  //  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
 //                             "Vbar" + rep_str + ".bindat");
 //
 //  io::write_ptSUN(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
@@ -225,12 +231,15 @@ int main(int argc, char *argv[]) {
   signal(SIGXCPU, kill_handler);
   signal(SIGINT, kill_handler);
 
-  // ////////////////////////////////////////////////////////////////////
-  // //
-  // // initialize MPI communicator
-  // comm::Communicator<GluonField>::init(argc,argv);
-
+  ////////////////////////////////////////////////////////////////////
+  //
+  // initialize MPI communicator
+#ifdef USE_MPI
+  comm::Communicator<GluonField>::init(argc,argv);
+  std::string rank_str =  "." + to_string(comm::Communicator<GluonField>::rank_);
+#else
   std::string rank_str = "";
+#endif
 
   ////////////////////////////////////////////////////////////////////
   // read the parameters
@@ -262,7 +271,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////////////////////////////////////////////////
   //
   // random number generators
-  srand(atoi(p["seed"].c_str()));
+  srand(atoi(p["seed"].c_str())+comm::Communicator<GluonField>::rank_);
 #ifdef IMP_ACT
   GUK<PrAK>::type::rands.resize(L*L*L*(T+1));
   GUK<PrBK>::type::rands.resize(L*L*L*(T+1));
@@ -291,7 +300,8 @@ int main(int argc, char *argv[]) {
   bgf::get_abelian_bgf(0, 0, T, L, s);
   // we will have just one field
   GluonField U(e, 1, 0, nt());
-  // U.comm.init(argc,argv);
+
+  MPI_Barrier(MPI_COMM_WORLD);
   ////////////////////////////////////////////////////////////////////
   //
   // initialzie the background field of U or read config
@@ -299,9 +309,12 @@ int main(int argc, char *argv[]) {
     for (int t = 0; t <= T; ++t){
       SetBgfKernel f(t);
       U.apply_on_timeslice(f, t);
+      U.apply_on_timeslice(f, t);
     }
   else {
+    p["read"] = p["read"] + rank_str;
     FileReaderKernel fr(p);
+    U.apply_everywhere(fr);
     U.apply_everywhere(fr);
   }
 
@@ -360,6 +373,7 @@ int main(int argc, char *argv[]) {
   } // end main for loop
   // write the gauge configuration
   if ( p["write"] != "none"){
+    p["write"] = p["write"] + rank_str;
     FileWriterKernel fw(p);
     U.apply_everywhere(fw);
   }
@@ -375,5 +389,9 @@ int main(int argc, char *argv[]) {
     util::pretty_print("actual # of configs", i_, "", of);
   of.close();
 
+#ifdef USE_MPI
+  comm::Communicator<GluonField>::finalize();
+#endif  
+  
   return 0;
 }

@@ -8,14 +8,18 @@ noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
   PtTypes.hpp MyQCD.h newMyQCD.h MyRand.h Types.h dSFMT/dSFMT.h \
   choices.h PtAlgo.hpp GammaStuff.h LocalField.hpp Geometry.hpp \
   Kernels.hpp uparam.hpp IO.hpp util.hpp ranlxd/ranlxd.hpp\
-  include/Kernels/generic/RungeKutta.hpp
+  include/Kernels/generic/RungeKutta.hpp Communicator.hpp\
+  Inverter.hpp
 
 dist_data_DATA = input run.sh
 
-bin_PROGRAMS = LocalQuenchFlow LocalQuench Invert
+bin_PROGRAMS = LocalQuenchFlow LocalQuench Invert Quench
 
-#ParQuenched_SOURCES = ParQuenched.cc MyMath.cc MyRand.cc \
-  newQCDpt.cc Point.cc Background.cc
+#ParQuenched_SOURCES = ParQuenched.cc \
+#  newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc
+
+Quench_SOURCES = Quench.cc \
+  newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc
 
 LocalQuench_SOURCES = LocalQuench.cc \
   newQCDpt.cc Point.cc Background.cc IO.cc ranlxd/ranlxd.cc
@@ -44,4 +48,3 @@ endif
 docs:
 	mkdir -p ./docs/doxygen
 	doxygen Doxyfile
-

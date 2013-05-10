@@ -25,4 +25,20 @@ template <class C, int n> struct array_t
 };
 #endif
 
+template<int N>
+struct Norm : public array_t<double, N>::Type {
+  Norm() { };
+  explicit Norm(typename array_t<double, N>::Type other) : rep(other) { };
+  Norm& operator+=(const Norm& other){
+    for (int i = 0; i < rep.size(); ++i) rep[i] += other[i];
+    return *this;
+  }
+  Norm& operator-=(const Norm& other){
+    for (int i = 0; i < rep.size(); ++i) rep[i] -= other[i];
+    return *this;
+  }
+ private:
+  typename array_t<double, N>::Type rep;
+};
+
 #endif
