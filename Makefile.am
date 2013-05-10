@@ -8,7 +8,8 @@ noinst_HEADERS = Background.h nspt.h MassC.h input.h MyTime.h \
   PtTypes.hpp MyQCD.h newMyQCD.h MyRand.h Types.h dSFMT/dSFMT.h \
   choices.h PtAlgo.hpp GammaStuff.h LocalField.hpp Geometry.hpp \
   Kernels.hpp uparam.hpp IO.hpp util.hpp ranlxd/ranlxd.hpp\
-  include/Kernels/generic/RungeKutta.hpp Communicator.hpp
+  include/Kernels/generic/RungeKutta.hpp Communicator.hpp\
+  Inverter.hpp
 
 dist_data_DATA = input run.sh
 

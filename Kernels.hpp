@@ -1379,705 +1379,501 @@ private:
 
 
 
-  // //////////////////////////////////////////////////////////////////////
-  // //////////////////////////////////////////////////////////////////////
-  // ///
-  // ///  Perturbative application of the Wilson dirac operator
-  // ///
-  // ///  \author Michele Brambilla <mib.mic@gmail.com>
-  // ///  \date Fri Nov 02 16:24:21 2012
 
-  // template <class Field_t>
-  // struct WilsonPTKernel {
-  // public:
-  //   // collect info about the field
-  //   typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-  //   typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-  //   typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-  //   typedef typename std_types<Field_t>::bgf_t BGF;
-  //   typedef typename std_types<Field_t>::point_t Point;
-  //   typedef typename std_types<Field_t>::direction_t Direction;
-  //   static const int ORD = std_types<Field_t>::order;
-  //   static const int DIM = std_types<Field_t>::n_dim;
-        
-  //   // fermion
-  //   typedef SpinColor<4> Fermion;
-  //   typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
-  //   typedef std::vector<ScalarFermionField> FermionField;
-  //   typedef typename array_t<double, DIM>::Type double_array_t;    
-  //   typedef typename array_t<double, ORD>::Type ptarray_t;    
-
-  //   // checker board hyper cube size
-  //   // c.f. geometry and localfield for more info
-  //   static const int n_cb = 0;
-
+  namespace detail {
     
-  //   WilsonPTKernel(Field_t& G, FermionField& X, ptarray_t& m ) : U(G), src(X), mass(m), ord_(0) { };
+    template<class Field_t>
+    struct Mass : base_types<Field_t> {
+      typedef typename base_types<Field_t>::data_t F;
+      Mass() { }
+      void operator()(const F& src, F& dest,const double& mass) const {
+	dest = mass*src;
+      }
+    };
+    template<class Field_t>
+    struct Mass5 : base_types<Field_t> {
+      typedef typename base_types<Field_t>::data_t F;
+      typedef typename base_types<Field_t>::direction_t Direction;
+      Mass5() { }
+      void operator()(const F& src, F& dest,const double& mass) const {
+	for(Direction nu(0);nu.is_good();++nu)
+	  dest[nu] = (src[dirac::gmuind[4][nu]]*dirac::gmuval[4][nu]*mass);
+      }
+    };
+
+
+    template<class Gauge_t, class Field_t>
+    struct Gamma : public base_types<Field_t> {
+      typedef typename base_types<Field_t>::data_t F;
+      typedef typename base_types<Field_t>::direction_t Direction;
+      typedef typename base_types<Field_t>::point_t Point;
+      Gamma() { }
+      void operator()(const Field_t& src,Point& n,const Direction& mu) {
+	Point dn = n-Direction(mu);
+	Point up = n+Direction(mu);
+	F Xi1, Xi2;
+	for(Direction nu(0);nu.is_good();++nu) {
+	  Xi1[nu] = (src[dn][nu]+src[dn][dirac::gmuind[mu][nu]]*dirac::gmuval[mu][nu]);
+	  Xi2[nu] = (src[up][nu]-src[up][dirac::gmuind[mu][nu]]*dirac::gmuval[mu][nu]);
+	}
+      }
+      const F& xi1() { return Xi1; }
+      const F& xi2() { return Xi2; }
+    private:
+      F Xi1, Xi2;
+    };
+    template<class Gauge_t, class Field_t>
+    struct Gamma5 : public base_types<Field_t> {
+      typedef typename base_types<Field_t>::data_t F;
+      typedef typename base_types<Field_t>::direction_t Direction;
+      typedef typename base_types<Field_t>::point_t Point;
+      Gamma5() { }
+      void operator()(const Field_t& src,const Point& n,const Direction& mu) {
+	Point dn = n-Direction(mu);
+	Point up = n+Direction(mu);
+	for(Direction nu(0);nu.is_good();++nu) {
+	  Xi1[nu] = (src[dn][dirac::gmuind[4        ][nu]]*dirac::gmuval[4        ][nu] + 
+		     src[dn][dirac::gmuind[5+(int)mu][nu]]*dirac::gmuval[5+(int)mu][nu] );
+	  Xi2[nu] = (src[up][dirac::gmuind[4        ][nu]]*dirac::gmuval[4        ][nu] - 
+		     src[up][dirac::gmuind[5+(int)mu][nu]]*dirac::gmuval[5+(int)mu][nu] );
+	}
+      }
+      const F& xi1() { return Xi1; }
+      const F& xi2() { return Xi2; }
+    private:
+      F Xi1, Xi2;
+    };
     
+    
+      
 
-  //   void operator() ( ScalarFermionField& dest, Point& n) {
-
-  //     for( int kord = 0; kord < ord_; ++kord ) {
-  // 	// DEBUG
-  // 	// if( n == 0 )
-  // 	//   std::cout << "F[" << ord_      << "] += "
-  // 	// 	    << "U[" << ord_-kord << "]*"
-  // 	// 	    << "f[" << kord      << "]"
-  // 	// 	    << "\n";
-
-  // 	dest[n] += (src[kord][n] * mass[ord_-kord]);
-  // 	Fermion Xi1, Xi2;
-	
-  // 	// Time direction
-  // 	Point dn = n-Direction(0);
-  // 	Point up = n+Direction(0);
-  // 	// (1 +(-) \gamma_\mu)\psi
-  // 	for( Direction nu(0); nu.is_good(); ++nu )
-  // 	  {
-  // 	    Xi1[nu] = ( src[kord][dn][nu] + dirac::gmuval[0][nu] * src[kord][dn][dirac::gmuind[0][nu]] );
-  // 	    Xi2[nu] = ( src[kord][up][nu] - dirac::gmuval[0][nu] * src[kord][up][dirac::gmuind[0][nu]] );
-  // 	  }
-  // 	// sign takes care of (anti)periodic (or others) boundary conditions
-  // 	dest[n] -= ( dag(U[dn][Direction(0)][ord_-kord-1]) * Xi1 * sign[0] + 
-  // 		         U[n ][Direction(0)][ord_-kord-1]  * Xi2 * sign[1]) * .5;
-	
-  // 	// Spatial directions
-  // 	for( Direction mu(1); mu.is_good(); ++mu )
-  // 	  {
-	    
-  // 	    Point dn = n-Direction(mu);
-  // 	    Point up = n+Direction(mu);
-  // 	    // (1 +(-) \gamma_\mu)\psi
-  // 	    for( Direction nu(0); nu.is_good(); ++nu )
-  // 	      {
-  // 		Xi1[nu] = ( src[kord][dn][nu] + dirac::gmuval[mu][nu] * src[kord][dn][dirac::gmuind[mu][nu]] );
-  // 		Xi2[nu] = ( src[kord][up][nu] - dirac::gmuval[mu][nu] * src[kord][up][dirac::gmuind[mu][nu]] );
-  // 	      }
-	    
-  // 	    dest[n] -= (  dag(U[dn][Direction(0)][ord_-kord-1]) * Xi1 + 
-  // 			      U[n ][Direction(0)][ord_-kord-1]  * Xi2 ) * .5;
-  // 	  } // mu
-
-  //     } // kord
-
-  //   }
-
-
-
-  
-  //   void bulk()  { sign[0] = Cplx( 1,0); sign[1] = Cplx( 1,0); }
-  //   void lower() { sign[0] = Cplx(-1,0); sign[1] = Cplx( 1,0); }
-  //   void upper() { sign[0] = Cplx( 1,0); sign[1] = Cplx(-1,0); }
-
-
-  //   inline int& ord() { return ord_; }
-  //   void operator++() { ++ord_; }
-
-  // private:
-  //   int ord_;
-  //   ptarray_t mass;
-  //   array_t<Cplx, 2>::Type sign;
-  //   Field_t& U;
-  //   FermionField& src;
-
-  // };
-
+  }
 
 
   enum boundaryId{bulk,lower,upper};
 
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
-  ///  TreeLevel ( U = bgf() ) application of the Wilson dirac operator
-  ///
-  ///  \author Michele Brambilla <mib.mic@gmail.com>
-  ///  \date Fri Nov 02 16:23:58 2012
-  template <class Field_t, int boundary>
-  struct WilsonTreeLevelKernel {
-  public:
-    // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
+  // template <class Field_t, int boundary, template<class> class Mass_t, template<class,class> class Gamma_t>
+  // struct WilsonTLBase : public base_types<Field_t> {
+  // public:
+  //   // collect info about the field
+  //   typedef typename std_types<Field_t>::point_t Point;
+  //   typedef typename std_types<Field_t>::direction_t Direction;
+  //   static const int DIM = std_types<Field_t>::n_dim;
         
-    // fermion
-    typedef SpinColor<4> Fermion;
-    typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
-    typedef std::vector<ScalarFermionField> FermionField;
-    typedef typename array_t<double, DIM>::Type double_array_t;    
-    typedef typename array_t<double, ORD>::Type ptarray_t;    
+  //   // fermion
+  //   typedef SpinColor<DIM> Fermion;
+  //   typedef typename fields::LocalField<Fermion, DIM> FermionField;
 
-    // checker board hyper cube size
-    // c.f. geometry and localfield for more info
-    static const int n_cb = 0;
-
-    WilsonTreeLevelKernel(Field_t& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
+  //   // checker board hyper cube size
+  //   // c.f. geometry and localfield for more info
+  //   static const int n_cb = 0;
     
-    void operator() ( ScalarFermionField& dest, const Point& n) const {
-      do_it(dest,n,mode_selektor<boundary>() );
-    }
-
-  private:
+  //   WilsonTLBase(const Field_t& G, const FermionField& X, 
+  // 			   const double& m ) :
+  //     U(G), src(X), mass(m) { };
     
-    double& mass;
-    Field_t& U;
-    ScalarFermionField& src;
-
-    template <int M> struct mode_selektor { };
-
-    void do_it( ScalarFermionField& dest, const Point& n,
-		const mode_selektor<bulk>) const {
-      dest[n] = (src[n] * mass);
-      Fermion Xi1, Xi2;
-      for( Direction mu(0); mu.is_good(); ++mu )
-	{
-	  Point dn = n-Direction(mu);
-	  Point up = n+Direction(mu);
-	  // (1 +(-) \gamma_\mu)\psi
-	  for( Direction nu(0); nu.is_good(); ++nu )
-	    {
-	      Xi1[nu] =  ( src[dn][nu] + dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
-	      Xi2[nu] =  ( src[up][nu] - dirac::gmuval[mu][nu] * src[up][dirac::gmuind[mu][nu]] );
-	    }
-	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
-		           U[n ][mu].bgf()  * Xi2 ) * .5;
-	}
-    }
-    
-
-    void do_it( ScalarFermionField& dest, const Point& n,
-		const mode_selektor<lower>) const {
-      dest[n] = (src[n] * mass);
-      Fermion Xi1, Xi2;
-      
-      // Time direction
-      {
-	Point dn = n-Direction(0);
-	Point up = n+Direction(0);
-	// (1 +(-) \gamma_\mu)\psi
-	for( Direction nu(0); nu.is_good(); ++nu )
-	  {
-	    Xi1[nu] = ( src[dn][nu] + dirac::gmuval[0][nu] * src[dn][dirac::gmuind[0][nu]] );
-	    Xi2[nu] = ( src[up][nu] - dirac::gmuval[0][nu] * src[up][dirac::gmuind[0][nu]] );
-	  }
-	dest[n] -= ( -dag(U[dn][Direction(0)].bgf()) * Xi1 + 
-		          U[n ][Direction(0)].bgf()  * Xi2) * .5;
-      }
-      // Spatial directions
-      for( Direction mu(1); mu.is_good(); ++mu )
-	{
-	  Point dn = n-Direction(mu);
-	  Point up = n+Direction(mu);
-	  // (1 +(-) \gamma_\mu)\psi
-	  for( Direction nu(0); nu.is_good(); ++nu )
-	    {
-	      Xi1[nu] =  ( src[dn][nu] + dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
-	      Xi2[nu] =  ( src[up][nu] - dirac::gmuval[mu][nu] * src[up][dirac::gmuind[mu][nu]] );
-	    }
-	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
-		           U[n ][mu].bgf()  * Xi2 ) * .5;
-	}
-    }
-
-
-    void do_it( ScalarFermionField& dest, const Point& n,
-		const mode_selektor<upper>) const {
-      dest[n] = (src[n] * mass);
-      Fermion Xi1, Xi2;
-      
-      // Time direction
-      {
-	Point dn = n-Direction(0);
-	Point up = n+Direction(0);
-	// (1 +(-) \gamma_\mu)\psi
-	for( Direction nu(0); nu.is_good(); ++nu )
-	  {
-	    Xi1[nu] = ( src[dn][nu] + dirac::gmuval[0][nu] * src[dn][dirac::gmuind[0][nu]] );
-	    Xi2[nu] = ( src[up][nu] - dirac::gmuval[0][nu] * src[up][dirac::gmuind[0][nu]] );
-	  }
-	dest[n] -= ( dag(U[dn][Direction(0)].bgf()) * Xi1 -
-		         U[n ][Direction(0)].bgf()  * Xi2 ) * .5;
-      }
-      // Spatial directions
-      for( Direction mu(1); mu.is_good(); ++mu )
-	{
-	  Point dn = n-Direction(mu);
-	  Point up = n+Direction(mu);
-	  // (1 +(-) \gamma_\mu)\psi
-	  for( Direction nu(0); nu.is_good(); ++nu )
-	    {
-	      Xi1[nu] =  ( src[dn][nu] + dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
-	      Xi2[nu] =  ( src[up][nu] - dirac::gmuval[mu][nu] * src[up][dirac::gmuind[mu][nu]] );
-	    }
-	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
-		           U[n ][mu].bgf()  * Xi2 ) * .5;
-	}
-    }
-
-  };
-
-
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
-  /// Application of the Wilson dirac operator
-  ///
-  ///  \author Michele Brambilla <mib.mic@gmail.com>
-  ///  \date Fri Feb 01 17:58:33 2013
-  //template <class Field_t, int boundary>
-  //struct WilsonKernel {
-  //public:
-  //  // collect info about the field
-  //  typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-  //  typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-  //  typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-  //  typedef typename std_types<Field_t>::bgf_t BGF;
-  //  typedef typename std_types<Field_t>::point_t Point;
-  //  typedef typename std_types<Field_t>::direction_t Direction;
-  //  static const int ORD = std_types<Field_t>::order;
-  //  static const int DIM = std_types<Field_t>::n_dim;
-  //      
-  //  // fermion
-  //  typedef SpinColor<4> Fermion;
-  //  typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
-  //  typedef std::vector<ScalarFermionField> FermionField;
-  //  typedef typename array_t<double, DIM>::Type double_array_t;    
-  //  typedef typename array_t<double, ORD>::Type ptarray_t;    
-  //
-  //  // checker board hyper cube size
-  //  // c.f. geometry and localfield for more info
-  //  static const int n_cb = 0;
-  //  
-  //
-  //  WilsonKernel(Field_t& G, ScalarFermionField& X, double& m, int& ord_ ) : U(G), src(X), mass(m), ord(ord_) { };
-  //  
-  //  void operator() ( ScalarFermionField& dest, const Point& n) const {
-  //    do_it(dest,n,mode_selektor<boundary>() );
-  //  }
-  //
-  //private:
-  //  
-  //  int& ord;
-  //  double& mass;
-  //  Field_t& U;
-  //  ScalarFermionField& src;
-  //
-  //  template <int M> struct mode_selektor { };
-  //
-  //  void do_it( ScalarFermionField& dest, const Point& n,
-  //		const mode_selektor<bulk>) const {
-  //    dest[n] = (src[n] * mass);
-  //    Fermion Xi1, Xi2;
-  //    for( Direction mu(0); mu.is_good(); ++mu )
-  //	{
-  //	  Point dn = n-Direction(mu);
-  //	  Point up = n+Direction(mu);
-  //	  // (1 +(-) \gamma_\mu)\psi
-  //	  for( Direction nu(0); nu.is_good(); ++nu )
-  //	    {
-  //	      Xi1[nu] =  ( src[dn][nu] + dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
-  //	      Xi2[nu] =  ( src[up][nu] - dirac::gmuval[mu][nu] * src[up][dirac::gmuind[mu][nu]] );
-  //	    }
-  //	  dest[n] -= ( dag(U[dn][mu][ord]) * Xi1 + 
-  //		           U[n ][mu][ord]  * Xi2 ) * .5;
-  //	}
-  //  }
-  //  
-  //
-  //  void do_it( ScalarFermionField& dest, const Point& n,
-  //		const mode_selektor<lower>) const {
-  //    dest[n] = (src[n] * mass);
-  //    Fermion Xi1, Xi2;
-  //    
-  //    // Time direction
-  //    {
-  //	Point dn = n-Direction(0);
-  //	Point up = n+Direction(0);
-  //	// (1 +(-) \gamma_\mu)\psi
-  //	for( Direction nu(0); nu.is_good(); ++nu )
-  //	  {
-  //	    Xi1[nu] = ( src[dn][nu] + dirac::gmuval[0][nu] * src[dn][dirac::gmuind[0][nu]] );
-  //	    Xi2[nu] = ( src[up][nu] - dirac::gmuval[0][nu] * src[up][dirac::gmuind[0][nu]] );
-  //	  }
-  //	dest[n] -= ( -dag(U[dn][Direction(0)][ord]) * Xi1 + 
-  //		          U[n ][Direction(0)][ord]  * Xi2) * .5;
-  //    }
-  //    // Spatial directions
-  //    for( Direction mu(1); mu.is_good(); ++mu )
-  //	{
-  //	  Point dn = n-Direction(mu);
-  //	  Point up = n+Direction(mu);
-  //	  // (1 +(-) \gamma_\mu)\psi
-  //	  for( Direction nu(0); nu.is_good(); ++nu )
-  //	    {
-  //	      Xi1[nu] =  ( src[dn][nu] + dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
-  //	      Xi2[nu] =  ( src[up][nu] - dirac::gmuval[mu][nu] * src[up][dirac::gmuind[mu][nu]] );
-  //	    }
-  //	  dest[n] -= ( dag(U[dn][mu][ord]) * Xi1 + 
-  //		           U[n ][mu][ord]  * Xi2 ) * .5;
-  //	}
-  //  }
-  //
-  //
-  //  void do_it( ScalarFermionField& dest, const Point& n,
-  //		const mode_selektor<upper>) const {
-  //    dest[n] = (src[n] * mass);
-  //    Fermion Xi1, Xi2;
-  //    
-  //    // Time direction
-  //    {
-  //	Point dn = n-Direction(0);
-  //	Point up = n+Direction(0);
-  //	// (1 +(-) \gamma_\mu)\psi
-  //	for( Direction nu(0); nu.is_good(); ++nu )
-  //	  {
-  //	    Xi1[nu] = ( src[dn][nu] + dirac::gmuval[0][nu] * src[dn][dirac::gmuind[0][nu]] );
-  //	    Xi2[nu] = ( src[up][nu] - dirac::gmuval[0][nu] * src[up][dirac::gmuind[0][nu]] );
-  //	  }
-  //	dest[n] -= ( dag(U[dn][Direction(0)][ord]) * Xi1 -
-  //		         U[n ][Direction(0)][ord]  * Xi2 ) * .5;
-  //    }
-  //    // Spatial directions
-  //    for( Direction mu(1); mu.is_good(); ++mu )
-  //	{
-  //	  Point dn = n-Direction(mu);
-  //	  Point up = n+Direction(mu);
-  //	  // (1 +(-) \gamma_\mu)\psi
-  //	  for( Direction nu(0); nu.is_good(); ++nu )
-  //	    {
-  //	      Xi1[nu] =  ( src[dn][nu] + dirac::gmuval[mu][nu] * src[dn][dirac::gmuind[mu][nu]] );
-  //	      Xi2[nu] =  ( src[up][nu] - dirac::gmuval[mu][nu] * src[up][dirac::gmuind[mu][nu]] );
-  //	    }
-  //	  dest[n] -= ( dag(U[dn][mu][ord]) * Xi1 + 
-  //		           U[n ][mu][ord]  * Xi2 ) * .5;
-  //	}
-  //  }
-  //
-  //};
-  //
-  //
-  //// Gamma5-Wilson kernels
-  //
-  //
-  //////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////
-  ///
-  ///  TreeLevel ( U = bgf() ) application of the Wilson dirac operator x Gamma5
-  ///
-  ///  \author Michele Brambilla <mib.mic@gmail.com>
-  ///  \date Fri Nov 02 16:23:58 2012
+  //   void operator() ( FermionField& dest, const Point& n) {
+  //     M(src[n],dest[n],mass);
+  //     do_spatial(dest,n);
+  //     do_temporal(dest,n,mode_selektor<boundary>());
+  //   }
   
+  // private:
+    
+  //   const double& mass;
+  //   const Field_t& U;
+  //   const FermionField& src;
+  //   Mass_t<FermionField> M;
+  //   Gamma_t<Field_t,FermionField> gmm;
+
+  //   template <int M> struct mode_selektor { };
+  
+  //   void do_spatial(FermionField& dest,const Point& n) {
+  //     for( Direction mu(1); mu.is_good(); ++mu ) {
+  // 	gmm(src,n,mu);
+  // 	dest[n] -= (dag(U[n-mu][mu].bgf())*gmm.xi1() +
+  // 		    U[n ][mu].bgf()*gmm.xi2())*.5;
+  //     }
+  //   }
+  //   void do_temporal(FermionField& dest,const Point& n,
+  //   		     const mode_selektor<bulk>) {
+  //     gmm(src,n,Direction(0));
+  //     dest[n] -= (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() +
+  //   		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+  //   }
+  //   void do_temporal(FermionField& dest,const Point& n,
+  //   		     const mode_selektor<lower>) {
+  //     gmm(src,n,Direction(0));
+  //     dest[n] += (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() -
+  //   		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+  //   }
+  //   void do_temporal(FermionField& dest,const Point& n,
+  //   		     const mode_selektor<upper>) {
+  //     gmm(src,n,Direction(0));
+  //     dest[n] -= (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() -
+  //   		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+  //   }  
+
+  // };
+
+  // template <class Field_t, int boundary, template<class> class Mass_t, template<class,class> class Gamma_t>
+  // struct WilsonBase : public base_types<Field_t> {
+  // public:
+  //   // collect info about the field
+  //   typedef typename std_types<Field_t>::point_t Point;
+  //   typedef typename std_types<Field_t>::direction_t Direction;
+  //   static const int DIM = std_types<Field_t>::n_dim;
+        
+  //   // fermion
+  //   typedef SpinColor<DIM> Fermion;
+  //   typedef typename fields::LocalField<Fermion, DIM> FermionField;
+
+  //   // checker board hyper cube size
+  //   // c.f. geometry and localfield for more info
+  //   static const int n_cb = 0;
+    
+  //   WilsonBase(const Field_t& G, const FermionField& X, 
+  // 			   const double& m ) :
+  //     U(G), src(X), mass(m) { };
+    
+  //   void operator() ( FermionField& dest, const Point& n) {
+  //     M(src[n],dest[n],mass);
+  //     do_spatial(dest,n);
+  //     do_temporal(dest,n,mode_selektor<boundary>());
+  //   }
+  
+  // private:
+    
+  //   const double& mass;
+  //   const Field_t& U;
+  //   const FermionField& src;
+  //   Mass_t<FermionField> M;
+  //   Gamma_t<Field_t,FermionField> gmm;
+
+  //   template <int M> struct mode_selektor { };
+  
+  //   void do_spatial(FermionField& dest,const Point& n) {
+  //     for( Direction mu(1); mu.is_good(); ++mu ) {
+  // 	gmm(src,n,mu);
+  // 	dest[n] -= (dag(U[n-mu][mu])*gmm.xi1() +
+  // 		    U[n ][mu]*gmm.xi2())*.5;
+  //     }
+  //   }
+  //   void do_temporal(FermionField& dest,const Point& n,
+  //   		     const mode_selektor<bulk>) {
+  //     gmm(src,n,Direction(0));
+  //     dest[n] -= (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() +
+  //   		  U[n ][Direction(0)]*gmm.xi2())*.5;
+  //   }
+  //   void do_temporal(FermionField& dest,const Point& n,
+  //   		     const mode_selektor<lower>) {
+  //     gmm(src,n,Direction(0));
+  //     dest[n] += (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() -
+  //   		  U[n ][Direction(0)]*gmm.xi2())*.5;
+  //   }
+  //   void do_temporal(FermionField& dest,const Point& n,
+  //   		     const mode_selektor<upper>) {
+  //     gmm(src,n,Direction(0));
+  //     dest[n] -= (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() -
+  //   		  U[n ][Direction(0)]*gmm.xi2())*.5;
+  //   }  
+
+  // };
+
+
+  // template<class Field_t, int boundary> 
+  // WilsonTLBase<Field_t,boundary,detail::Mass,detail::Gamma> : WilsonTreeLevelKernel;
+  
+  // template<class Field_t, int boundary> 
+  // typename WilsonBase<Field_t,boundary,detail::Mass,detail::Gamma> WilsonKernel;
+
+  // template<class Field_t, int boundary> 
+  // typename WilsonTLBase<Field_t,boundary,detail::Mass5,detail::Gamma5> WilsonTreeLevel5Kernel;
+  
+  // template<class Field_t, int boundary> 
+  // typename WilsonBase<Field_t,boundary,detail::Mass5,detail::Gamma5> Wilson5Kernel;
+
+
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  TreeLevel ( U = bgf() ) application of the Wilson dirac operator 
   template <class Field_t, int boundary>
-  struct WilsonTreeLevel5Kernel {
+  struct WilsonTreeLevelKernel : public base_types<Field_t> {
   public:
     // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
     typedef typename std_types<Field_t>::point_t Point;
     typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
         
     // fermion
-    typedef SpinColor<4> Fermion;
-    typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
-    typedef std::vector<ScalarFermionField> FermionField;
-    typedef typename array_t<double, DIM>::Type double_array_t;    
-    typedef typename array_t<double, ORD>::Type ptarray_t;    
+    typedef SpinColor<DIM> Fermion;
+    typedef typename fields::LocalField<Fermion, DIM> FermionField;
+
+    // wilson dirac operator stuff
+    typedef typename detail::Mass<FermionField> Mass;
+    typedef typename detail::Gamma<Field_t,FermionField> Gamma;
   
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
     static const int n_cb = 0;
     
-    WilsonTreeLevel5Kernel(Field_t& G, ScalarFermionField& X, double& m ) : U(G), src(X), mass(m) { };
+    WilsonTreeLevelKernel(const Field_t& G, const FermionField& X, 
+  			   const double& m ) :
+      U(G), src(X), mass(m) { };
     
-    void operator() ( ScalarFermionField& dest, const Point& n) const {
-      do_it(dest,n,mode_selektor<boundary>() );
+    void operator() ( FermionField& dest, const Point& n) {
+      M(src[n],dest[n],mass);
+      do_spatial(dest,n);
+      do_temporal(dest,n,mode_selektor<boundary>());
     }
   
   private:
     
-    double mass;
-    Field_t& U;
-    ScalarFermionField& src;
-  
+    const double& mass;
+    const Field_t& U;
+    const FermionField& src;
+    Mass M;
+    Gamma gmm;
+
     template <int M> struct mode_selektor { };
   
-    void do_it( ScalarFermionField& dest, const Point& n,
-  		const mode_selektor<bulk>) const {
-      for( Direction nu(0); nu.is_good(); ++nu )
-  	dest[n][nu] = (dirac::gmuval[4][nu] * src[n][dirac::gmuind[4][nu]] * mass);
-      Fermion Xi1, Xi2;
-      for( Direction mu(0); mu.is_good(); ++mu )
-  	{
-  	  Point dn = n-Direction(mu);
-  	  Point up = n+Direction(mu);
-  	  // (1 +(-) \gamma_\mu)\psi
-  	  for( Direction nu(0); nu.is_good(); ++nu )
-  	    {
-  	      Xi1[nu] = ( dirac::gmuval[4   ][nu] * src[dn][dirac::gmuind[4   ][nu]] + 
-  			  dirac::gmuval[5+(int)mu][nu] * src[dn][dirac::gmuind[5+(int)mu][nu]] );
-  	      Xi2[nu] = ( dirac::gmuval[4   ][nu] * src[up][dirac::gmuind[4   ][nu]] - 
-  			  dirac::gmuval[5+(int)mu][nu] * src[up][dirac::gmuind[5+(int)mu][nu]] );
-  	    }
-  	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
-  		           U[n ][mu].bgf()  * Xi2 ) * .5;
-  	}
-    }
-    
-  
-    void do_it( ScalarFermionField& dest, const Point& n,
-  		const mode_selektor<lower>) const {
-      for( Direction nu(0); nu.is_good(); ++nu )
-  	dest[n][nu] = (dirac::gmuval[4][nu] * src[n][dirac::gmuind[4][nu]] * mass);
-      Fermion Xi1, Xi2;
-      
-      // Time direction
-      {
-  	Point dn = n-Direction(0);
-  	Point up = n+Direction(0);
-  	// (1 +(-) \gamma_\mu)\psi
-  	for( Direction nu(0); nu.is_good(); ++nu )
-  	  {
-  	    Xi1[nu] = ( dirac::gmuval[4  ][nu] * src[dn][dirac::gmuind[4  ][nu]] + 
-  			dirac::gmuval[5+0][nu] * src[dn][dirac::gmuind[5+0][nu]] );
-  	    Xi2[nu] = ( dirac::gmuval[4  ][nu] * src[up][dirac::gmuind[4  ][nu]] - 
-  			dirac::gmuval[5+0][nu] * src[up][dirac::gmuind[5+0][nu]] );
-  	  }
-  	dest[n] -= ( -dag(U[dn][Direction(0)].bgf()) * Xi1 + 
-  		          U[n ][Direction(0)].bgf()  * Xi2) * .5;
+    void do_spatial(FermionField& dest,const Point& n) {
+      for( Direction mu(1); mu.is_good(); ++mu ) {
+  	gmm(src,n,mu);
+  	dest[n] -= (dag(U[n-mu][mu].bgf())*gmm.xi1() +
+  		    U[n ][mu].bgf()*gmm.xi2())*.5;
       }
-      // Spatial directions
-      for( Direction mu(1); mu.is_good(); ++mu )
-  	{
-  	  Point dn = n-Direction(mu);
-  	  Point up = n+Direction(mu);
-  	  // (1 +(-) \gamma_\mu)\psi
-  	  for( Direction nu(0); nu.is_good(); ++nu )
-  	    {
-      	      Xi1[nu] =  ( dirac::gmuval[4   ][nu] * src[dn][dirac::gmuind[4   ][nu]] + 
-      			   dirac::gmuval[5+(int)mu][nu] * src[dn][dirac::gmuind[5+(int)mu][nu]] );
-      	      Xi2[nu] =  ( dirac::gmuval[4   ][nu] * src[up][dirac::gmuind[4   ][nu]] - 
-      			   dirac::gmuval[5+(int)mu][nu] * src[up][dirac::gmuind[5+(int)mu][nu]] );
-  	    }
-  	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
-  		           U[n ][mu].bgf()  * Xi2 ) * .5;
-  	}
     }
-  
-  
-    void do_it( ScalarFermionField& dest, const Point& n,
-  		const mode_selektor<upper>) const {
-      for( Direction nu(0); nu.is_good(); ++nu )
-  	dest[n][nu] = (dirac::gmuval[4][nu] * src[n][dirac::gmuind[4][nu]] * mass);
-      Fermion Xi1, Xi2;
-      
-      // Time direction
-      {
-  	Point dn = n-Direction(0);
-  	Point up = n+Direction(0);
-  	// (1 +(-) \gamma_\mu)\psi
-  	for( Direction nu(0); nu.is_good(); ++nu )
-  	  {
-  	    Xi1[nu] = ( dirac::gmuval[4  ][nu] * src[dn][dirac::gmuind[4  ][nu]] + 
-  			dirac::gmuval[5+0][nu] * src[dn][dirac::gmuind[5+0][nu]] );
-  	    Xi2[nu] = ( dirac::gmuval[4  ][nu] * src[up][dirac::gmuind[4  ][nu]] - 
-  			dirac::gmuval[5+0][nu] * src[up][dirac::gmuind[5+0][nu]] );
-  	  }
-  	dest[n] -= ( dag(U[dn][Direction(0)].bgf()) * Xi1 -
-  		         U[n ][Direction(0)].bgf()  * Xi2 ) * .5;
-      }
-      // Spatial directions
-      for( Direction mu(1); mu.is_good(); ++mu )
-  	{
-  	  Point dn = n-Direction(mu);
-  	  Point up = n+Direction(mu);
-  	  // (1 +(-) \gamma_\mu)\psi
-  	  for( Direction nu(0); nu.is_good(); ++nu )
-  	    {
-      	      Xi1[nu] =  ( dirac::gmuval[4   ][nu] * src[dn][dirac::gmuind[4   ][nu]] + 
-      			   dirac::gmuval[5+(int)mu][nu] * src[dn][dirac::gmuind[5+(int)mu][nu]] );
-      	      Xi2[nu] =  ( dirac::gmuval[4   ][nu] * src[up][dirac::gmuind[4   ][nu]] - 
-      			   dirac::gmuval[5+(int)mu][nu] * src[up][dirac::gmuind[5+(int)mu][nu]] );
-  	    }
-  	  dest[n] -= ( dag(U[dn][mu].bgf()) * Xi1 + 
-  		           U[n ][mu].bgf()  * Xi2 ) * .5;
-  	}
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<bulk>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() +
+    		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
     }
-  
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<lower>) {
+      gmm(src,n,Direction(0));
+      dest[n] += (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() -
+    		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<upper>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() -
+    		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+    }  
   };
   
-  
-  
-  
-  
-  
-  //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
-  ///  TreeLevel ( U = bgf() ) application of the Wilson dirac operator x Gamma5
-  ///
-  ///  \author Michele Brambilla <mib.mic@gmail.com>
-  ///  \date Fri Feb 01 18:08:43 2013
-  
+  /// Wilson dirac operator 
+
   template <class Field_t, int boundary>
-  struct Wilson5Kernel {
+  struct WilsonKernel : public base_types<Field_t> {
   public:
     // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
     typedef typename std_types<Field_t>::point_t Point;
     typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
         
     // fermion
-    typedef SpinColor<4> Fermion;
-    typedef fields::LocalField<Fermion, DIM> ScalarFermionField;
-    typedef std::vector<ScalarFermionField> FermionField;
-    typedef typename array_t<double, DIM>::Type double_array_t;    
-    typedef typename array_t<double, ORD>::Type ptarray_t;    
+    typedef SpinColor<DIM> Fermion;
+    typedef typename fields::LocalField<Fermion, DIM> FermionField;
+
+    // wilson dirac operator stuff
+    typedef typename detail::Mass5<FermionField> Mass;
+    typedef typename detail::Gamma5<Field_t,FermionField> Gamma;
   
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
     static const int n_cb = 0;
     
-    Wilson5Kernel(Field_t& G, ScalarFermionField& X, double& m, int& ord_ ) : U(G), src(X), mass(m), ord(ord_) { };
+    WilsonKernel(const Field_t& G, const FermionField& X, 
+  			   const double& m ) :
+      U(G), src(X), mass(m) { };
     
-    void operator() ( ScalarFermionField& dest, const Point& n) const {
-      do_it(dest,n,mode_selektor<boundary>() );
+    void operator() ( FermionField& dest, const Point& n) {
+      M(src[n],dest[n],mass);
+      do_spatial(dest,n);
+      do_temporal(dest,n,mode_selektor<boundary>());
     }
   
   private:
     
-    int& ord;
-    double& mass;
-    Field_t& U;
-    ScalarFermionField& src;
-  
+    const double& mass;
+    const Field_t& U;
+    const FermionField& src;
+    Mass M;
+    Gamma gmm;
+
     template <int M> struct mode_selektor { };
   
-    void do_it( ScalarFermionField& dest, const Point& n,
-  		const mode_selektor<bulk>) const {
-      for( Direction nu(0); nu.is_good(); ++nu )
-  	dest[n][nu] = (dirac::gmuval[4][nu] * src[n][dirac::gmuind[4][nu]] * mass);
-      Fermion Xi1, Xi2;
-      for( Direction mu(0); mu.is_good(); ++mu )
-  	{
-  	  Point dn = n-Direction(mu);
-  	  Point up = n+Direction(mu);
-  	  // (1 +(-) \gamma_\mu)\psi
-  	  for( Direction nu(0); nu.is_good(); ++nu )
-  	    {
-  	      Xi1[nu] = ( dirac::gmuval[4   ][nu] * src[dn][dirac::gmuind[4   ][nu]] + 
-  			  dirac::gmuval[5+(int)mu][nu] * src[dn][dirac::gmuind[5+(int)mu][nu]] );
-  	      Xi2[nu] = ( dirac::gmuval[4   ][nu] * src[up][dirac::gmuind[4   ][nu]] - 
-  			  dirac::gmuval[5+(int)mu][nu] * src[up][dirac::gmuind[5+(int)mu][nu]] );
-  	    }
-  	  dest[n] -= ( dag(U[dn][mu][ord]) * Xi1 + 
-  		           U[n ][mu][ord]  * Xi2 ) * .5;
-  	}
+    void do_spatial(FermionField& dest,const Point& n) {
+      for( Direction mu(1); mu.is_good(); ++mu ) {
+  	gmm(src,n,mu);
+  	dest[n] -= (dag(U[n-mu][mu])*gmm.xi1()+U[n ][mu]*gmm.xi2())*.5;
+      }
     }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<bulk>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() +
+    		  U[n ][Direction(0)]*gmm.xi2())*.5;
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<lower>) {
+      gmm(src,n,Direction(0));
+      dest[n] += (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() -
+    		  U[n ][Direction(0)]*gmm.xi2())*.5;
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<upper>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() -
+    		  U[n ][Direction(0)]*gmm.xi2())*.5;
+    }  
+  };
+
+
+
+
+  //////////////////////////////////////////////////////////////////////
+  ///
+  ///  TreeLevel ( U = bgf() ) application of the Gamma5 Wilson dirac operator 
+  
+  template <class Field_t, int boundary>
+  struct WilsonTreeLevel5Kernel : public base_types<Field_t> {
+  public:
+    // collect info about the field
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int DIM = std_types<Field_t>::n_dim;
+        
+    // fermion
+    typedef SpinColor<DIM> Fermion;
+    typedef typename fields::LocalField<Fermion, DIM> FermionField;
+
+    // wilson dirac operator stuff
+    typedef typename detail::Mass5<FermionField> Mass;
+    typedef typename detail::Gamma5<Field_t,FermionField> Gamma;
+  
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 0;
     
-  
-    void do_it( ScalarFermionField& dest, const Point& n,
-  		const mode_selektor<lower>) const {
-      for( Direction nu(0); nu.is_good(); ++nu )
-  	dest[n][nu] = (dirac::gmuval[4][nu] * src[n][dirac::gmuind[4][nu]] * mass);
-      Fermion Xi1, Xi2;
-      
-      // Time direction
-      {
-  	Point dn = n-Direction(0);
-  	Point up = n+Direction(0);
-  	// (1 +(-) \gamma_\mu)\psi
-  	for( Direction nu(0); nu.is_good(); ++nu )
-  	  {
-  	    Xi1[nu] = ( dirac::gmuval[4  ][nu] * src[dn][dirac::gmuind[4  ][nu]] + 
-  			dirac::gmuval[5+0][nu] * src[dn][dirac::gmuind[5+0][nu]] );
-  	    Xi2[nu] = ( dirac::gmuval[4  ][nu] * src[up][dirac::gmuind[4  ][nu]] - 
-  			dirac::gmuval[5+0][nu] * src[up][dirac::gmuind[5+0][nu]] );
-  	  }
-  	dest[n] -= ( -dag(U[dn][Direction(0)][ord]) * Xi1 + 
-  		          U[n ][Direction(0)][ord]  * Xi2) * .5;
-      }
-      // Spatial directions
-      for( Direction mu(1); mu.is_good(); ++mu )
-  	{
-  	  Point dn = n-Direction(mu);
-  	  Point up = n+Direction(mu);
-  	  // (1 +(-) \gamma_\mu)\psi
-  	  for( Direction nu(0); nu.is_good(); ++nu )
-  	    {
-      	      Xi1[nu] =  ( dirac::gmuval[4   ][nu] * src[dn][dirac::gmuind[4   ][nu]] + 
-      			   dirac::gmuval[5+(int)mu][nu] * src[dn][dirac::gmuind[5+(int)mu][nu]] );
-      	      Xi2[nu] =  ( dirac::gmuval[4   ][nu] * src[up][dirac::gmuind[4   ][nu]] - 
-      			   dirac::gmuval[5+(int)mu][nu] * src[up][dirac::gmuind[5+(int)mu][nu]] );
-  	    }
-  	  dest[n] -= ( dag(U[dn][mu][ord]) * Xi1 + 
-  		           U[n ][mu][ord]  * Xi2 ) * .5;
-  	}
+    WilsonTreeLevel5Kernel(const Field_t& G, const FermionField& X, 
+  			   const double& m ) :
+      U(G), src(X), mass(m) { };
+    
+    void operator() ( FermionField& dest, const Point& n) {
+      M(src[n],dest[n],mass);
+      do_spatial(dest,n);
+      do_temporal(dest,n,mode_selektor<boundary>());
     }
   
+  private:
+    
+    const double& mass;
+    const Field_t& U;
+    const FermionField& src;
+    Mass M;
+    Gamma gmm;
+
+    template <int M> struct mode_selektor { };
   
-    void do_it( ScalarFermionField& dest, const Point& n,
-  		const mode_selektor<upper>) const {
-      for( Direction nu(0); nu.is_good(); ++nu )
-  	dest[n][nu] = (dirac::gmuval[4][nu] * src[n][dirac::gmuind[4][nu]] * mass);
-      Fermion Xi1, Xi2;
-      
-      // Time direction
-      {
-  	Point dn = n-Direction(0);
-  	Point up = n+Direction(0);
-  	// (1 +(-) \gamma_\mu)\psi
-  	for( Direction nu(0); nu.is_good(); ++nu )
-  	  {
-  	    Xi1[nu] = ( dirac::gmuval[4  ][nu] * src[dn][dirac::gmuind[4  ][nu]] + 
-  			dirac::gmuval[5+0][nu] * src[dn][dirac::gmuind[5+0][nu]] );
-  	    Xi2[nu] = ( dirac::gmuval[4  ][nu] * src[up][dirac::gmuind[4  ][nu]] - 
-  			dirac::gmuval[5+0][nu] * src[up][dirac::gmuind[5+0][nu]] );
-  	  }
-  	dest[n] -= ( dag(U[dn][Direction(0)][ord]) * Xi1 -
-  		         U[n ][Direction(0)][ord]  * Xi2 ) * .5;
+    void do_spatial(FermionField& dest,const Point& n) {
+      for( Direction mu(1); mu.is_good(); ++mu ) {
+  	gmm(src,n,mu);
+  	dest[n] -= (dag(U[n-mu][mu].bgf())*gmm.xi1() +
+  		    U[n ][mu].bgf()*gmm.xi2())*.5;
       }
-      // Spatial directions
-      for( Direction mu(1); mu.is_good(); ++mu )
-  	{
-  	  Point dn = n-Direction(mu);
-  	  Point up = n+Direction(mu);
-  	  // (1 +(-) \gamma_\mu)\psi
-  	  for( Direction nu(0); nu.is_good(); ++nu )
-  	    {
-      	      Xi1[nu] =  ( dirac::gmuval[4   ][nu] * src[dn][dirac::gmuind[4   ][nu]] + 
-      			   dirac::gmuval[5+(int)mu][nu] * src[dn][dirac::gmuind[5+(int)mu][nu]] );
-      	      Xi2[nu] =  ( dirac::gmuval[4   ][nu] * src[up][dirac::gmuind[4   ][nu]] - 
-      			   dirac::gmuval[5+(int)mu][nu] * src[up][dirac::gmuind[5+(int)mu][nu]] );
-  	    }
-  	  dest[n] -= ( dag(U[dn][mu][ord]) * Xi1 + 
-  		           U[n ][mu][ord]  * Xi2 ) * .5;
-  	}
     }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<bulk>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() +
+    		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<lower>) {
+      gmm(src,n,Direction(0));
+      dest[n] += (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() -
+    		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<upper>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)].bgf())*gmm.xi1() -
+    		  U[n ][Direction(0)].bgf()*gmm.xi2())*.5;
+    }  
+  };
   
+  //////////////////////////////////////////////////////////////////////
+  ///
+  /// Gamma5 Wilson dirac operator 
+  template <class Field_t, int boundary>
+  struct Wilson5Kernel : public base_types<Field_t> {
+  public:
+    // collect info about the field
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
+    static const int DIM = std_types<Field_t>::n_dim;
+    // fermion
+    typedef SpinColor<DIM> Fermion;
+    typedef typename fields::LocalField<Fermion, DIM> FermionField;
+    // wilson dirac operator stuff
+    typedef typename detail::Mass5<FermionField> Mass;
+    typedef typename detail::Gamma5<Field_t,FermionField> Gamma;
+    // checker board hyper cube size
+    static const int n_cb = 0;
+    
+    Wilson5Kernel(const Field_t& G, const FermionField& X, 
+  			   const double& m ) :
+      U(G), src(X), mass(m) { };
+    
+    void operator() ( FermionField& dest, const Point& n) {
+      M(src[n],dest[n],mass);
+      do_spatial(dest,n);
+      do_temporal(dest,n,mode_selektor<boundary>());
+    }
+  private:
+    const double& mass;
+    const Field_t& U;
+    const FermionField& src;
+    Mass M;
+    Gamma gmm;
+
+    template <int M> struct mode_selektor { };
+  
+    void do_spatial(FermionField& dest,const Point& n) {
+      for( Direction mu(1); mu.is_good(); ++mu ) {
+  	gmm(src,n,mu);
+  	dest[n] -= (dag(U[n-mu][mu])*gmm.xi1()+U[n ][mu]*gmm.xi2())*.5;
+      }
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<bulk>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() +
+    		  U[n ][Direction(0)]*gmm.xi2())*.5;
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<lower>) {
+      gmm(src,n,Direction(0));
+      dest[n] += (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() -
+    		  U[n ][Direction(0)]*gmm.xi2())*.5;
+    }
+    void do_temporal(FermionField& dest,const Point& n,
+    		     const mode_selektor<upper>) {
+      gmm(src,n,Direction(0));
+      dest[n] -= (dag(U[n-Direction(0)][Direction(0)])*gmm.xi1() -
+    		  U[n ][Direction(0)]*gmm.xi2())*.5;
+    }  
   };
   
   
-  //
-  //
-  //
-  //
-  //
-  //
+  
+  
   ////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////
   /////
