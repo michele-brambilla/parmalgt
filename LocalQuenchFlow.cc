@@ -119,6 +119,11 @@ void measure_coupling(GluonField &U, const std::string& rep_str){
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
                              "Vbar" + rep_str + ".bindat");
 
+  // the action at the boundary for the c_t counter-term
+  plaq::Temporal<GluonField> pt;
+  U.apply_on_timeslice(pt, 0);
+  U.apply_on_timeslice(pt, T-1).reduce();
+  io::write_file(pt.result, "B.bindat");
 }
 // timing
 
