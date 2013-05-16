@@ -18,9 +18,11 @@ namespace comm {
   struct Communicator {
     typedef typename C::extents_t extents_t;
     typedef typename C::neighbors_t nb_t;
-    Communicator(const extents_t& e) { }
-    const int& rank() { return 0; }
-    const nb_t& nb() { return nb_t(); }
+    Communicator(const extents_t& e) : zero(0) { }
+    int zero;
+    nb_t n;
+    const int& rank() const { return zero; }
+    const nb_t& nb() const { return n; }
   };
 }
 #endif

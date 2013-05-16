@@ -101,7 +101,6 @@ typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_gamma> GammaL
 typedef kernels::GammaUpperKernel<GluonField, kernels::init_helper_vbar> VbarUpperKernel;
 typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_vbar> VbarLowerKernel;
 typedef kernels::UdagUKernel<GluonField> UdagUKernel;
-typedef kernels::TemporalPlaqKernel<GluonField> TemporalPlaqKernel;
 typedef kernels::PlaqKernel<GluonField> PlaqKernel;
 
 // ... and for the checkpointing.
@@ -127,10 +126,6 @@ void measure(GluonField &U, const std::string& rep_str,
 
 #ifndef HIGHER_ORDER_INT
 
-  //TemporalPlaqKernel tp;
-  //U.apply_on_timeslice(tp, 0);
-  //U.apply_on_timeslice(tp, T-1);
-  //
 
 #ifndef IMP_ACT
   GammaUpperKernel Gu(L);
@@ -237,6 +232,12 @@ int main(int argc, char *argv[]) {
   uparam::Param p;
   //  p.read("input" + rank_str);
   p.read("input");
+  // also write the number of space-time dimensions
+  // and perturbative order to the parameters, to
+  // make sure they are written in the .info file 
+  // for the configurations stored on disk
+  p["NDIM"] = to_string(DIM);
+  p["ORD"] = to_string(ORD);
   std::ofstream of(("run.info"+rank_str).c_str(), std::ios::app);
   of << "INPUT PARAMETERS:\n";
   p.print(of);
@@ -248,12 +249,6 @@ int main(int argc, char *argv[]) {
   NRUN = atoi(p["NRUN"].c_str());
   MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str());
   T = L-s;
-  // also write the number of space-time dimensions
-  // and perturbative order to the parameters, to
-  // make sure they are written in the .info file 
-  // for the configurations stored on disk
-  p["NDIM"] = to_string(DIM);
-  p["ORD"] = to_string(ORD);
   ////////////////////////////////////////////////////////////////////
   //
   // timing stuff

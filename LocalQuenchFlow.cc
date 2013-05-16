@@ -180,6 +180,10 @@ int main(int argc, char *argv[]) {
   p.read("flow_ipt" + rank_str);
   std::ofstream of(("SFrun.info"+rank_str).c_str(), std::ios::app);
   of << "INPUT PARAMETERS:\n";
+  // also write the number of space-time dimensions
+  // and perturbative order to the parameters
+  p["NDIM"] = to_string(DIM);
+  p["ORD"] = to_string(ORD);
   p.print(of);
   of.close();
   L = atoi(p["L"].c_str());  // Spatial lattice size
@@ -193,12 +197,6 @@ int main(int argc, char *argv[]) {
   int FLOW_FREQ = atoi(p["FLOW_FREQ"].c_str()); // after how many steps shall we flow?
   int FLOW_MEAS_FREQ = atoi(p["FLOW_MEAS_FREQ"].c_str()); // freq. of meas. in flow
   int MEAS_FREQ = atoi(p["MEAS_FREQ"].c_str()); // freq. of meas.
-  // also write the number of space-time dimensions
-  // and perturbative order to the parameters, to
-  // make sure they are written in the .info file 
-  // for the configurations stored on disk
-  p["NDIM"] = to_string(DIM);
-  p["ORD"] = to_string(ORD);
   ////////////////////////////////////////////////////////////////////
   //
   // timing stuff
