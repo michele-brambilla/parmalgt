@@ -15,7 +15,8 @@ taug 0.03       # Langevin integration step size
 tuaf 0.02       # Wilson flow integration step size
 NRUN 400        # number of configs to generate
 NFLOW 20        # number of flow steps
-MEAS_FREQ 10    # frequency of measurements durin flow
+MEAS_FREQ 10    # frequency of measurements outside flow
+FLOW_MEAS_FREQ 10    # after how many flow steps do we want to measure?
 FLOW_FREQ 10    # after how many Langevin steps do we want to flow?
 seed 1234       # random number seed
 

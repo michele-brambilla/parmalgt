@@ -103,7 +103,12 @@ void measure(GluonField &U, const std::string& rep_str,
 }
 
 // Measurements for couplings
-void measure_coupling(GluonField &U, const std::string& rep_str){
+void measure_coupling(GluonField &U,
+                      const std::string& rep_str,
+                      const bgf::ScalarBgf&){ }
+void measure_coupling(GluonField &U,
+                      const std::string& rep_str,
+                      const bgf::AbelianBgf&){
   // Gamma'
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
@@ -256,7 +261,7 @@ int main(int argc, char *argv[]) {
     //  measurement of the coupling
     if(! (i_ % MEAS_FREQ) ){
        timings["measurements"].start();
-       measure_coupling(U, "");
+       measure_coupling(U, "", Bgf_t());
        timings["measurements"].stop();
     }
 
@@ -275,7 +280,7 @@ int main(int argc, char *argv[]) {
 	if ( ! (j_ % FLOW_MEAS_FREQ) ){
 	  timings["measurements"].start();
 	  measure(Up, rank_str, Bgf_t());
-          measure_coupling(Up, "_flow");
+          measure_coupling(Up, "_flow", Bgf_t());
 	  timings["measurements"].stop();
 	}
       }
