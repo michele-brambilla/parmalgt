@@ -5,14 +5,31 @@ parmalgt -- A NSPT simulation program
 Quick start guide.
 ====================
 
-After you download the source code using the commands
+First, you download the source code using the commands
 ::
 
   git clone git@bitbucket.org:dirkhesse/parmalgt.git
   git submodule init
   git submodule update
 
-you want to generate and run the configure script,
+If this fails because, e.g. you are behind a firewall (like at TCD)
+that does not like the git protocol for some reason, you can after the
+first step edit the file ``.gitmodules`` to use ``http`` instead,
+::
+
+  [submodule "ranlxd"]
+	path = ranlxd
+	url = https://github.com/dhesse/ranlxd.git
+  [submodule "sun-sources"]
+	path = sun-sources
+	url = https://github.com/dhesse/sun.git
+
+After this, you will have to tell git to use the corresponding proxy,
+e.g.::
+
+  git config --global http.proxy proxy.tchpc.tcd.ie:8080
+
+Now, you want to generate and run the configure script,
 ::
 
   cd parmalgt
