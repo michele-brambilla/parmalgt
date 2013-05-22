@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <IO.hpp>
 #include <Methods.hpp>
+#include <Kernels/generic/Plaquette.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -101,7 +102,7 @@ typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_gamma> GammaL
 typedef kernels::GammaUpperKernel<GluonField, kernels::init_helper_vbar> VbarUpperKernel;
 typedef kernels::GammaLowerKernel<GluonField, kernels::init_helper_vbar> VbarLowerKernel;
 typedef kernels::UdagUKernel<GluonField> UdagUKernel;
-typedef kernels::TemporalPlaqKernel<GluonField> TemporalPlaqKernel;
+typedef plaq::Temporal<GluonField> TemporalPlaqKernel;
 typedef kernels::PlaqKernel<GluonField> PlaqKernel;
 
 // ... and for the checkpointing.
@@ -261,8 +262,8 @@ int main(int argc, char *argv[]) {
   // and perturbative order to the parameters, to
   // make sure they are written in the .info file 
   // for the configurations stored on disk
-  p["NDIM"] = to_string(DIM);
-  p["ORD"] = to_string(ORD);
+  p.set("NDIM", to_string(DIM));
+  p.set("ORD", to_string(ORD));
   ////////////////////////////////////////////////////////////////////
   //
   // timing stuff
@@ -312,7 +313,7 @@ int main(int argc, char *argv[]) {
       U.apply_on_timeslice(f, t);
     }
   else {
-    p["read"] = p["read"] + rank_str;
+    p.set("read", p["read"] + rank_str);
     FileReaderKernel fr(p);
     U.apply_everywhere(fr);
     U.apply_everywhere(fr);
@@ -373,7 +374,7 @@ int main(int argc, char *argv[]) {
   } // end main for loop
   // write the gauge configuration
   if ( p["write"] != "none"){
-    p["write"] = p["write"] + rank_str;
+    p.set("write", p["write"] + rank_str);
     FileWriterKernel fw(p);
     U.apply_everywhere(fw);
   }
