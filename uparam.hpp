@@ -51,6 +51,9 @@ namespace uparam {
       for (const_iterator i = begin(); i != end(); ++i)
         util::pretty_print(i->first, i->second, "", os);
     }
+    bool has(const std::string& s) const {
+      return params.find(s) != params.end();
+    }
   private:
     map_t params;
     std::string to_upper(std::string& in){
