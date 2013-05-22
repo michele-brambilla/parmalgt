@@ -236,8 +236,8 @@ int main(int argc, char *argv[]) {
   // and perturbative order to the parameters, to
   // make sure they are written in the .info file 
   // for the configurations stored on disk
-  p["NDIM"] = to_string(DIM);
-  p["ORD"] = to_string(ORD);
+  p.set("NDIM", to_string(DIM));
+  p.set("ORD",  to_string(ORD));
   std::ofstream of(("run.info"+rank_str).c_str(), std::ios::app);
   of << "INPUT PARAMETERS:\n";
   p.print(of);

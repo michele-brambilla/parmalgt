@@ -43,6 +43,10 @@ const int DIM = 4;
 const int ORD = 4;
 
 // some short-hands
+// BACKGROUND FIELD
+// NOTE: If you want to switch the background field,
+//       you ONLY have to un-comment the one you want
+//       and comment the other one here, NOTHING ELSE!
 //typedef bgf::ScalarBgf Bgf_t; // background field
 typedef bgf::AbelianBgf Bgf_t; // background field
 typedef BGptSU3<Bgf_t, ORD> ptSU3; // group variables
@@ -165,15 +169,6 @@ std::string to_string(const T& x){
   return sts.str();
 }
 
-class ParameterNotFoundError : public std::exception { };
-
-void chk_ipt(const std::string& s, const uparam::Param& p){
-  if (!p.has(s)){
-      std::cerr << "Parameter " << s << " not found!\nABORTING!\n";
-      throw ParameterNotFoundError();
-  }
-}
-
 int main(int argc, char *argv[]) {
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
@@ -192,25 +187,12 @@ int main(int argc, char *argv[]) {
   uparam::Param p;
   p.read("flow_ipt" + rank_str);
   // check for parameters
-  chk_ipt("L", p);
-  chk_ipt("s", p);
-  chk_ipt("alpha", p);
-  chk_ipt("taug", p);
-  chk_ipt("tauf", p);
-  chk_ipt("NRUN", p);
-  chk_ipt("NFLOW", p);
-  chk_ipt("FLOW_FREQ", p);
-  chk_ipt("FLOW_MEAS_FREQ", p);
-  chk_ipt("MEAS_FREQ", p);
-  chk_ipt("seed", p);
-  chk_ipt("read", p);
-  chk_ipt("write", p);
   std::ofstream of(("SFrun.info"+rank_str).c_str(), std::ios::app);
   of << "INPUT PARAMETERS:\n";
   // also write the number of space-time dimensions
   // and perturbative order to the parameters
-  p["NDIM"] = to_string(DIM);
-  p["ORD"] = to_string(ORD);
+  p.set("NDIM", to_string(DIM));
+  p.set("ORD", to_string(ORD));
   p.print(of);
   of.close();
   L = atoi(p["L"].c_str());  // Spatial lattice size

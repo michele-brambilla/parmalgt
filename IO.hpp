@@ -178,7 +178,7 @@ namespace io {
     }
     ~CheckedOut() { 
       os.close();
-      param["md5"] = CheckedIo::md5();
+      param.set("md5", CheckedIo::md5());
       param.write(param["write"] + ".info");
     }
     //////////////////////////////////////////////////////////////////////
