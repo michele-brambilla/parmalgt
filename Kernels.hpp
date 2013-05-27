@@ -1353,7 +1353,7 @@ private:
       typedef typename base_types<Field_t>::data_t F;
       Mass() { }
       void operator()(const F& src, F& dest,const double& mass) const {
-	dest = mass*src;
+	dest = src*mass;
       }
     };
     template<class Field_t>
@@ -1374,10 +1374,9 @@ private:
       typedef typename base_types<Field_t>::direction_t Direction;
       typedef typename base_types<Field_t>::point_t Point;
       Gamma() { }
-      void operator()(const Field_t& src,Point& n,const Direction& mu) {
+      void operator()(const Field_t& src,const Point& n,const Direction& mu) {
 	Point dn = n-Direction(mu);
 	Point up = n+Direction(mu);
-	F Xi1, Xi2;
 	for(Direction nu(0);nu.is_good();++nu) {
 	  Xi1[nu] = (src[dn][nu]+src[dn][dirac::gmuind[mu][nu]]*dirac::gmuval[mu][nu]);
 	  Xi2[nu] = (src[up][nu]-src[up][dirac::gmuind[mu][nu]]*dirac::gmuval[mu][nu]);

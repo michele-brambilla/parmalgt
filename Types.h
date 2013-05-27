@@ -27,6 +27,13 @@ template <class C, int n> struct array_t
 
 template<int N>
 struct Norm : public array_t<double, N>::Type {
+  typedef typename array_t<double, N>::Type::iterator iterator;
+  typedef typename array_t<double, N>::Type::const_iterator const_iterator;
+  iterator begin() { return rep.begin(); };
+  iterator end() { return rep.end(); };
+  const_iterator begin() const { return rep.begin(); };
+  const_iterator end() const { return rep.end(); };
+
   Norm() { };
   explicit Norm(typename array_t<double, N>::Type other) : rep(other) { };
   Norm& operator+=(const Norm& other){
@@ -40,5 +47,22 @@ struct Norm : public array_t<double, N>::Type {
  private:
   typename array_t<double, N>::Type rep;
 };
+
+template <class C, int n>
+std::ostream& operator<<(std::ostream& os, const array_t<C,n>& v) {
+  typename array_t<C,n>::iterator it = v.begin();
+  for(;it!=v.end();++it)
+    os << *it << "\t";
+  return os;
+}
+template <int n>
+std::ostream& operator<<(std::ostream& os, const Norm<n>& v) {
+  typename Norm<n>::iterator it = v.begin();
+  for(;it!=v.end();++it)
+    os << *it << "\t";
+  return os;
+}
+
+
 
 #endif

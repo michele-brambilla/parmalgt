@@ -275,7 +275,7 @@ namespace io {
     comm::Reduce<ptSU3> reduce(U);
     ptSU3 A = reduce();
     if(reduce.rank()==0)
-      detail::write_file<ptSU3,ORD>(U,tree,fname);
+      detail::write_file<ptSU3,ORD>(A,tree,fname);
     MPI_Barrier(MPI_COMM_WORLD);
 #else
     detail::write_file<ptSU3,ORD>(U,tree,fname);
@@ -287,7 +287,7 @@ namespace io {
     comm::Reduce<CONT> reduce(c);
     CONT s = reduce();
     if(reduce.rank()==0) 
-      detail::write_file<CONT>(c,fname);
+      detail::write_file<CONT>(s,fname);
     MPI_Barrier(MPI_COMM_WORLD);
 #else
     detail::write_file<CONT>(c,fname);
@@ -299,7 +299,7 @@ namespace io {
     comm::Reduce<CONT> reduce(c);
     CONT s = reduce();
     if(reduce.rank()==0)
-      detail::write_ptSUN<CONT>(c,fname);
+      detail::write_ptSUN<CONT>(s,fname);
     MPI_Barrier(MPI_COMM_WORLD);
 #else
     detail::write_ptSUN<CONT>(c,fname);
