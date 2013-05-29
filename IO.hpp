@@ -274,8 +274,8 @@ namespace io {
 #ifdef USE_MPI
     comm::Reduce<ptSU3> reduce(U);
     ptSU3 A = reduce();
-    if(reduce.rank()==0)
-      detail::write_file<ptSU3,ORD>(A,tree,fname);
+    if(reduce.rank()==0) 
+      detail::write_file<ptSU3,ORD>(A,tree*reduce.np(),fname);
     MPI_Barrier(MPI_COMM_WORLD);
 #else
     detail::write_file<ptSU3,ORD>(U,tree,fname);
@@ -286,7 +286,7 @@ namespace io {
 #ifdef USE_MPI
     comm::Reduce<CONT> reduce(c);
     CONT s = reduce();
-    if(reduce.rank()==0) 
+    if(reduce.rank()==0)
       detail::write_file<CONT>(s,fname);
     MPI_Barrier(MPI_COMM_WORLD);
 #else

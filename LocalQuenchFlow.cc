@@ -174,8 +174,8 @@ int main(int argc, char *argv[]) {
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);
   signal(SIGINT, kill_handler);
-  int rank;
 #ifdef USE_MPI
+  int rank;
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   std::string rank_str = "." + to_string(rank);

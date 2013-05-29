@@ -851,6 +851,25 @@ private:
           norm[0][k] += norm[i][k];
       return norm[0];
     }
+    typename array_t<double, ORD+1>::Type reduce(typename array_t<double, ORD+1>::Type& other){
+      other = norm[0];
+      for (int i = 1, j = omp_get_max_threads(); i < j; ++i)
+        for (int k = 0; k < ORD+1; ++k) {
+          norm[0][k] += norm[i][k];
+	  other[k]   += norm[i][k];
+	}
+      return norm[0];
+    }
+    typename array_t<double, ORD+1>::Type reduce(Norm<ORD+1>& other){
+      for (int k = 0; k < ORD+1; ++k)
+	other[k] = norm[0][k];
+      for (int i = 1, j = omp_get_max_threads(); i < j; ++i)
+        for (int k = 0; k < ORD+1; ++k) {
+          norm[0][k] += norm[i][k];
+	  other[k] += norm[i][k];
+	}
+      return norm[0];
+    }
   };
 
   // measures Udagger * U
@@ -1646,8 +1665,8 @@ private:
     typedef typename fields::LocalField<Fermion, DIM> FermionField;
 
     // wilson dirac operator stuff
-    typedef typename detail::Mass5<FermionField> Mass;
-    typedef typename detail::Gamma5<Field_t,FermionField> Gamma;
+    typedef typename detail::Mass<FermionField> Mass;
+    typedef typename detail::Gamma<Field_t,FermionField> Gamma;
   
     // checker board hyper cube size
     // c.f. geometry and localfield for more info

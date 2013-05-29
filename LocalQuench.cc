@@ -113,7 +113,8 @@ typedef kernels::FileReaderKernel<GluonField> FileReaderKernel;
 void measure_common(GluonField &U, const std::string& rep_str){
   // Norm of the Gauge Field
   MeasureNormKernel m;
-  io::write_file(U.apply_everywhere(m).reduce(),
+  typename array_t<double, ORD+1>::Type other;
+  io::write_file(U.apply_everywhere(m).reduce(other),
                  "Norm" + rep_str + ".bindat");
 }
 

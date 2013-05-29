@@ -36,14 +36,15 @@ struct Norm : public array_t<double, N>::Type {
 
   Norm() { };
   explicit Norm(typename array_t<double, N>::Type other) : rep(other) { };
-  Norm& operator+=(const Norm& other){
+  Norm& operator+=(Norm& other){
     for (int i = 0; i < rep.size(); ++i) rep[i] += other[i];
     return *this;
   }
-  Norm& operator-=(const Norm& other){
+  Norm& operator-=(Norm& other){
     for (int i = 0; i < rep.size(); ++i) rep[i] -= other[i];
     return *this;
   }
+  double& operator[](const int i) { return rep[i]; }
  private:
   typename array_t<double, N>::Type rep;
 };
@@ -62,7 +63,5 @@ std::ostream& operator<<(std::ostream& os, const Norm<n>& v) {
     os << *it << "\t";
   return os;
 }
-
-
 
 #endif
