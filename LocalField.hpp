@@ -406,7 +406,7 @@ namespace fields {
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True){
-      // std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True)" << std::endl;
+      //std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True)" << std::endl;
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
@@ -422,7 +422,7 @@ namespace fields {
     }
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True) const {
-      // std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True) const" << std::endl;
+      //std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True) const" << std::endl;
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;

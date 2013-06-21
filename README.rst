@@ -9,6 +9,7 @@ First, you download the source code using the commands
 ::
 
   git clone git@bitbucket.org:dirkhesse/parmalgt.git
+  cd parmalgt
   git submodule init
   git submodule update
 

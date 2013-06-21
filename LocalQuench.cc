@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <IO.hpp>
 #include <Methods.hpp>
+#include <Kernels/generic/Plaquette.hpp>
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -143,26 +144,32 @@ void measure(GluonField &U, const std::string& rep_str,
     + U.apply_on_timeslice(Gl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
                              "Gp" + rep_str + ".bindat");
-
-
-  // Evaluate F*Gamma'
-//  std::vector<Cplx> g = tmp.trace(), f = tp.val.trace(), gf(ORD+1, 0);
-//  for (int i = 0; i <= ORD; ++i)
-//    for (int j = 0; j <= i; ++j)
-//      gf[i] += g[j] * f[i - j];
-//
-//  io::write_file(gf, "FGamm" + rep_str + ".bindat");
-//
-//  VbarUpperKernel Vu(L);
-//  VbarLowerKernel Vl(L);
-//
-//  // Evaluate vbar
-//  tmp = U.apply_on_timeslice(Vu, T-1).val
-//    - U.apply_on_timeslice(Vl, 0).val;
-//  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
-//                             "Vbar" + rep_str + ".bindat");
-//
-//  io::write_ptSUN(tp.val*tmp, "Fvbar" + rep_str + ".bindat");
+  std::vector<Cplx> Gp(ORD+1);
+  Gp[0] = tmp.bgf().Tr();
+  for (int i = 1; i <= ORD; ++i)
+    Gp[i] = tmp[i-1].tr();
+  // the action at the boundary for the c_t counter-term
+  plaq::Temporal<GluonField> pt;
+  U.apply_on_timeslice(pt, 0);
+  U.apply_on_timeslice(pt, T-1).reduce();
+  pt.result[0] = 0;
+  io::write_file(pt.result, "Bbar.bindat");
+  std::vector<Cplx> GpBbar(ORD+1);
+  for (int i = 0; i <= ORD; ++i)
+    for (int j = 0; j <= i; ++j)
+      GpBbar[i] += Gp[j]*pt.result[i-j];
+  io::write_file(GpBbar, "GpBbar.bindat");
+  // get m1b, m2b explictly
+  std::ofstream ofs1("m1b.bindat", std::ofstream::binary | std::ofstream::app);
+  std::ofstream ofs2("m2b_til.bindat", std::ofstream::binary | std::ofstream::app);
+  double m1b = (Gp[1]*pt.result[1]/Gp[0]).real();
+  // this is only the part <W1 S3> + <W2 S2> + <W3 S1>
+  double m2b_partial = (Gp[1]*pt.result[3] + Gp[2]*pt.result[2]
+                        + Gp[3]*pt.result[1]).real();
+  ofs1.write(reinterpret_cast<const char*>(&m1b), sizeof(double));
+  ofs1.close();
+  ofs2.write(reinterpret_cast<const char*>(&m2b_partial), sizeof(double));
+  ofs2.close();
 #endif
   measure_common(U, rep_str);
 }
