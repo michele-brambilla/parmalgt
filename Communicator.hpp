@@ -260,13 +260,12 @@ namespace comm {
     Reduce(const T& value) : x(value) {
       MPI_Comm_size(MPI_COMM_WORLD, &np_);      
       MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
-      rbuf = new T[np_];
+      for(int i=0;i<np_;++i)
+	rbuf.push_back(x);	
     };
     T& operator()() {
       MPI_Barrier(MPI_COMM_WORLD);
-      MPI_Gather( (void*)&x,sz_t,MPI_BYTE,rbuf,sz_t,MPI_BYTE,0,MPI_COMM_WORLD);
-      // for(int i=0;i<np();++i) std::cout << rbuf[i] << "\t";
-      // std::cout << std::endl;
+      MPI_Gather( (void*)&x,sz_t,MPI_BYTE,&rbuf[0],sz_t,MPI_BYTE,0,MPI_COMM_WORLD);
       for(int i=1;i<np();++i)
       	rbuf[0] += rbuf[i];
       return rbuf[0];
@@ -278,7 +277,7 @@ namespace comm {
     const T& x;
     int np_;
     int rank_;
-    T* rbuf;
+    std::vector<T> rbuf;
   };
 
 }

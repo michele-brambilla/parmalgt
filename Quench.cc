@@ -116,6 +116,21 @@ void measure_common(GluonField &U, const std::string& rep_str){
   //  Norm of the Gauge Field
   MeasureNormKernel m;
   Norm<ORD+1> res;
+
+  U.apply_everywhere(m).reduce(res);
+
+  // for(int rk=0;rk<comm::Communicator<GluonField>::numprocs_;++rk) {
+  //   if( comm::Communicator<GluonField>::rank_ == rk ) {
+  //     typename array_t<double, ORD+1>::Type::const_iterator it = res.begin();
+  //     std::cout << "rank: " << rk << ":\t";
+  //     do {
+  // 	std::cout << *it << "\t";
+  //     } while( (++it) != res.end() );
+  //     std::cout << std::endl;
+  //   }
+  //   MPI_Barrier(MPI_COMM_WORLD);
+  // }
+
   io::write_file(res,"Norm.bindat");
   // io::write_file(res,"Norm" + rep_str + ".bindat");
 }
@@ -272,7 +287,7 @@ int main(int argc, char *argv[]) {
   ////////////////////////////////////////////////////////////////////
   //
   // random number generators
-  srand(atoi(p["seed"].c_str())+comm::Communicator<GluonField>::rank_);
+  srand(atoi(p["seed"].c_str())+comm::Communicator<GluonField>::rank_*time(NULL));
 #ifdef IMP_ACT
   GUK<PrAK>::type::rands.resize(L*L*L*(T+1));
   GUK<PrBK>::type::rands.resize(L*L*L*(T+1));

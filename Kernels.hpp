@@ -851,6 +851,25 @@ private:
           norm[0][k] += norm[i][k];
       return norm[0];
     }
+    typename array_t<double, ORD+1>::Type reduce(typename array_t<double, ORD+1>::Type& other){
+      other = norm[0];
+      for (int i = 1, j = omp_get_max_threads(); i < j; ++i)
+        for (int k = 0; k < ORD+1; ++k) {
+          norm[0][k] += norm[i][k];
+	  other[k]   += norm[i][k];
+	}
+      return norm[0];
+    }
+    typename array_t<double, ORD+1>::Type reduce(Norm<ORD+1>& other){
+      for (int k = 0; k < ORD+1; ++k)
+	other[k] = norm[0][k];
+      for (int i = 1, j = omp_get_max_threads(); i < j; ++i)
+        for (int k = 0; k < ORD+1; ++k) {
+          norm[0][k] += norm[i][k];
+	  other[k] += norm[i][k];
+	}
+      return norm[0];
+    }
   };
 
   // measures Udagger * U
@@ -1353,7 +1372,7 @@ private:
       typedef typename base_types<Field_t>::data_t F;
       Mass() { }
       void operator()(const F& src, F& dest,const double& mass) const {
-	dest = mass*src;
+	dest = src*mass;
       }
     };
     template<class Field_t>
@@ -1374,10 +1393,9 @@ private:
       typedef typename base_types<Field_t>::direction_t Direction;
       typedef typename base_types<Field_t>::point_t Point;
       Gamma() { }
-      void operator()(const Field_t& src,Point& n,const Direction& mu) {
+      void operator()(const Field_t& src,const Point& n,const Direction& mu) {
 	Point dn = n-Direction(mu);
 	Point up = n+Direction(mu);
-	F Xi1, Xi2;
 	for(Direction nu(0);nu.is_good();++nu) {
 	  Xi1[nu] = (src[dn][nu]+src[dn][dirac::gmuind[mu][nu]]*dirac::gmuval[mu][nu]);
 	  Xi2[nu] = (src[up][nu]-src[up][dirac::gmuind[mu][nu]]*dirac::gmuval[mu][nu]);
@@ -1647,8 +1665,8 @@ private:
     typedef typename fields::LocalField<Fermion, DIM> FermionField;
 
     // wilson dirac operator stuff
-    typedef typename detail::Mass5<FermionField> Mass;
-    typedef typename detail::Gamma5<Field_t,FermionField> Gamma;
+    typedef typename detail::Mass<FermionField> Mass;
+    typedef typename detail::Gamma<Field_t,FermionField> Gamma;
   
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
