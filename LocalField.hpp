@@ -410,10 +410,12 @@ namespace fields {
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
-      geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
+      static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
+      //std::cout << "---\n";
       for (typename slice::const_iterator s = cb[t].begin();
 	   s != cb[t].end(); ++s){
 	int N = s->size();
+        //std::cout << N << std::endl;
 #pragma omp parallel for
 	for (int i = 0; i < N; ++i)
 	  f(*this, (*s)[i]);
