@@ -406,16 +406,13 @@ namespace fields {
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True){
-      //std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True)" << std::endl;
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
       static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
-      //std::cout << "---\n";
       for (typename slice::const_iterator s = cb[t].begin();
 	   s != cb[t].end(); ++s){
 	int N = s->size();
-        //std::cout << N << std::endl;
 #pragma omp parallel for
 	for (int i = 0; i < N; ++i)
 	  f(*this, (*s)[i]);
@@ -424,7 +421,6 @@ namespace fields {
     }
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True) const {
-      //std::cout << "M& apply_on_timeslice_impl(M& f, const int& t, True) const" << std::endl;
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
@@ -443,10 +439,6 @@ namespace fields {
       typename geometry::Geometry<DIM>::raw_pt_t n;
       n[0] = t;
       for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i, g);
-      // std::cout << "Iterator begins at: (";
-      // for (int i = 0; i < DIM; ++i) 
-      // 	std::cout << n[i] << ",";
-      // std::cout << ")\n";
       Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }
@@ -455,10 +447,6 @@ namespace fields {
       typename geometry::Geometry<DIM>::raw_pt_t n;
       n[0] = t;
       for (int i = 1; i < DIM; ++i) n[i] = Iter::get_start(i, g);
-      // std::cout << "Iterator begins at: (";
-      // for (int i = 0; i < DIM; ++i) 
-      // 	std::cout << n[i] << ",";
-      // std::cout << ")\n";
       Iter x(g.mk_point(n), g.get_extents());
       do { f(*this, *x); } while ((++x).is_good());
     }

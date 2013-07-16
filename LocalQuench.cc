@@ -126,9 +126,6 @@ void measure(GluonField &U, const std::string& rep_str,
   //PlaqKernel P;
   //io::write_file(U.apply_everywhere(P).val, "Plaq" + rep_str + ".bindat");
 
-#ifndef HIGHER_ORDER_INT
-
-
 #ifndef IMP_ACT
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
@@ -153,26 +150,16 @@ void measure(GluonField &U, const std::string& rep_str,
   plaq::Temporal<GluonField> pt;
   U.apply_on_timeslice(pt, 0);
   U.apply_on_timeslice(pt, T-1).reduce();
-  pt.result[0] = 0;
-  io::write_file(pt.result, "Bbar.bindat");
-  std::vector<Cplx> GpBbar(ORD+1);
-  for (int i = 0; i <= ORD; ++i)
-    for (int j = 0; j <= i; ++j)
-      GpBbar[i] += Gp[j]*pt.result[i-j];
-  io::write_file(GpBbar, "GpBbar.bindat");
-  // get m1b, m2b explictly
-  std::ofstream ofs1("m1b.bindat", std::ofstream::binary | std::ofstream::app);
-  std::ofstream ofs2("m2b_til.bindat", std::ofstream::binary | std::ofstream::app);
-  double m1b = (Gp[1]*pt.result[1]/Gp[0]).real();
-  // this is only the part <W1 S3> + <W2 S2> + <W3 S1>
-  double m2b_partial = (Gp[1]*pt.result[3] + Gp[2]*pt.result[2]
-                        + Gp[3]*pt.result[1]).real();
-  ofs1.write(reinterpret_cast<const char*>(&m1b), sizeof(double));
-  ofs1.close();
-  ofs2.write(reinterpret_cast<const char*>(&m2b_partial), sizeof(double));
-  ofs2.close();
-#endif
+  io::write_file(pt.result, "B.bindat");
   measure_common(U, rep_str);
+
+  // Evaluate vbar
+  VbarUpperKernel Vu(L);
+  VbarLowerKernel Vl(L);
+  tmp = U.apply_on_timeslice(Vu, T-1).val
+    + U.apply_on_timeslice(Vl, 0).val;
+  io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() , "Vbar" + rep_str + ".bindat");
+
 }
 
 // Stuff that makes sense only for a scalar background field.
