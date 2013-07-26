@@ -43,8 +43,8 @@ struct tagfld {
 
 TEST(Comunicator, Buffer){
   typedef fields::LocalField<int, DIM> intField;
-  typedef typename intField::raw_pt raw_pt_t;
-  typedef typename std::vector<int> vec_t;
+  typedef intField::raw_pt raw_pt_t;
+  typedef std::vector<int> vec_t;
   intField::extents_t e;
   intField::neighbors_t nn;
   std::fill(e.begin(), e.end(), L);

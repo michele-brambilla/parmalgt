@@ -458,17 +458,11 @@ namespace geometry {
   class CheckerBoard {
   public:
     typedef pt::Point<D> Point; // single point
-    // first, we use a list for fast generation of the bins
-    typedef std::list<Point> l_bin; // one bin
-    typedef std::vector<l_bin> l_slice; // bins in a time slice
-    typedef std::vector<l_slice> l_lattice; // all time slices
-    // in a second step, we replace that by vectors for later
-    // convenience
-    typedef std::vector<Point> v_bin; // one bin
-    typedef std::vector<v_bin> v_slice; // bins in a time slice
-    typedef std::vector<v_slice> v_lattice; // all time slices
+    typedef std::vector<Point> bin; // one bin
+    typedef std::vector<bin> slice; // bins in a time slice
+    typedef std::vector<slice> lattice; // all time slices
     explicit CheckerBoard (const Geometry<D>& g) :
-      lat(g[0] + 1, l_slice(g.template n_bins<N>())), v_lat(g[0] + 1) {
+      lat(g[0] + 1, slice(g.template n_bins<N>())) {
       typename geometry::Geometry<D>::raw_pt_t n;
       for (int t = 0; t <= g[0]; ++t){
         n[0] = t;
@@ -477,23 +471,19 @@ namespace geometry {
         do {
           lat[t].at(g.template bin<N>(*x)).push_back(*x);
         } while ((++x).is_good());
-        for (typename l_slice::const_iterator i = lat[t].begin();
-             i != lat[t].end(); ++i)
-          v_lat[t].push_back(v_bin(i->begin(), i->end()));
       }
     }
-    const v_slice& operator[](const int& i) const {
-      return v_lat[i];
+    const slice& operator[](const int& i) const {
+      return lat[i];
     }
     // as operator[] just for non-const access. this is for testing
     // purposes only and should not be used 'in the wild' use the
     // constant operator above instead.
-    l_slice& nca(const int& i){
+    slice& nca(const int& i){
       return lat[i];
     }
   private:
-    l_lattice lat;
-    v_lattice v_lat;
+    lattice lat;
   };
 }
 

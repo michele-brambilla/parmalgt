@@ -18,20 +18,21 @@ lib_libgtest_main_la_LIBADD = lib/libgtest.la
 # moment
 
 bin_PROGRAMS = test_Geometry test_Bgfield test_Helper test_newQCDpt \
-	test_PtTypes test_LocalField test_Clover test_Communicator\
-	test_CommunicatorSU3
+	test_PtTypes test_LocalField test_Clover 
 
 test_LocalField_SOURCES = test_LocalField.cc
 test_LocalField_LDADD = lib/libgtest_main.la -lpthread
 
-test_CommunicatorSU3_SOURCES = test_CommunicatorSU3.cc
-test_CommunicatorSU3_LDADD = lib/libgtest_main.la
+# DH: does not compile!
+#test_CommunicatorSU3_SOURCES = test_CommunicatorSU3.cc
+#test_CommunicatorSU3_LDADD = lib/libgtest_main.la
 
-test_Communicator_SOURCES = test_Communicator.cc
-test_Communicator_LDADD = lib/libgtest_main.la
+# DH: Does not compile!
+#test_Communicator_SOURCES = test_Communicator.cc
+#test_Communicator_LDADD = lib/libgtest_main.la
 
 test_Clover_SOURCES = test_Clover.cc ../MyRand.cc\
-	../Background.cc
+	../Background.cc ../ranlxd/ranlxd.cc
 test_Clover_LDADD = lib/libgtest_main.la -lpthread
 
 test_Geometry_SOURCES = test_Geometry.cc

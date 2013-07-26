@@ -176,14 +176,14 @@ TEST(Geometry, CheckerBoard){
   geometry::CheckerBoard<DIM,1,geometry::TimeSliceIter> cb1(g);
   geometry::CheckerBoard<DIM,2,geometry::TimeSliceIter> cb2(g);
   geometry::CheckerBoard<DIM,3,geometry::TimeSliceIter> cb3(g);
-  typedef geometry::CheckerBoard<DIM,0,geometry::TimeSliceIter>::l_slice slice0;
-  typedef geometry::CheckerBoard<DIM,1,geometry::TimeSliceIter>::l_slice slice1;
-  typedef geometry::CheckerBoard<DIM,2,geometry::TimeSliceIter>::l_slice slice2;
-  typedef geometry::CheckerBoard<DIM,3,geometry::TimeSliceIter>::l_slice slice3;
-  typedef geometry::CheckerBoard<DIM,0,geometry::TimeSliceIter>::l_bin bin0;
-  typedef geometry::CheckerBoard<DIM,1,geometry::TimeSliceIter>::l_bin bin1;
-  typedef geometry::CheckerBoard<DIM,2,geometry::TimeSliceIter>::l_bin bin2;
-  typedef geometry::CheckerBoard<DIM,3,geometry::TimeSliceIter>::l_bin bin3;
+  typedef geometry::CheckerBoard<DIM,0,geometry::TimeSliceIter>::slice slice0;
+  typedef geometry::CheckerBoard<DIM,1,geometry::TimeSliceIter>::slice slice1;
+  typedef geometry::CheckerBoard<DIM,2,geometry::TimeSliceIter>::slice slice2;
+  typedef geometry::CheckerBoard<DIM,3,geometry::TimeSliceIter>::slice slice3;
+  typedef geometry::CheckerBoard<DIM,0,geometry::TimeSliceIter>::bin bin0;
+  typedef geometry::CheckerBoard<DIM,1,geometry::TimeSliceIter>::bin bin1;
+  typedef geometry::CheckerBoard<DIM,2,geometry::TimeSliceIter>::bin bin2;
+  typedef geometry::CheckerBoard<DIM,3,geometry::TimeSliceIter>::bin bin3;
   geometry::Geometry<DIM>::raw_pt_t n;
   std::fill(n.begin(), n.end(), 0);
   for (n[0] = 0; n[0] < e[0]; ++n[0])

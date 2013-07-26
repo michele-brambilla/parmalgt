@@ -17,14 +17,6 @@ AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 AC_LANG_CPLUSPLUS
 
-# Checks for libraries.
-# FIXME: Replace `main' with a function in `-lfftw3':
-#AC_CHECK_LIB([fftw3], [main])
-# FIXME: Replace `main' with a function in `-lgsl':
-# AC_CHECK_LIB([gsl], [main])
-# FIXME: Replace `main' with a function in `-lgslcblas':
-# AC_CHECK_LIB([gslcblas], [main])
-
 # Checks for header files.
 AC_CHECK_HEADERS([fenv.h inttypes.h limits.h stdlib.h string.h sys/time.h unistd.h])
 
@@ -32,14 +24,7 @@ AC_ARG_WITH([gtest-srcdir], [AS_HELP_STRING([--with-gtest-srcdir=DIR],
  [Path to Googletest.])], [], [])
 
 AC_SUBST([GTEST_DIR],["$with_gtest_srcdir"])
-
-AC_ARG_WITH([boost-srcdir], [AS_HELP_STRING([--with-boost-srcdir=DIR],
- [Path to Boost.])], [], [])
-
-AC_SUBST([BOOST_DIR],["$with_boost_srcdir"])
-AM_CONDITIONAL([GTEST], [test x$with_boost_srcdir != x])
-echo "TEST:"
-echo x$with_boost_srcdir
+AM_CONDITIONAL([GTEST], [test x$with_gtest_srcdir != x])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -53,12 +38,5 @@ AC_CHECK_FUNCS([bzero clock_gettime gettimeofday memset pow sqrt])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_FILES([Makefile Doxyfile testing/Makefile])
-# AC_CONFIG_FILES([SU2/makefile
-#                  dSFMT/Makefile
-#                  makefile
-#                  perform/makefile
-#                  renorm/makefile
-#                  spectr/makefile
-#                  tools/makefile])
-#AC_CONFIG_SUBDIRS([testing])
+
 AC_OUTPUT

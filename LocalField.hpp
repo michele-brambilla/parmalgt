@@ -70,7 +70,6 @@ namespace fields {
       }
       static const int n_cb = 0;
     private:
-      inplace_add(const inplace_add&) { } // no copy allowed
       Field_t const * other;
     };
 
@@ -83,7 +82,6 @@ namespace fields {
       }
      static const int n_cb = 0;
     private:
-      inplace_sub(const inplace_sub&) { } // no copy allowed
       Field_t const * other;
     };
 
@@ -97,7 +95,6 @@ namespace fields {
       }
       static const int n_cb = 0;
     private:
-      inplace_smul(const inplace_smul&) { } // no copy allowed
       Scalar_t other;
     };
 
@@ -126,7 +123,6 @@ namespace fields {
 	return std::accumulate(result.begin(), result.end(), Cplx(0,0));
       }
     private:
-      inner_prod(const inner_prod&) { } // no copy allowed
       std::vector<Cplx> result;
       Field_t const * other;
     };
@@ -157,7 +153,6 @@ namespace fields {
 	return std::accumulate(result.begin(), result.end(), Cplx(0,0));
       }
     private:
-      prod(const prod&) { } // no copy allowed
       std::vector<Cplx> result;
       Field_t const * other;
     };
@@ -178,9 +173,8 @@ namespace fields {
   ///  the advantages of a cluster using nodes with
   ///  modern CPUs with several cores each may be fully exploited.
   ///
-  ///  \tparam BGF The background field class to be used.
-  ///  \tparam DIM The number of space-time dimensions
-  ///  \tparam ORD The perturbative order.
+  ///  \tparam F   The type of elements residing at the lattice sites.
+  ///  \tparam DIM The number of space-time dimensions.
   ///
   ///  \ingroup MPI
   ///
@@ -407,8 +401,8 @@ namespace fields {
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True){
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::bin bin;
       static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
 	   s != cb[t].end(); ++s){
@@ -422,8 +416,8 @@ namespace fields {
     template <class M, class Iter>
     M& apply_on_timeslice_impl(M& f, const int& t, True) const {
       // parallelize with a simple checker-board scheme ...
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_slice slice;
-      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::v_bin bin;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::slice slice;
+      typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::bin bin;
       static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
 	   s != cb[t].end(); ++s){
