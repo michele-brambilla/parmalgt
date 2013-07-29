@@ -35,6 +35,8 @@ namespace bgf {
     /// Right multiplication.
     virtual SU3 ApplyFromRight ( const SU3 & ) const = 0;
     virtual CVector ApplyFromRight ( const CVector & ) const = 0;
+    // Add to a SU(3) matrix
+    virtual SU3 Add ( const SU3 & ) const = 0;
     // set to zero, or one
     virtual void set_to_one () = 0;
     virtual void set_to_zero () = 0;
@@ -55,6 +57,11 @@ namespace bgf {
     }
     virtual SU3 ApplyFromRight ( const SU3 & U) const {
       return U;
+    }
+    virtual SU3 Add (const SU3 & U) const {
+      SU3 res(U);
+      for ( int i = 0; i < SU3::size ;++i) res(i,i) += 1;
+      return res;
     }
     virtual CVector ApplyFromLeft ( const CVector & U) const {
       return U;
@@ -103,6 +110,9 @@ namespace bgf {
     Cplx & operator[](const short& s){
       return v_[s];
     }
+    const Cplx & operator[](const short& s) const{
+      return v_[s];
+    }
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ///
@@ -135,6 +145,11 @@ namespace bgf {
       for (int i = 0; i < SU3::size; ++i)
 	for (int j = 0; j < SU3::size; ++j)
 	  result(i, j) = v_[i] * U(i, j);
+      return result;
+    }
+    virtual SU3 Add ( const SU3 & U) const {
+      SU3 result(U);
+      for (int i = 0; i < SU3::size; ++i) result(i, i) += v_[i];
       return result;
     }
     virtual CVector ApplyFromLeft ( const CVector & v) const {
@@ -451,6 +466,11 @@ namespace bgf {
     virtual SU3 ApplyFromLeft ( const SU3 & U) const {
       SU3 result;
       for (int i = 0; i < SU3::rep_size; ++i) result[i] = a_ * U[i];
+      return result;
+    }
+    virtual SU3 Add ( const SU3 & U) const {
+      SU3 result(U);
+      for (int i = 0; i < SU3::size; ++i) result(i,i) += a_;
       return result;
     }
     virtual CVector ApplyFromLeft ( const CVector & v) const {

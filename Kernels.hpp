@@ -20,6 +20,15 @@ namespace kernels {
 }
 #endif
 
+#define FLD_INFO(F) \
+  typedef typename std_types<F>::ptGluon_t ptGluon;	\
+  typedef typename std_types<F>::ptSU3_t ptSU3;		\
+  typedef typename std_types<F>::ptsu3_t ptsu3;		\
+  typedef typename std_types<F>::bgf_t BGF;		\
+  typedef typename std_types<F>::point_t Point;		\
+  typedef typename std_types<F>::direction_t Direction;	\
+  static const int ORD = std_types<F>::order;		\
+  static const int DIM = std_types<F>::n_dim;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -119,19 +128,11 @@ namespace kernels {
   };
 
   template <class Field_t>
-  struct StapleSqKernel : public std_types<Field_t> {
+  struct StapleSqKernel {
     // collect info about the field
-    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
-    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
-    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
-    typedef typename std_types<Field_t>::bgf_t BGF;
-    typedef typename std_types<Field_t>::point_t Point;
-    typedef typename std_types<Field_t>::direction_t Direction;
-    static const int ORD = std_types<Field_t>::order;
-    static const int DIM = std_types<Field_t>::n_dim;
+    FLD_INFO(Field_t);
 
     typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
-    typedef typename array_t<double, 1>::Type weight_array_t;    
 
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
@@ -139,7 +140,6 @@ namespace kernels {
 
     ptsu3_array_t val;
     Direction mu;
-    static weight_array_t weights;
 
     StapleSqKernel(const Direction& nu) : mu(nu) {  }
 
@@ -161,11 +161,69 @@ namespace kernels {
     }
 
   };
-  template <class Field_t>
-  typename StapleSqKernel<Field_t>::weight_array_t 
-  StapleSqKernel<Field_t>::weights;
 
+  template <class Bgf, class SUN>
+  void inplace_add(SUN& s, const Bgf& b){
+    for (int i = 0; i < SUN::size; ++i)
+      for (int j = 0; j < SUN::size; ++j)
+	s(i,j) += b(i,j);
+  }
+  template <class SUN>
+  void inplace_add(SUN& s, const bgf::AbelianBgf& b){
+    for (int i = 0; i < SUN::size; ++i)
+      s(i,i) += b[i];
+  }
+  template <class SUN>
+  void inplace_add(SUN& s, const bgf::ScalarBgf& b){
+    for (int i = 0; i < SUN::size; ++i)
+      s(i,i) += b.val();
+  }
+  template <class SUN>
+  void inplace_add(SUN&, const bgf::TrivialBgf&){ }
   
+
+  template <class Field_t>
+  struct StapleSqKernelCtOne {
+    // collect info about the field
+    FLD_INFO(Field_t);
+
+    typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
+
+    const double ct1 = 0.08896;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 1;
+
+    ptsu3_array_t val;
+    Direction mu;
+
+    StapleSqKernelCtOne(const Direction& nu) : mu(nu) {  }
+
+    void operator()(Field_t& U, const Point& n) {
+      // std::cout << val[0][0] << "\n";
+      val[0].zero();
+      // std::cout << val[0][0] << "\n";
+      for(Direction nu; nu.is_good(); ++nu)
+        if(nu != mu){
+          val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu]);
+          val[0] += dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+        }
+      // Close the staple
+      val[0] = U[n][mu] * val[0];
+      // Apply ct, i.e.
+      // staple = staple * (1 + g_0^2 c_t^(1))
+      for (int i = 2; i < ORD; ++i)
+	val[0][i] += val[0][i-2] * ct1;
+      // background contribution
+      inplace_add(val[0][1], val[0].bgf());
+    }
+    
+    ptSU3& reduce() { 
+      return val[0]; 
+    }
+
+  };
   ////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////
   ///

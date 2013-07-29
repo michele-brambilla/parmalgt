@@ -306,7 +306,7 @@ namespace kernels {
   
     ////////////////////////////////////////////////////////////
     //
-    //  Gauge update with second-order Runge-Kutta scheme, second
+    //  Gauge update with second-order Runge-Kutta scheme, first
     //  step.
     //
     //  \warning   See warning in GU_RK2_2.
@@ -347,7 +347,7 @@ namespace kernels {
 
     ////////////////////////////////////////////////////////////
     //
-    //  Gauge update with -order Runge-Kutta scheme, step.
+    //  Gauge update with -order Runge-Kutta scheme, second step.
     //
     //  \warning   We are not sure if what is below called "Method I"
     //  or "Method II" is correct! Else it seems to work now.

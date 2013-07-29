@@ -358,6 +358,22 @@ namespace meth{
 	for (Direction mu; mu.is_good(); ++mu)
 	  U.apply_on_timeslice(wf3[mu], t);
     }
+
+    // select the correct kernel for the temporal boundary links
+    template <class Fld_t, bool b> struct bnd_kernel { // no ct
+      typedef typename detail::rand_gen_<Fld_t>::RandField RK_t;
+      typedef typename kernels::StapleSqKernel<Fld_t> Staple_k;
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, Staple_k, RK_t > wf1_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, Staple_k, RK_t > wf2_t;
+    };
+    template <class Fld_t> struct bnd_kernel<Fld_t, true> { // with ct
+      typedef typename detail::rand_gen_<Fld_t>::RandField RK_t;
+      typedef typename kernels::StapleSqKernelCtOne<Fld_t> CtStaple;
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, CtStaple, RK_t > wf1_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, CtStaple, RK_t > wf2_t;
+    };
+
+
     ////////////////////////////////////////////////////////////
     //
     //  Perform a gauge update on the SF d.o.f. using a second-order
@@ -367,11 +383,12 @@ namespace meth{
     //
     //  \date      Thu Feb 21 18:27:23 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
-    template <class Fld_t>
+    template <class Fld_t, bool do_ct = false>
     void RK2_update(Fld_t& U, const double& eps){
       typedef typename detail::rand_gen_<Fld_t>::RandField RK_t;
-      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, kernels::StapleSqKernel<Fld_t>, RK_t > wf1_t;
-      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, kernels::StapleSqKernel<Fld_t>, RK_t > wf2_t;
+      typedef typename kernels::StapleSqKernel<Fld_t> Staple_k;
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, Staple_k, RK_t > wf1_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, Staple_k, RK_t > wf2_t;
       typedef typename kernels::std_types<Fld_t>::direction_t Direction;
       static detail::rand_gen_<Fld_t> R(U);
       R.update();
@@ -380,18 +397,26 @@ namespace meth{
       std::vector<wf1_t> wf1;
       for (Direction mu; mu.is_good(); ++mu)
 	wf1.push_back(wf1_t(mu, eps, F, R[mu], Util));
-      U.apply_on_timeslice(wf1[0], 0);
-      for (int t = 1; t < T; ++t)
+      typename bnd_kernel<Fld_t, do_ct>::wf1_t bndk1(Direction(0), eps, F, R[0], Util);
+      U.apply_on_timeslice(bndk1, 0);
+      for (int t = 1; t < T-1; ++t)
 	for (Direction mu; mu.is_good(); ++mu)
 	  U.apply_on_timeslice(wf1[mu], t);
+      for (Direction mu(1); mu.is_good(); ++mu)
+	U.apply_on_timeslice(wf1[mu], T-1);
+      U.apply_on_timeslice(bndk1, T-1);
       std::vector<wf2_t> wf2;
       for (Direction mu; mu.is_good(); ++mu)
 	wf2.push_back(wf2_t(mu, eps, F, R[mu], Util));
-      U.apply_on_timeslice(wf2[0], 0);
-      for (int t = 1; t < T; ++t)
+      typename bnd_kernel<Fld_t, do_ct>::wf2_t bndk2(Direction(0), eps, F, R[0], Util);
+      U.apply_on_timeslice(bndk2, 0);
+      for (int t = 1; t < T-1; ++t)
 	for (Direction mu; mu.is_good(); ++mu)
 	  U.apply_on_timeslice(wf2[mu], t);
-    }
+      for (Direction mu(1); mu.is_good(); ++mu)
+	U.apply_on_timeslice(wf2[mu], T-1);
+      U.apply_on_timeslice(bndk2, T-1);
+   }
      ////////////////////////////////////////////////////////////
     //
     //  Perform a gauge update on the SF d.o.f. using a first-order
