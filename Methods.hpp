@@ -383,7 +383,7 @@ namespace meth{
     //
     //  \date      Thu Feb 21 18:27:23 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
-    template <class Fld_t, bool do_ct = false>
+    template <class Fld_t, bool do_ct>
     void RK2_update(Fld_t& U, const double& eps){
       typedef typename detail::rand_gen_<Fld_t>::RandField RK_t;
       typedef typename kernels::StapleSqKernel<Fld_t> Staple_k;

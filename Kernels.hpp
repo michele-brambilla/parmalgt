@@ -189,8 +189,6 @@ namespace kernels {
 
     typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
 
-    const double ct1 = 0.08896;
-
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
     static const int n_cb = 1;
@@ -201,9 +199,8 @@ namespace kernels {
     StapleSqKernelCtOne(const Direction& nu) : mu(nu) {  }
 
     void operator()(Field_t& U, const Point& n) {
-      // std::cout << val[0][0] << "\n";
+      static const double ct1 = 0.08896;
       val[0].zero();
-      // std::cout << val[0][0] << "\n";
       for(Direction nu; nu.is_good(); ++nu)
         if(nu != mu){
           val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu]);
