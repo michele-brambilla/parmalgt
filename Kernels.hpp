@@ -199,7 +199,7 @@ namespace kernels {
     StapleSqKernelCtOne(const Direction& nu) : mu(nu) {  }
 
     void operator()(Field_t& U, const Point& n) {
-      static const double ct1 = 0.08896;
+      static const double ct1 = -0.08896;
       val[0].zero();
       for(Direction nu; nu.is_good(); ++nu)
         if(nu != mu){
@@ -213,7 +213,7 @@ namespace kernels {
       for (int i = 2; i < ORD; ++i)
 	val[0][i] += val[0][i-2] * ct1;
       // background contribution
-      inplace_add(val[0][1], val[0].bgf());
+      inplace_add(val[0][1], val[0].bgf() * ct1);
     }
     
     ptSU3& reduce() { 

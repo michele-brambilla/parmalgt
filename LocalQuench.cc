@@ -337,11 +337,11 @@ int main(int argc, char *argv[]) {
     timings["Gauge Update"].stop();
 #else
     timings["Gauge Update"].start();
-    meth::gu::RK2_update<GluonField, false>(U, taug);
+    //meth::gu::RK2_update<GluonField, false>(U, taug);
     // DH: Experimental: gauge update using c_t^(1)
     // DH: Comment the line above and uncomment the one
     // DH: below to activate.
-    //meth::gu::RK2_update<GluonField, true>(U, taug);
+    meth::gu::RK2_update<GluonField, true>(U, taug);
     timings["Gauge Update"].stop();
 #endif
     ////////////////////////////////////////////////////////
