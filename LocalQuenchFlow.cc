@@ -41,6 +41,8 @@ void kill_handler(int s){
 const int DIM = 4;
 // perturbative order
 const int ORD = 4;
+// gauge improvement coefficient c1
+const double c_1 =  -0.331;
 
 // some short-hands
 // BACKGROUND FIELD
