@@ -63,6 +63,21 @@ typedef GluonField::neighbors_t nt;
 // Make aliases for the Kernels ...
 //
 
+// ... for the gauge update/fixing ...
+#ifdef IMP_ACT // do we want an improved aciton?
+// 1x1, and 2x1 staples
+typedef kernels::StapleReKernel<GluonField> StK;
+// we need these to implement the imrovement at the boundary
+// NOTE however, that they have to be applied at t=1 and T=t-1
+typedef kernels::LWProcessA<GluonField> PrAK;
+typedef kernels::LWProcessB<GluonField> PrBK;
+typedef kernels::TrivialPreProcess<GluonField> PrTK;
+// workaround for template typedef
+template <class PR> struct GUK {
+  typedef  kernels::GaugeUpdateKernel <GluonField, StK, PR> type;
+};
+#endif
+
 // ... to set the background field ...
 typedef kernels::SetBgfKernel<GluonField> SetBgfKernel;
 
@@ -113,9 +128,23 @@ void measure_coupling(GluonField &U,
 void measure_coupling(GluonField &U,
                       const std::string& rep_str,
                       const bgf::AbelianBgf&){
-  // Gamma'
+
+#ifndef IMP_ACT
   GammaUpperKernel Gu(L);
   GammaLowerKernel Gl(L);
+#else
+  GammaUpperKernel::weights imp_coeff;
+  imp_coeff[0] = 1. - 8.*c_1;
+  imp_coeff[1] = c_1;
+  GammaUpperKernel Gu(L,imp_coeff);
+  GammaLowerKernel Gl(L,imp_coeff);
+#endif
+
+//  MDB: commented
+//  GammaUpperKernel Gu(L);
+//  GammaLowerKernel Gl(L);
+
+  // Gamma'
   ptSU3 tmp = U.apply_on_timeslice(Gu, T-1).val
     + U.apply_on_timeslice(Gl, 0).val;
   io::write_file<ptSU3, ORD>(tmp, tmp.bgf().Tr() ,
@@ -170,10 +199,22 @@ std::string to_string(const T& x){
 }
 
 int main(int argc, char *argv[]) {
+#ifdef IMP_ACT
+  //TODO: CROSS CHECK THESE
+  StK::weights[0] = 1. - 8.*c_1;
+  StK::weights[1] = c_1;
+#endif
   signal(SIGUSR1, kill_handler);
   signal(SIGUSR2, kill_handler);
   signal(SIGXCPU, kill_handler);
   signal(SIGINT, kill_handler);
+
+//  MDB: commented
+//  signal(SIGUSR1, kill_handler);
+//  signal(SIGUSR2, kill_handler);
+//  signal(SIGXCPU, kill_handler);
+//  signal(SIGINT, kill_handler);
+
 #ifdef USE_MPI
   int rank;
   MPI_Init(&argc, &argv);
@@ -215,6 +256,18 @@ int main(int argc, char *argv[]) {
   //
   // random number generators
   srand(atoi(p["seed"].c_str()));
+#ifdef IMP_ACT
+  GUK<PrAK>::type::rands.resize(L*L*L*(T+1));
+  GUK<PrBK>::type::rands.resize(L*L*L*(T+1));
+  GUK<PrTK>::type::rands.resize(L*L*L*(T+1));
+  for (int i = 0; i < L*L*L*(T+1); ++i){
+    GUK<PrAK>::type::rands[i].init(rand());
+    GUK<PrBK>::type::rands[i].init(rand());
+    GUK<PrTK>::type::rands[i].init(rand());
+  }
+#endif
+
+
   ////////////////////////////////////////////////////////////////////
   //
   // lattice setup
@@ -250,9 +303,47 @@ int main(int argc, char *argv[]) {
     //
     //  gauge update
     ////
+#ifdef IMP_ACT
+    // In the case of an improved gauge action, we proceed with the
+    // update according to choice "B" in Aoki et al., hep-lat/9808007
+    // make vector of 'tirvially' pre-processed gauge update kernels
+    std::vector<GUK<PrTK>::type> gut;
+    for (Direction mu; mu.is_good(); ++mu)
+      gut.push_back(GUK<PrTK>::type(mu, taug));
     timings["Gauge Update"].start();
-    meth::gu::RK2_update(U, taug);
+    // 1) Use 'special' GU kernels for spatial plaquettes at t=1 and
+    //    T-1, re reason for this is that the rectangular plaquettes
+    //    with two links on the boundary have a weight of 3/2 c_1.
+    for (Direction k(1); k.is_good(); ++k){
+      GUK<PrAK>::type gua (k, taug);
+      GUK<PrBK>::type gub (k, taug);
+      U.apply_on_timeslice(gua, 1);
+      U.apply_on_timeslice(gub, T-1);
+    }
+    // 2) Business as usual for t = 2,...,T-2, all directions and 
+    //    t = 0,1 and T-1 for mu = 0
+    for (int t = 2; t <= T-2; ++t)
+      for (Direction mu; mu.is_good(); ++mu)
+        U.apply_on_timeslice(gut[mu], t);
+    U.apply_on_timeslice(gut[0], 0);
+    U.apply_on_timeslice(gut[0], 1);
+    U.apply_on_timeslice(gut[0], T-1);
     timings["Gauge Update"].stop();
+#else
+    timings["Gauge Update"].start();
+    meth::gu::RK2_update<GluonField, false>(U, taug);
+    // DH: Experimental: gauge update using c_t^(1)
+    // DH: Comment the line above and uncomment the one
+    // DH: below to activate.
+//    meth::gu::RK2_update<GluonField, true>(U, taug);
+    timings["Gauge Update"].stop();
+#endif
+
+//    MDB: commented 
+//    timings["Gauge Update"].start();
+//    meth::gu::RK2_update(U, taug);
+//    timings["Gauge Update"].stop();
+
     ////////////////////////////////////////////////////////
     //
     //  gauge fixing
@@ -268,6 +359,8 @@ int main(int argc, char *argv[]) {
        measure_coupling(U, "", Bgf_t());
        timings["measurements"].stop();
     }
+
+    //MDB: we want the improved action also in the flow
 
     ////////////////////////////////////////////////////////
     //
