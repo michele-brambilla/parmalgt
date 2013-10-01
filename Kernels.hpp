@@ -182,8 +182,17 @@ namespace kernels {
   void inplace_add(SUN&, const bgf::TrivialBgf&){ }
   
 
+  ////////////////////////////////////////////////////////////
+  //
+  // Staple kernel taking into account the boundary correction
+  // c_t. This is meant to act on the TEMPORAL components of the gauge
+  // field at x_0 = 0 and x_0 = T - a.
+  //
+  // \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  // \date Tue Oct  1 16:36:56 2013
+
   template <class Field_t>
-  struct StapleSqKernelCtOne {
+  struct StapleSqKernelCtOneTemporal {
     // collect info about the field
     FLD_INFO(Field_t);
 
@@ -196,7 +205,7 @@ namespace kernels {
     ptsu3_array_t val;
     Direction mu;
 
-    StapleSqKernelCtOne(const Direction& nu) : mu(nu) {  }
+    StapleSqKernelCtOneTemporal(const Direction& nu) : mu(nu) {  }
 
     void operator()(Field_t& U, const Point& n) {
       static const double ct1 = -0.08896;
@@ -221,6 +230,118 @@ namespace kernels {
     }
 
   };
+
+  ////////////////////////////////////////////////////////////
+  //
+  // Staple kernel taking into account the boundary correction
+  // c_t. This is meant to act on the SPATIAL components of the gauge
+  // field at x_0 = a.
+  //
+  // \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  // \date Tue Oct  1 16:41:11 2013
+
+  template <class Field_t>
+  struct StapleSqKernelCtOneSpatialEarly {
+    // collect info about the field
+    FLD_INFO(Field_t);
+
+    typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 1;
+
+    ptsu3_array_t val;
+    Direction mu;
+
+    StapleSqKernelCtOneSpatialEarly(const Direction& nu) : mu(nu) {  }
+
+    void operator()(Field_t& U, const Point& n) {
+      static const double ct1 = -0.08896;
+      val[0].zero();
+      Direction nu;
+      if(nu != mu){
+	val[0] += dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+	// contains temproal link -> factor of ct ...
+	// staple = staple * (1 + g_0^2 c_t^(1))
+	for (int i = 2; i < ORD; ++i)
+	  val[0][i] += val[0][i-2] * ct1;
+	// background contribution
+	inplace_add(val[0][1], val[0].bgf() * ct1);
+	val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu]);
+      }
+      for(++nu; nu.is_good(); ++nu)
+        if(nu != mu){
+          val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu]);
+          val[0] += dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+        }
+      // Close the staple
+      val[0] = U[n][mu] * val[0];
+      // Apply ct, i.e.
+    }
+    
+    ptSU3& reduce() { 
+      return val[0]; 
+    }
+  };
+
+  ////////////////////////////////////////////////////////////
+  //
+  // Staple kernel taking into account the boundary correction
+  // c_t. This is meant to act on the SPATIAL components of the gauge
+  // field at x_0 = T - a.
+  //
+  // \author Dirk Hesse <herr.dirk.hesse@gmail.com>
+  // \date Tue Oct  1 16:42:11 2013
+
+
+  template <class Field_t>
+  struct StapleSqKernelCtOneSpatialLate {
+    // collect info about the field
+    FLD_INFO(Field_t);
+
+    typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
+
+    // checker board hyper cube size
+    // c.f. geometry and localfield for more info
+    static const int n_cb = 1;
+
+    ptsu3_array_t val;
+    Direction mu;
+
+    StapleSqKernelCtOneSpatialLate(const Direction& nu) : mu(nu) {  }
+
+    void operator()(Field_t& U, const Point& n) {
+      static const double ct1 = -0.08896;
+      val[0].zero();
+      Direction nu;
+      if (nu != mu){
+	val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu]);
+	// contains temporal link -> factor of ct ...
+	// staple = staple * (1 + g_0^2 c_t^(1))
+	for (int i = 2; i < ORD; ++i)
+	  val[0][i] += val[0][i-2] * ct1;
+	// background contribution
+	inplace_add(val[0][1], val[0].bgf() * ct1);
+	val[0] += dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+      }
+      for(++nu; nu.is_good(); ++nu)
+        if(nu != mu){
+          val[0] += U[n + mu][nu] *  dag(U[n][nu] * U[n + nu][mu]);
+          val[0] += dag(U[n-nu][mu] * U[n+mu-nu][nu]) * U[n - nu][nu];
+        }
+      // Close the staple
+      val[0] = U[n][mu] * val[0];
+     
+    }
+    
+    ptSU3& reduce() { 
+      return val[0]; 
+    }
+
+  };
+
+
   ////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////
   ///

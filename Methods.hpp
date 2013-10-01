@@ -363,14 +363,29 @@ namespace meth{
     template <class Fld_t, bool b> struct bnd_kernel { // no ct
       typedef typename detail::rand_gen_<Fld_t>::RandField RK_t;
       typedef typename kernels::StapleSqKernel<Fld_t> Staple_k;
-      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, Staple_k, RK_t > wf1_t;
-      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, Staple_k, RK_t > wf2_t;
+      // kernels to be applied in temporal directions at x_0 = 0, x_0 = T - a
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, Staple_k, RK_t > wf1t_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, Staple_k, RK_t > wf2t_t;
+      // kernels to be applided in spatial directions at x_0 = a, x_0 = T-a
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, Staple_k, RK_t > wf1s_early_t;
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, Staple_k, RK_t > wf1s_late_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, Staple_k, RK_t > wf2s_early_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, Staple_k, RK_t > wf2s_late_t;
     };
     template <class Fld_t> struct bnd_kernel<Fld_t, true> { // with ct
       typedef typename detail::rand_gen_<Fld_t>::RandField RK_t;
-      typedef typename kernels::StapleSqKernelCtOne<Fld_t> CtStaple;
-      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, CtStaple, RK_t > wf1_t;
-      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, CtStaple, RK_t > wf2_t;
+      // plaquette for temporal direction
+      typedef typename kernels::StapleSqKernelCtOneTemporal<Fld_t> CtStaple;
+      typedef typename kernels::StapleSqKernelCtOneSpatialEarly<Fld_t> CtEarlyStaple;
+      typedef typename kernels::StapleSqKernelCtOneSpatialLate<Fld_t> CtLateStaple;
+      // kernels to be applied in temporal directions at x_0 = 0, x_0 = T - a
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, CtStaple, RK_t > wf1t_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, CtStaple, RK_t > wf2t_t;
+      // kernels to be applided in spatial directions at x_0 = a, x_0 = T-a
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, CtEarlyStaple, RK_t > wf1s_early_t;
+      typedef typename kernels::gauge_update::GU_RK2_1<Fld_t, CtLateStaple, RK_t > wf1s_late_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, CtEarlyStaple, RK_t > wf2s_early_t;
+      typedef typename kernels::gauge_update::GU_RK2_2<Fld_t, CtLateStaple, RK_t > wf2s_late_t;
     };
 
 
@@ -394,27 +409,57 @@ namespace meth{
       R.update();
       Fld_t F(U), Util(U);
       int T = U.extent(0) - 1;
+      ///////////////////////////////
+      // FIRST STEP
       std::vector<wf1_t> wf1;
       for (Direction mu; mu.is_good(); ++mu)
 	wf1.push_back(wf1_t(mu, eps, F, R[mu], Util));
-      typename bnd_kernel<Fld_t, do_ct>::wf1_t bndk1(Direction(0), eps, F, R[0], Util);
+      // t = 0, mu = 0
+      typename bnd_kernel<Fld_t, do_ct>::wf1t_t bndk1(Direction(0), eps, F, R[0], Util);
       U.apply_on_timeslice(bndk1, 0);
-      for (int t = 1; t < T-1; ++t)
+      // t = a, mu = 0
+      U.apply_on_timeslice(wf1[0], 1);
+      // t = a, mu = 1,2,..., D-1
+      for (Direction mu(1); mu.is_good(); ++mu){
+	typename bnd_kernel<Fld_t, do_ct>::wf1s_early_t tmp(mu, eps, F, R[0], Util);
+	U.apply_on_timeslice(tmp, 1);
+      }
+      // t = 2*a, ..., T-2
+      for (int t = 2; t < T-1; ++t)
 	for (Direction mu; mu.is_good(); ++mu)
 	  U.apply_on_timeslice(wf1[mu], t);
-      for (Direction mu(1); mu.is_good(); ++mu)
-	U.apply_on_timeslice(wf1[mu], T-1);
+      // t = T - 1, mu = 1,2,..., D-1
+      for (Direction mu(1); mu.is_good(); ++mu){
+	typename bnd_kernel<Fld_t, do_ct>::wf1s_early_t tmp(mu, eps, F, R[0], Util);
+	U.apply_on_timeslice(tmp, T-1);
+      }
+      // t = T - 1, mu = 0
       U.apply_on_timeslice(bndk1, T-1);
+      ///////////////////////////////
+      // SECOND STEP
       std::vector<wf2_t> wf2;
       for (Direction mu; mu.is_good(); ++mu)
 	wf2.push_back(wf2_t(mu, eps, F, R[mu], Util));
-      typename bnd_kernel<Fld_t, do_ct>::wf2_t bndk2(Direction(0), eps, F, R[0], Util);
+      // t = 0, mu = 0
+      typename bnd_kernel<Fld_t, do_ct>::wf2t_t bndk2(Direction(0), eps, F, R[0], Util);
       U.apply_on_timeslice(bndk2, 0);
-      for (int t = 1; t < T-1; ++t)
+      // t = a, mu = 0
+      U.apply_on_timeslice(wf2[0], 1);
+      // t = a, mu = 1,2,..., D-1
+      for (Direction mu(1); mu.is_good(); ++mu){
+	typename bnd_kernel<Fld_t, do_ct>::wf2s_early_t tmp(mu, eps, F, R[0], Util);
+	U.apply_on_timeslice(tmp, 1);
+      }
+      // t = 2*a, ..., T-2
+      for (int t = 2; t < T-1; ++t)
 	for (Direction mu; mu.is_good(); ++mu)
 	  U.apply_on_timeslice(wf2[mu], t);
-      for (Direction mu(1); mu.is_good(); ++mu)
-	U.apply_on_timeslice(wf2[mu], T-1);
+      // t = T - 1, mu = 1,2,..., D-1
+      for (Direction mu(1); mu.is_good(); ++mu){
+	typename bnd_kernel<Fld_t, do_ct>::wf2s_early_t tmp(mu, eps, F, R[0], Util);
+	U.apply_on_timeslice(tmp, T-1);
+      }
+      // t = T - 1, mu = 0
       U.apply_on_timeslice(bndk2, T-1);
    }
      ////////////////////////////////////////////////////////////
