@@ -421,7 +421,7 @@ namespace meth{
       U.apply_on_timeslice(wf1[0], 1);
       // t = a, mu = 1,2,..., D-1
       for (Direction mu(1); mu.is_good(); ++mu){
-	typename bnd_kernel<Fld_t, do_ct>::wf1s_early_t tmp(mu, eps, F, R[0], Util);
+	typename bnd_kernel<Fld_t, do_ct>::wf1s_early_t tmp(mu, eps, F, R[mu], Util);
 	U.apply_on_timeslice(tmp, 1);
       }
       // t = 2*a, ..., T-2
@@ -430,7 +430,7 @@ namespace meth{
 	  U.apply_on_timeslice(wf1[mu], t);
       // t = T - 1, mu = 1,2,..., D-1
       for (Direction mu(1); mu.is_good(); ++mu){
-	typename bnd_kernel<Fld_t, do_ct>::wf1s_early_t tmp(mu, eps, F, R[0], Util);
+	typename bnd_kernel<Fld_t, do_ct>::wf1s_late_t tmp(mu, eps, F, R[mu], Util);
 	U.apply_on_timeslice(tmp, T-1);
       }
       // t = T - 1, mu = 0
@@ -447,7 +447,7 @@ namespace meth{
       U.apply_on_timeslice(wf2[0], 1);
       // t = a, mu = 1,2,..., D-1
       for (Direction mu(1); mu.is_good(); ++mu){
-	typename bnd_kernel<Fld_t, do_ct>::wf2s_early_t tmp(mu, eps, F, R[0], Util);
+	typename bnd_kernel<Fld_t, do_ct>::wf2s_early_t tmp(mu, eps, F, R[mu], Util);
 	U.apply_on_timeslice(tmp, 1);
       }
       // t = 2*a, ..., T-2
@@ -456,7 +456,7 @@ namespace meth{
 	  U.apply_on_timeslice(wf2[mu], t);
       // t = T - 1, mu = 1,2,..., D-1
       for (Direction mu(1); mu.is_good(); ++mu){
-	typename bnd_kernel<Fld_t, do_ct>::wf2s_early_t tmp(mu, eps, F, R[0], Util);
+	typename bnd_kernel<Fld_t, do_ct>::wf2s_late_t tmp(mu, eps, F, R[mu], Util);
 	U.apply_on_timeslice(tmp, T-1);
       }
       // t = T - 1, mu = 0
