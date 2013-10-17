@@ -179,7 +179,7 @@ namespace kernels {
       s(i,i) += b.val();
   }
   template <class SUN>
-  void inplace_add(SUN&, const bgf::TrivialBgf&){
+  void inplace_add(SUN& s, const bgf::TrivialBgf&){
     for (int i = 0; i < SUN::size; ++i)
       s(i,i) += 1;
   }
