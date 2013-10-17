@@ -47,10 +47,13 @@ namespace ptt {
     ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
     ///  \date Fri Feb  3 12:41:56 2012
 
-    //const SU3_t& operator[](const int& i) const { return array_[i]; }
-    //SU3_t& operator[](const int& i) { return array_[i]; }
+#ifndef DEBUG
+    const SU3_t& operator[](const int& i) const { return array_[i]; }
+    SU3_t& operator[](const int& i) { return array_[i]; }
+#else
     const SU3_t& operator[](const int& i) const { return array_.at(i); }
     SU3_t& operator[](const int& i) { return array_.at(i); }
+#endif
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -293,11 +296,6 @@ namespace ptt {
   template <int N>
   inline PtMatrix<N> operator*(const PtMatrix<N>& A, const PtMatrix<N>& B){
     PtMatrix<N> result;
-    //for (int r = 0; r < ORD; ++r){
-    //  result[r] = A[r];
-    //  for (int s = 1; s < r+1; ++s)
-    //    result[r] += A[s-1] * B[r-s];
-    //}
     for (int i = 0; i < N - 1; ++i)
       for (int j = 0; j <= i; ++j)
         result[i + 1] += A[j] * B[i - j];
