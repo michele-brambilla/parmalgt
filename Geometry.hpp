@@ -469,7 +469,7 @@ namespace geometry {
         for (int i = 1; i < D; ++i) n[i] = Iter::get_start(i, g);
         Iter x(g.mk_point(n), g.get_extents());
         do {
-          lat[t].at(g.template bin<N>(*x)).push_back(*x);
+          lat[t][g.template bin<N>(*x)].push_back(*x);
         } while ((++x).is_good());
       }
     }

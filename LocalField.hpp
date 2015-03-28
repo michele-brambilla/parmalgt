@@ -403,7 +403,7 @@ namespace fields {
       // parallelize with a simple checker-board scheme ...
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::slice slice;
       typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::bin bin;
-      static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
+      geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
       for (typename slice::const_iterator s = cb[t].begin();
 	   s != cb[t].end(); ++s){
 	int N = s->size();
