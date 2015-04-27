@@ -114,7 +114,7 @@ namespace kernels {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu); // maye make a vector of this a class member
         st(U,n);
-        (*F)[n][mu] = st.reduce() * 3./4 -(*F)[n][mu];
+        (*F)[n][mu] = st.reduce() * 3./4 - (*F)[n][mu];
         //ptsu3 tmp  = st.reduce().reH() * -taug;
         U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() * -taug)*U[n][mu]; // back to SU3
       }
@@ -185,9 +185,7 @@ namespace kernels {
         StapleK_t st(mu); // maye make a vector of this a class member
         st(*Utilde,n);
         (*F)[n][mu] += st.reduce();
-	(*F)[n][mu] *= -.5 * taug;
-        for (int i = 0; i < ORD - 2; ++i)
-	  (*F)[n][mu][i + 2] += 0.5 * taug * (*F)[n][mu][i];
+	(*F)[n][mu] *= -(0.5  + .25* taug) * taug;
         U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() )* U[n][mu]; // back to SU3
       }
     };
@@ -309,8 +307,6 @@ namespace kernels {
     //  Gauge update with second-order Runge-Kutta scheme, first
     //  step.
     //
-    //  \warning   See warning in GU_RK2_2.
-    //
     //  \date      Thu Feb 21 19:28:54 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     template <class Field_t, class StapleK_t, class RF_t>
@@ -339,18 +335,13 @@ namespace kernels {
         (*F)[n][mu] = st.reduce();
         ptsu3 tmp = (*F)[n][mu].reH() * -taug;
         tmp[0] -= (*R)[n] * staug;
-	//ptsu3 tmp;
-	//tmp[0] -= (*R)[n] * staug;
         (*Utilde)[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
 
     ////////////////////////////////////////////////////////////
     //
-    //  Gauge update with -order Runge-Kutta scheme, second step.
-    //
-    //  \warning   We are not sure if what is below called "Method I"
-    //  or "Method II" is correct! Else it seems to work now.
+    //  Gauge update with 2nd-order Runge-Kutta scheme, second step.
     //
     //  \date      Thu Feb 21 19:29:02 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
@@ -378,19 +369,11 @@ namespace kernels {
         StapleK_t st(mu); // maye make a vector of this a class member
         st(*Utilde,n);
         (*F)[n][mu] += st.reduce();
-	/*/ Method I
-	(*F)[n][mu] *= -(0.5  + .25* taug) * taug;
-	/*/  
-	// Method II
 	(*F)[n][mu] *= -.5 * taug;
         for (int i = 0; i < ORD - 2; ++i)
 	  (*F)[n][mu][i + 2] += 0.5 * taug * (*F)[n][mu][i];
-	//*/
         (*F)[n][mu][0] -= (*R)[n] * staug;
         U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() )*U[n][mu]; // back to SU3
-	//ptsu3 tmp;
-	//tmp[0] -= (*R)[n] * staug;
-        //U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
     template <class Field_t, class StapleK_t, class RF_t>
