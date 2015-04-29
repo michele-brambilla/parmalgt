@@ -93,29 +93,32 @@ namespace meth{
       typedef typename kernels::flow::WF_RK_2<Fld_t, kernels::StapleSqKernel<Fld_t> > wf2_t;
       typedef typename kernels::flow::WF_RK_3<Fld_t, kernels::StapleSqKernel<Fld_t> > wf3_t;
       typedef typename kernels::std_types<Fld_t>::direction_t Direction;
-      Fld_t F(U);
+      Fld_t F(U), Utilde(U);
       int T = U.extent(0) - 1;
       std::vector<wf1_t> wf1;
       for (Direction mu; mu.is_good(); ++mu)
-        wf1.push_back(wf1_t(mu, eps, F));
+        wf1.push_back(wf1_t(mu, eps, F, Utilde));
       U.apply_on_timeslice(wf1[0], 0);
       for (int t = 1; t < T; ++t)
         for (Direction mu; mu.is_good(); ++mu)
   	U.apply_on_timeslice(wf1[mu], t);
+      U = Utilde;
       std::vector<wf2_t> wf2;
       for (Direction mu; mu.is_good(); ++mu)
-        wf2.push_back(wf2_t(mu, eps, F));
+        wf2.push_back(wf2_t(mu, eps, F, Utilde));
       U.apply_on_timeslice(wf2[0], 0);
       for (int t = 1; t < T; ++t)
   	for (Direction mu; mu.is_good(); ++mu)
   	  U.apply_on_timeslice(wf2[mu], t);
+      U = Utilde;
       std::vector<wf3_t> wf3;
       for (Direction mu; mu.is_good(); ++mu)
-        wf3.push_back(wf3_t(mu, eps, F));
+        wf3.push_back(wf3_t(mu, eps, F, Utilde));
       U.apply_on_timeslice(wf3[0], 0);
       for (int t = 1; t < T; ++t)
         for (Direction mu; mu.is_good(); ++mu)
   	U.apply_on_timeslice(wf3[mu], t);
+      U = Utilde;
     }
     ////////////////////////////////////////////////////////////
     //

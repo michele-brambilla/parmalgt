@@ -33,19 +33,26 @@ namespace kernels {
       
       Direction mu;
       double taug;
-      Field_t *F;
+      Field_t& F;
+      Field_t& Utilde;
       
-      WF_RK_1(const Direction& nu, const double& t, Field_t& FF) :
-        mu(nu), taug(t), F(&FF) { }
-  
+      WF_RK_1(const Direction& nu, const double& t, Field_t& F, Field_t& Utilde) :
+        mu(nu), taug(t), F(F), Utilde(Utilde) { }
+      WF_RK_1(const WF_RK_1& other) : mu(other.mu), taug(other.taug),
+				      F(const_cast<WF_RK_1&>(other).F),
+				      Utilde(const_cast<WF_RK_1&>(other).Utilde){}
+      WF_RK_1& operator=(const WF_RK_1& other) {
+	if (this != &other)
+	  *this = WF_RK_1(other);
+	return *this;
+      }
       void operator()(Field_t& U, const Point& n) {
-	Field_t& FF = *F;
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu);
         st(U,n);
-        FF[n][mu] = st.reduce();
-        ptsu3 tmp  = FF[n][mu].reH() * -0.25 * taug;
-        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        F[n][mu] = st.reduce();
+        ptsu3 tmp  = F[n][mu].reH() * -0.25 * taug;
+        Utilde[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
     
@@ -70,19 +77,26 @@ namespace kernels {
       
       Direction mu;
       double taug;
-      Field_t *F;
+      Field_t& F;
+      Field_t& Utilde;
       
-      WF_RK_2(const Direction& nu, const double& t, Field_t& FF) :
-        mu(nu), taug(t), F(&FF) { }
-  
+      WF_RK_2(const Direction& nu, const double& t, Field_t& F, Field_t& Utilde) :
+        mu(nu), taug(t), F(F), Utilde(Utilde) { }
+      WF_RK_2(const WF_RK_2& other) : mu(other.mu), taug(other.taug),
+				      F(const_cast<WF_RK_2&>(other).F),
+				      Utilde(const_cast<WF_RK_2&>(other).Utilde){}
+      WF_RK_2& operator=(const WF_RK_2& other) {
+	if (this != &other)
+	  *this = WF_RK_2(other);
+	return *this;
+      }
       void operator()(Field_t& U, const Point& n) {
-	Field_t& FF = *F;
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu);
         st(U,n);
-        FF[n][mu] = FF[n][mu] * -17.0 / 36.0 + 8.0 / 9.0 * st.reduce();
-        ptsu3 tmp  = FF[n][mu].reH() * -taug;
-        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        F[n][mu] = F[n][mu] * -17.0 / 36.0 + 8.0 / 9.0 * st.reduce();
+        ptsu3 tmp  = F[n][mu].reH() * -taug;
+        Utilde[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
 
@@ -107,18 +121,25 @@ namespace kernels {
       
       Direction mu;
       double taug;
-      Field_t *F;
+      Field_t& F;
+      Field_t& Utilde;
       
-      WF_RK_3(const Direction& nu, const double& t, Field_t& FF) :
-        mu(nu), taug(t), F(&FF) { }
-  
+      WF_RK_3(const Direction& nu, const double& t, Field_t& F, Field_t& Utilde) :
+        mu(nu), taug(t), F(F), Utilde(Utilde) { }
+      WF_RK_3(const WF_RK_3& other) : mu(other.mu), taug(other.taug),
+				      F(const_cast<WF_RK_3&>(other).F),
+				      Utilde(const_cast<WF_RK_3&>(other).Utilde){}
+      WF_RK_3& operator=(const WF_RK_3& other) {
+	if (this != &other)
+	  *this = WF_RK_3(other);
+	return *this;
+      }
       void operator()(Field_t& U, const Point& n) {
-	Field_t& FF = *F;
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu);
         st(U,n);
-        ptsu3 tmp = (st.reduce() * 3.0 / 4.0 - FF[n][mu]).reH() * -taug;
-        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        ptsu3 tmp = (st.reduce() * 3.0 / 4.0 - F[n][mu]).reH() * -taug;
+        Utilde[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
     ////////////////////////////////////////////////////////////
