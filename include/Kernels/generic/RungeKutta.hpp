@@ -39,12 +39,13 @@ namespace kernels {
         mu(nu), taug(t), F(&FF) { }
   
       void operator()(Field_t& U, const Point& n) {
+	Field_t& FF = *F;
         // Make a Kernel to calculate and store the plaquette(s)
-        StapleK_t st(mu); // maye make a vector of this a class member
+        StapleK_t st(mu);
         st(U,n);
-        (*F)[n][mu] = st.reduce();
-        //ptsu3 tmp  = st.reduce().reH() * -taug;
-        U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() * -0.25 * taug)*U[n][mu]; // back to SU3
+        FF[n][mu] = st.reduce();
+        ptsu3 tmp  = FF[n][mu].reH() * -0.25 * taug;
+        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
     
@@ -75,12 +76,13 @@ namespace kernels {
         mu(nu), taug(t), F(&FF) { }
   
       void operator()(Field_t& U, const Point& n) {
+	Field_t& FF = *F;
         // Make a Kernel to calculate and store the plaquette(s)
-        StapleK_t st(mu); // maye make a vector of this a class member
+        StapleK_t st(mu);
         st(U,n);
-        (*F)[n][mu] = (*F)[n][mu] * -17./36 + 8./9 * st.reduce();
-        //ptsu3 tmp  = st.reduce().reH() * -taug;
-        U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() * -taug)*U[n][mu]; // back to SU3
+        FF[n][mu] = FF[n][mu] * -17.0 / 36.0 + 8.0 / 9.0 * st.reduce();
+        ptsu3 tmp  = FF[n][mu].reH() * -taug;
+        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
 
@@ -111,12 +113,12 @@ namespace kernels {
         mu(nu), taug(t), F(&FF) { }
   
       void operator()(Field_t& U, const Point& n) {
+	Field_t& FF = *F;
         // Make a Kernel to calculate and store the plaquette(s)
-        StapleK_t st(mu); // maye make a vector of this a class member
+        StapleK_t st(mu);
         st(U,n);
-        (*F)[n][mu] = st.reduce() * 3./4 - (*F)[n][mu];
-        //ptsu3 tmp  = st.reduce().reH() * -taug;
-        U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() * -taug)*U[n][mu]; // back to SU3
+        ptsu3 tmp = (st.reduce() * 3.0 / 4.0 - FF[n][mu]).reH() * -taug;
+        U[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
     ////////////////////////////////////////////////////////////
@@ -151,7 +153,7 @@ namespace kernels {
         StapleK_t st(mu); // maye make a vector of this a class member
         st(U,n);
         (*F)[n][mu] = st.reduce();
-        ptsu3 tmp = (*F)[n][mu].reH() * -taug;
+        ptsu3 tmp = (*F)[n][mu].reH() * -0.25 * taug;
         (*Utilde)[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
       }
     };
@@ -184,8 +186,8 @@ namespace kernels {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu); // maye make a vector of this a class member
         st(*Utilde,n);
-        (*F)[n][mu] += st.reduce();
-	(*F)[n][mu] *= -(0.5  + .25* taug) * taug;
+        (*F)[n][mu] -= 2.0 * st.reduce();
+	(*F)[n][mu] *= taug;
         U[n][mu] = exp<BGF, ORD>( (*F)[n][mu].reH() )* U[n][mu]; // back to SU3
       }
     };
