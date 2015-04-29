@@ -54,13 +54,16 @@ while for the version with Wilson you want to use
 
   make LocalQuenchFlow
 
-Both programs should now be ready. Their behaivours are controlled
-with the configuration files ``input`` and ``flow_ipt``
-respectively. Both contain comments explaining the options. The
-execution of the programs will produce data files containing measured
-observables, with the extension ``.bindat``. The data is in binary, if
-you call the command
-::
+Both programs should now be ready.
+
+Executing the Simulations
+=====================
+
+Their behaviors are controlled with the configuration files ``input``
+and ``flow_ipt`` respectively. Both contain comments explaining the
+options. The execution of the programs will produce data files
+containing measured observables, with the extension ``.bindat``. The
+data is in binary, if you call the command ::
 
   od -t f8 Gp.bindat
 
@@ -72,3 +75,22 @@ you will get an output like this::
   0000040    -1.628038858861708e-01   -8.673617379884035e-19  <- O(g^2), Meas. 1
   0000060     3.166703085779656e-04    4.846514929628224e-05  <- ...
                                                               <- tree level, Meas. 2 ...
+
+
+
+Testing
+========
+
+Several unit tests are available. To build and run them, you need to
+download the googletest[1] suite. Just point the configure script to
+the top level directory where you unpacked googletest, like so::
+
+  ./configure --with-gtest-srcdir=/path/to/gtest-1.6.0
+
+After this, a simple::
+
+  make check
+
+should compile and execute the individual tests.
+
+[1]: https://code.google.com/p/googletest/ "Googletest"
