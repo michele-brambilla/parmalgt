@@ -125,7 +125,7 @@ namespace meth{
       std::vector<wf3_t> wf3;
       for (Direction mu; mu.is_good(); ++mu)
         wf3.push_back(wf3_t(mu, eps, F));
-      detail::ApplyOnSfDOF(U, wf1); // measure
+      detail::ApplyOnSfDOF(U, wf3); // measure
       detail::ApplyOnSfDOF(U, afk); // apply
     }
     ////////////////////////////////////////////////////////////
