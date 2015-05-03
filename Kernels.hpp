@@ -143,7 +143,7 @@ namespace kernels {
 
     StapleSqKernel(const Direction& nu) : mu(nu) {  }
 
-    void operator()(Field_t& U, const Point& n) {
+    void operator()(const Field_t& U, const Point& n) {
       // std::cout << val[0][0] << "\n";
       val[0].zero();
       // std::cout << val[0][0] << "\n";

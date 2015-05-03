@@ -34,25 +34,21 @@ namespace kernels {
       Direction mu;
       double taug;
       Field_t& F;
-      Field_t& Utilde;
       
-      WF_RK_1(const Direction& nu, const double& t, Field_t& F, Field_t& Utilde) :
-        mu(nu), taug(t), F(F), Utilde(Utilde) { }
+      WF_RK_1(const Direction& nu, const double& t, Field_t& F) :
+        mu(nu), taug(t), F(F) { }
       WF_RK_1(const WF_RK_1& other) : mu(other.mu), taug(other.taug),
-				      F(const_cast<WF_RK_1&>(other).F),
-				      Utilde(const_cast<WF_RK_1&>(other).Utilde){}
+				      F(const_cast<WF_RK_1&>(other).F) { }
       WF_RK_1& operator=(const WF_RK_1& other) {
 	if (this != &other)
 	  *this = WF_RK_1(other);
 	return *this;
       }
-      void operator()(Field_t& U, const Point& n) {
+      void operator()(const Field_t& U, const Point& n) const {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu);
         st(U,n);
-        F[n][mu] = st.reduce();
-        ptsu3 tmp  = F[n][mu].reH() * -0.25 * taug;
-        Utilde[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        F[n][mu] = st.reduce() * 0.25;
       }
     };
     
@@ -78,25 +74,21 @@ namespace kernels {
       Direction mu;
       double taug;
       Field_t& F;
-      Field_t& Utilde;
       
-      WF_RK_2(const Direction& nu, const double& t, Field_t& F, Field_t& Utilde) :
-        mu(nu), taug(t), F(F), Utilde(Utilde) { }
+      WF_RK_2(const Direction& nu, const double& t, Field_t& F) :
+        mu(nu), taug(t), F(F) { }
       WF_RK_2(const WF_RK_2& other) : mu(other.mu), taug(other.taug),
-				      F(const_cast<WF_RK_2&>(other).F),
-				      Utilde(const_cast<WF_RK_2&>(other).Utilde){}
+				      F(const_cast<WF_RK_2&>(other).F) { }
       WF_RK_2& operator=(const WF_RK_2& other) {
 	if (this != &other)
 	  *this = WF_RK_2(other);
 	return *this;
       }
-      void operator()(Field_t& U, const Point& n) {
+      void operator()(const Field_t& U, const Point& n) const {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu);
         st(U,n);
-        F[n][mu] = F[n][mu] * -17.0 / 36.0 + 8.0 / 9.0 * st.reduce();
-        ptsu3 tmp  = F[n][mu].reH() * -taug;
-        Utilde[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        F[n][mu] = F[n][mu] * 4.0 * -17.0 / 36.0 + 8.0 / 9.0 * st.reduce();
       }
     };
 
@@ -122,24 +114,49 @@ namespace kernels {
       Direction mu;
       double taug;
       Field_t& F;
-      Field_t& Utilde;
       
-      WF_RK_3(const Direction& nu, const double& t, Field_t& F, Field_t& Utilde) :
-        mu(nu), taug(t), F(F), Utilde(Utilde) { }
+      WF_RK_3(const Direction& nu, const double& t, Field_t& F) :
+        mu(nu), taug(t), F(F) { }
       WF_RK_3(const WF_RK_3& other) : mu(other.mu), taug(other.taug),
-				      F(const_cast<WF_RK_3&>(other).F),
-				      Utilde(const_cast<WF_RK_3&>(other).Utilde){}
+				      F(const_cast<WF_RK_3&>(other).F) { }
       WF_RK_3& operator=(const WF_RK_3& other) {
 	if (this != &other)
 	  *this = WF_RK_3(other);
 	return *this;
       }
-      void operator()(Field_t& U, const Point& n) {
+      void operator()(const Field_t& U, const Point& n) const {
         // Make a Kernel to calculate and store the plaquette(s)
         StapleK_t st(mu);
         st(U,n);
-        ptsu3 tmp = (st.reduce() * 3.0 / 4.0 - F[n][mu]).reH() * -taug;
-        Utilde[n][mu] = exp<BGF, ORD>(tmp)*U[n][mu]; // back to SU3
+        F[n][mu] = (st.reduce() * 3.0 / 4.0 - F[n][mu]);
+      }
+    };
+    
+    template <class Field_t>
+    struct ApplyForceKernel {
+      
+      // collect info about the field
+      FLD_INFO(Field_t);
+  
+      // checker board hyper cube size
+      // c.f. geometry and localfield for more info
+      static const int n_cb = 1;
+      
+      Direction mu;
+      double epsilon; // Step size
+      Field_t& F; // Force field
+      
+      ApplyForceKernel(const Direction& mu, const double& epsilon, Field_t& F) :
+        mu(mu), epsilon(epsilon), F(F) { }
+      ApplyForceKernel(const ApplyForceKernel& other) : mu(other.mu), epsilon(other.epsilon),
+							F(const_cast<ApplyForceKernel&>(other).F) { }
+      ApplyForceKernel& operator=(const ApplyForceKernel& other) {
+	if (this != &other)
+	  *this = ApplyForceKernel(other);
+	return *this;
+      }
+      void operator()(Field_t& U, const Point& n) {
+        U[n][mu] = exp<BGF, ORD>(F[n][mu].reH() * -epsilon)*U[n][mu]; // back to SU3
       }
     };
     ////////////////////////////////////////////////////////////
