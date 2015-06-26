@@ -354,6 +354,14 @@ int main(int argc, char *argv[]) {
     meth::gf::sf_gauge_fixing(U, alpha);
     timings["Gauge Fixing"].stop();
 
+    ////////////////////////////////////////////////////////
+    //
+    //  SU3 projection
+    timings["SU3 projection"].start();
+    meth::proj::ProjectSUN(U);
+    timings["SU3 projection"].stop();
+
+
     ////////////////////////////////////////////////////////////
     //
     //  measurement of the coupling
@@ -378,8 +386,11 @@ int main(int argc, char *argv[]) {
 	meth::wflow::RK2_flow(Up, tauf);
 	timings["Wilson flow"].stop();
 	timings["Flow gauge Fixing"].start();
-	meth::gf::sf_gauge_fixing(U, beta);
+	meth::gf::sf_gauge_fixing(Up, beta);
 	timings["Flow gauge Fixing"].stop();
+	timings["Flow SU3 projection"].start();
+	meth::proj::ProjectSUN(Up);
+	timings["Flow SU3 projection"].stop();
 	if ( ! (j_ % FLOW_MEAS_FREQ) ){
 	  timings["measurements"].start();
 	  measure(Up, rank_str, Bgf_t());

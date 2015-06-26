@@ -5,6 +5,7 @@
 #include <Background.h>
 #include <LocalField.hpp>
 #include <Kernels/generic/RungeKutta.hpp>
+#include <Kernels/generic/Project.hpp>
 
 namespace meth{
 
@@ -191,6 +192,19 @@ namespace meth{
       for (int t = 1; t < T; ++t)
 	for (Direction mu; mu.is_good(); ++mu)
 	  U.apply_on_timeslice(wf[mu], t);
+    }
+  }
+
+  namespace proj {
+    template <class Fld_t>
+    void ProjectSUN(Fld_t& U){
+      typedef typename kernels::proj::ProjectSUN<Fld_t> Kernel_t;
+      typedef typename kernels::std_types<Fld_t>::direction_t Direction;
+      int T = U.extent(0) - 1;
+      std::vector<Kernel_t> proj;
+      for (Direction mu; mu.is_good(); ++mu)
+        proj.push_back(Kernel_t(mu));
+      wflow::detail::ApplyOnSfDOF(U, proj); // measure
     }
   }
 
