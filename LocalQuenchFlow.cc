@@ -242,6 +242,7 @@ int main(int argc, char *argv[]) {
   int s = atoi(p["s"].c_str());  // s parameter, T = L - s
   T = L-s; // temporal lattice size
   double alpha = atof(p["alpha"].c_str());  // gauge fixing parameter
+  double beta = atof(p["beta"].c_str()); // gauge fixing during flow
   double taug = atof(p["taug"].c_str()); // integration step size
   double tauf = atof(p["tauf"].c_str());
   int NRUN = atoi(p["NRUN"].c_str()); // Total # of gauge updates
@@ -376,6 +377,9 @@ int main(int argc, char *argv[]) {
         timings["Wilson flow"].start();
 	meth::wflow::RK2_flow(Up, tauf);
 	timings["Wilson flow"].stop();
+	timings["Flow gauge Fixing"].start();
+	meth::gf::sf_gauge_fixing(U, beta);
+	timings["Flow gauge Fixing"].stop();
 	if ( ! (j_ % FLOW_MEAS_FREQ) ){
 	  timings["measurements"].start();
 	  measure(Up, rank_str, Bgf_t());
