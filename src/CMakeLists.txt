@@ -1,0 +1,6 @@
+add_subdirectory(background)
+add_subdirectory(geometry)
+add_subdirectory(fields)
+add_subdirectory(kernels)
+add_subdirectory(types)
+add_subdirectory(runtimes)
