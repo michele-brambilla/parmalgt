@@ -1,5 +1,5 @@
-#ifndef _BACKGROUND_H_
-#define _BACKGROUND_H_
+#ifndef _TRIVIAL_BACKGROUND_H_
+#define _TRIVIAL_BACKGROUND_H_
 
 #include "BackgroundInterface.hpp"
 
@@ -45,11 +45,11 @@ namespace bgf {
     template <class C> TrivialBgf operator* (const C&) const {
       return *this;
     }
-    TrivialBgf inverse() const override { return *this; }
+    TrivialBgf inverse() const { return *this; }
     void set_to_one() override { }
     void set_to_zero() override { throw std::exception(); } // not possible ...
-    TrivialBgf dag() const override { return *this; }
-    Cplx Tr() const { return 3; }
+    TrivialBgf dag() const { return *this; }
+    Cplx Tr() const override { return 3; }
     double Norm() const override { return 1; }
     void Trless() override {}
     void reH() override {}
@@ -58,4 +58,4 @@ namespace bgf {
 
 }
 
-#endif
+#endif // _TRIVIAL_BACKGROUND_H_

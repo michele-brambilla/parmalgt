@@ -25,3 +25,4 @@ include(add_unit_test)
 
 add_unit_test(test_BackgroundHelper test_BackgroundHelper.cpp "" "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>;$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/deps/sun>")
 add_unit_test(test_TrivialBackground test_TrivialBackground.cpp "" "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>;$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/deps/sun>")
+add_unit_test(test_AbelianBackground test_AbelianBackground.cpp "Background;ranlxd" "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>;$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/deps/sun>;$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/deps/ranlxd>")
