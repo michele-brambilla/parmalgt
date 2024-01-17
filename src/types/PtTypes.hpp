@@ -34,12 +34,12 @@ namespace ptt {
 
   template <int N> class PtMatrix {
   public:
-    typedef PtMatrix self_t;
-    typedef typename array_t<SU3, N>::Type su3_array_t;
-    typedef typename su3_array_t::value_type SU3_t;
-    typedef typename su3_array_t::iterator iterator;
-    typedef typename su3_array_t::const_iterator const_iterator;
-
+    using self_t = PtMatrix ;
+    using su3_array_t = typename array_t<SU3, N>::Type ;
+    using SU3_t = typename su3_array_t::value_type ;
+    using iterator = typename su3_array_t::iterator ;
+    using const_iterator = typename su3_array_t::const_iterator ;
+    using value_type = SU3_t;
 
 
     //////////////////////////////////////////////////////////////////////

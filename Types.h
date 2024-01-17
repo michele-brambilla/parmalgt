@@ -5,9 +5,9 @@
 #include <SUN.hpp>
 #include <Vector.hpp>
 
-typedef sun::SU<3> SU3;
-typedef sun::SU<3>::data_t Cplx;
-typedef sun::Vec<3> CVector;
+using SU3 = sun::SU<3>;
+using Cplx = sun::SU<3>::data_t;
+using CVector = sun::Vec<3>;
 
 #ifdef HAVE_CXX0X
 #include <array>

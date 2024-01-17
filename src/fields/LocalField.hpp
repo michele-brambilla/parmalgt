@@ -10,22 +10,11 @@
 #include <geometry/Geometry.hpp>
 #include <geometry/Point.hpp>
 
+#include <common/Communicator.hpp>
 #ifdef USE_MPI
-#include <Communicator.hpp>
 #include <mpi.h>
 #else
-namespace comm {
-template <class C>
-struct Communicator {
-    typedef typename C::extents_t extents_t;
-    typedef typename C::neighbors_t nb_t;
-    Communicator(const extents_t &e) : zero(0) {}
-    int zero;
-    nb_t n;
-    const int &rank() const { return zero; }
-    const nb_t &nb() const { return n; }
-};
-} // namespace comm
+
 #endif
 #include <algorithm>
 #ifdef _OPENMP
@@ -65,7 +54,7 @@ template <class Field_t>
 class inplace_add {
   public:
     static const int dim = Field_t::dim;
-    inplace_add(const Field_t &F) : other(&F) {}
+    explicit inplace_add(const Field_t &F) : other(&F) {}
     void operator()(Field_t &F, const pt::Point<dim> &n) const {
         F[n] += (*other)[n];
     }
@@ -79,7 +68,7 @@ template <class Field_t>
 class inplace_sub {
   public:
     static const int dim = Field_t::dim;
-    inplace_sub(const Field_t &F) : other(&F) {}
+    explicit inplace_sub(const Field_t &F) : other(&F) {}
     void operator()(Field_t &F, const pt::Point<dim> &n) const {
         F[n] -= (*other)[n];
     }
@@ -93,7 +82,7 @@ template <class Field_t, class Scalar_t>
 class inplace_smul {
   public:
     static const int dim = Field_t::dim;
-    inplace_smul(const Scalar_t &s) : other(s) {}
+    explicit inplace_smul(const Scalar_t &s) : other(s) {}
     void operator()(Field_t &F, const pt::Point<dim> &n) const {
         F[n] *= other;
     }
@@ -194,22 +183,21 @@ class LocalField {
     using basic_type = typename undelying_type<F>::type;
 
   public:
-    typedef LocalField<F, DIM> self_t;
-    typedef F data_t;
     static const int dim = DIM;
-    typedef std::vector<data_t> rep_t;
-    typedef typename rep_t::iterator iterator;
-    typedef typename rep_t::const_iterator const_iterator;
-    typedef pt::Point<DIM> Point;
-    typedef typename std::array<std::pair<int, int>, DIM> neighbors_t;
-    typedef typename geometry::Geometry<DIM>::extents_t extents_t;
-    typedef typename geometry::Geometry<DIM>::raw_pt_t raw_pt;
+    using self_t = LocalField<F, DIM>;
+    using data_t = F;
+    using value_type = data_t;
+    using rep_t = std::vector<data_t>;
+    using iterator = typename rep_t::iterator;
+    using const_iterator = typename rep_t::const_iterator;
+    using Point = pt::Point<DIM>;
+    using neighbors_t = typename std::array<std::pair<int, int>, DIM>;
+    using extents_t = typename geometry::Geometry<DIM>::extents_t;
+    using raw_pt = typename geometry::Geometry<DIM>::raw_pt_t;
     LocalField(const extents_t &e,
                const int &number_of_threads,
                const int &mpi_process_id,
                const neighbors_t &mpi_neighbors) : g{e}, rep{g.vol()}, n_th{number_of_threads}, comm{e} {
-                //,
-                                                  //  pid(comm.rank()), neighbors(comm.nb()) {
                 pid = comm.rank();
                 neighbors = comm.nb();
     }
@@ -328,7 +316,6 @@ std::cout << t << "\n";
     }
 
     // Added: MB on Fri 2, 2012
-
     LocalField &operator+=(LocalField &other) {
         apply_everywhere(detail::inplace_add<LocalField>(other));
         return *this;
@@ -446,6 +433,7 @@ std::cout << t << "\n";
         do {
             f(*this, *x);
         } while ((++x).is_good());
+        return f;
     }
     template <class M, class Iter>
     M &apply_on_timeslice_impl(M &f, const int &t, False) const {
@@ -457,6 +445,7 @@ std::cout << t << "\n";
         do {
             f(*this, *x);
         } while ((++x).is_good());
+        return f;
     }
 
     ///////////////////////////////

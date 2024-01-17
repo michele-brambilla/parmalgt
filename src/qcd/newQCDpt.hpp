@@ -1,16 +1,16 @@
-#ifndef _MY_QCD_H_
-#define _MY_QCD_H_
+#ifndef _QCDPT_H_
+#define _QCDPT_H_
 
-#include <background/Background.hpp>
+#include <background/AbelianBackground.hpp>
+#include <background/ScalarBackground.hpp>
+#include <background/TrivialBackground.hpp>
 #include <types/PtTypes.hpp>
 #include <types/Types.hpp>
 
-
 #include <algorithm>
-#include <numeric>
-/* #include <ranlxd.hpp> */
 #include <iostream>
 #include <limits>
+#include <numeric>
 
 // debug flag
 
@@ -80,20 +80,21 @@ template <class B> struct IsZero<true, B> {
 ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
 ///  \date Tue Jan 24 16:55:46 2012
 
-template <class B, int ORD>
+template <class BGF, int ORD>
 class BGptSU3{
 public:
   // self type
-  typedef BGptSU3 self_t;
+  using self_t = BGptSU3;
   // underlying perturbative structure
-  typedef typename ptt::PtMatrix<ORD> pt_matrix_t;
+  using pt_matrix_t = typename ptt::PtMatrix<ORD>;
   // iterators
-  typedef typename pt_matrix_t::iterator iterator;
-  typedef typename pt_matrix_t::const_iterator const_iterator;
+  using iterator = typename pt_matrix_t::iterator ;
+  using const_iterator = typename pt_matrix_t::const_iterator ;
   // 3x3 matrix type
-  typedef typename pt_matrix_t::SU3_t SU3_t;
+  using SU3_t = typename pt_matrix_t::SU3_t ;
   // background field type
-  typedef B bgf_t;
+  using bgf_t = BGF;
+  using value_type = pt_matrix_t;
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   ///
@@ -101,8 +102,8 @@ public:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Sun Mar 25 14:52:42 2012
-  static const int storage_size = 
-    B::storage_size + pt_matrix_t::storage_size;
+  static constexpr int storage_size = 
+    bgf_t::storage_size + pt_matrix_t::storage_size;
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -123,19 +124,19 @@ public:
     ptU_.read(i);
   }
 
-  explicit BGptSU3(const B& bgf) : bgf_(bgf) { }
-  BGptSU3(const B& bgf, const pt_matrix_t& ptU) : 
+  explicit BGptSU3(const bgf_t& bgf) : bgf_(bgf) { }
+  BGptSU3(const bgf_t& bgf, const pt_matrix_t& ptU) : 
     bgf_(bgf), ptU_(ptU) { }
 
   // Default constructor, needed such that self_t may be used in a
   // std::array type.
-  BGptSU3() : bgf_(bgf::unit<B>()) { }
+  BGptSU3() : bgf_(bgf::unit<bgf_t>()) { }
 
   SU3_t& operator[](const int& i) { return ptU_[i]; }
   const SU3_t& operator[](const int& i) const { return ptU_[i]; }
 
-  B& bgf() { return bgf_; }
-  const B& bgf() const { return bgf_; }
+  bgf_t& bgf() { return bgf_; }
+  const bgf_t& bgf() const { return bgf_; }
   
   pt_matrix_t& ptU() { return ptU_; };
   const pt_matrix_t& ptU() const { return ptU_; };
@@ -312,15 +313,15 @@ public:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri Feb  3 16:40:29 2012
   pt_matrix_t reH() const {
-    B bg(bgf_);
+    bgf_t bg(bgf_);
     bg.reH();
-    IsZero<do_debug, B>::check(bg);
+    IsZero<do_debug, bgf_t>::check(bg);
     pt_matrix_t U(ptU_);
     return U.reH();
   }
 
 private:
-  B bgf_;
+  bgf_t bgf_;
   pt_matrix_t ptU_;
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -346,9 +347,10 @@ private:
 template <class B, int ORD> std::ostream& 
 operator<<(std::ostream &o, const BGptSU3<B, ORD>& U) {
   o << U.bgf() << std::endl;
-  for (typename BGptSU3<B, ORD>::const_iterator i = U.begin();
-       i != U.end(); ++i)
-    o << *i << std::endl;
+  // for (auto const& i : U)
+  //  U.begin();
+  //      i != U.end(); ++i)
+    //  o << i << std::endl;
   return o;
 }
 
@@ -529,14 +531,15 @@ inline ptt::PtMatrix<ORD> get_q(const BGptSU3<B, ORD>& U){
 template <class BGF,  int ORD, int DIM>
 class BGptGluon {
 public:
-  using value_type = BGF;
-  typedef BGF bgf_t;
   static const int order = ORD;
-  typedef BGptSU3<BGF, ORD> pt_su3_t;
-  typedef typename array_t<pt_su3_t, DIM>::Type array_t;
-  typedef BGptGluon self_t;
-  typedef typename array_t::iterator iterator;
-  typedef typename array_t::const_iterator const_iterator;
+  static const int dim = DIM;
+  using bgf_t = BGF;
+  using pt_su3_t = BGptSU3<BGF, ORD> ;
+  using array_t = typename array_t<pt_su3_t, DIM>::Type;
+  using value_type = pt_su3_t;
+  using self_t = BGptGluon ;
+  using iterator = typename array_t::iterator;
+  using const_iterator = typename array_t::const_iterator;
 
   static const int storage_size = DIM*pt_su3_t::storage_size + BGF::storage_size;
  

@@ -1,6 +1,25 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+namespace kernels {
+  int omp_get_max_threads() { return 1; }
+  int omp_get_thread_num() { return 0; }
+}
+#endif
+
+#define FLD_INFO(F) \
+  typedef typename std_types<F>::ptGluon_t ptGluon;	\
+  typedef typename std_types<F>::ptSU3_t ptSU3;		\
+  typedef typename std_types<F>::ptsu3_t ptsu3;		\
+  typedef typename std_types<F>::bgf_t BGF;		\
+  typedef typename std_types<F>::point_t Point;		\
+  typedef typename std_types<F>::direction_t Direction;	\
+  static const int ORD = std_types<F>::order;		\
+  static const int DIM = std_types<F>::n_dim;
+
 namespace util {
   ////////////////////////////////////////////////////////////
   // formated cout for the timings/parameters

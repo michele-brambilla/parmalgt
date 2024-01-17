@@ -11,7 +11,7 @@ bool test_is_good_true_if_0_le_direction() {
     while (dir.is_good()) {
         --dir;
     }
-    return dir == -1;
+    return int(dir) == -1;
 }
 
 template <int D>
@@ -20,7 +20,7 @@ bool test_is_good_true_if_direction_lt_dim() {
     while (dir.is_good()) {
         ++dir;
     }
-    return dir == D;
+    return int(dir) == D;
 }
 
 TEST(Direction, test_is_good_true_if_0_le_direction_lt_DIM) {
