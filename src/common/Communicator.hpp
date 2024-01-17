@@ -1,6 +1,7 @@
 #ifndef _COMMUNICATOR_H
 #define _COMMUNICATOR_H
 
+#ifdef USE_MPI
 #include <Background.h>
 #include <Geometry.hpp>
 #include <Point.hpp>
@@ -15,6 +16,7 @@
 #include <uparam.hpp>
 #include <stdlib.h>
 
+#endif
 
 
 namespace kernels {
@@ -24,6 +26,7 @@ namespace kernels {
 
 
 namespace comm {
+#ifdef USE_MPI
 
   // Rules for communications
   namespace detail {
@@ -188,16 +191,6 @@ namespace comm {
       nb_[2].second = rank_;
       nb_[3].first  = (rank_+1)%numprocs_;
       nb_[3].second = (rank_+numprocs_-1)%numprocs_;     
-      
-      // if( rank_ == 1)
-      // 	for(int mu(0); mu < DIM; ++mu)
-      // 	    std::cout << "neighbour in direction " << mu
-      // 		      << "+ is rank "              << nb_[mu].first
-      // 		      << std::endl
-      // 		      << "neighbour in direction " << mu
-      // 		      << "- is rank "              << nb_[mu].second
-      // 		      << std::endl
-      // 		      << std::endl;
 
       MPI_Barrier(MPI_COMM_WORLD);
 
@@ -280,6 +273,20 @@ namespace comm {
     std::vector<T> rbuf;
   };
 
+#else // USE_MPI
+
+template <class C>
+struct Communicator {
+    using extents_t = typename C::extents_t;
+    using nb_t = typename C::neighbors_t;
+    explicit Communicator(const extents_t &) {}
+    int zero{0};
+    nb_t n;
+    const int &rank() const { return zero; }
+    const nb_t &nb() const { return n; }
+};
+
+#endif // USE_MPI
 }
 
 
