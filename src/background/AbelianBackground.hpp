@@ -145,10 +145,7 @@ class AbelianBgf : public BgfBase {
     ///  \date Mon Sep 26 18:28:23 2011
     template <class C>
     AbelianBgf &operator*=(const C &alpha) {
-        std::transform(v_.begin(), v_.end(), v_.begin(),
-                       [&](three_vec_t::value_type &value) { value *= alpha; }
-                       );
-
+        for(auto &element : v_) element *= alpha;
         return *this;
     }
     //////////////////////////////////////////////////////////////////////
@@ -326,12 +323,12 @@ class AbelianBgf : public BgfBase {
 
     template <class Writer_t>
     void write(Writer_t &o) const {
-        for (const_iterator n = begin(); n != end(); ++n)
+        for (auto n = begin(); n != end(); ++n)
             o.write(*n);
     }
     template <class Reader_t>
     void read(Reader_t &o) {
-        for (iterator n = begin(); n != end(); ++n)
+        for (auto n = begin(); n != end(); ++n)
             o.read(*n);
     }
 
@@ -345,7 +342,7 @@ class AbelianBgf : public BgfBase {
 
     std::vector<double>::const_iterator &
     unbuffer(std::vector<double>::const_iterator &i) {
-        for (iterator n = begin(); n != end(); ++n) {
+        for (auto n = begin(); n != end(); ++n) {
             n->real() = *i;
             ++i;
             n->imag() = *i;
@@ -389,7 +386,7 @@ inline AbelianBgf &AbelianBgf::operator*=(const AbelianBgf &other) {
 
 inline std::ostream &operator<<(std::ostream &os, const AbelianBgf &b) {
     os << "{ ";
-    for (AbelianBgf::const_iterator i = b.begin();
+    for (auto i = b.begin();
          i != b.end(); ++i)
         os << "(" << i->real() << ", " << i->imag() << ") ";
     os << "}";
@@ -447,7 +444,9 @@ class AbelianBgfFactory {
         const double eta = 0;
         const double nu = 0;
         double pi = std::atan(1.) * 4.;
-        SU3 C, Cp, B;
+        SU3 C;
+        SU3 Cp;
+        SU3 B;
         C(0, 0) = eta - pi / 3;
         C(1, 1) = eta * (nu - 0.5);
         C(2, 2) = -eta * (nu + 0.5) + pi / 3;
@@ -464,7 +463,7 @@ class AbelianBgfFactory {
             Vt_[0][k] = exp(C(k, k)) * ct;
             Vt_[T][k] = exp(Cp(k, k)) * ct;
         }
-        Cplx i = Cplx(0, 1);
+        auto i = Cplx(0, 1);
         for (int t = 1; t < T; ++t) {
             Vt_[t][0] = exp(-2. * f[s + 1][L / 2 - 2] * (t - 0.5 * T) * i + 0.5 * (C(0, 0) + Cp(0, 0)));
             for (int k = 1; k < 3; ++k)
@@ -476,18 +475,18 @@ class AbelianBgfFactory {
     // temporal, V_0, set V_0(t = T) to 0, such that one can exploit
     // the periodicity of the lattice for e.g. LW improved gauge
     // actions.
-    const three_vec_t &get_temporal(int t) const {
+    three_vec_t get_temporal(int t) const {
         static three_vec_t one = {1, 1, 1};
         static three_vec_t zero = {0, 0, 0};
         if (t >= T)
             return zero;
-        else
-            return one;
+        return one;
     }
 
   private:
     std::vector<three_vec_t> Vt_;
-    static const double f[3][31];
+    static const std::array<std::array<double, 31>,3> f;
+    // static const double f[3][31];
     int T;
 };
 
