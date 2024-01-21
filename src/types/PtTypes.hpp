@@ -307,31 +307,19 @@ namespace ptt {
   
   template <int N, typename T> 
   inline PtMatrix<N> operator*(const T& alpha, const PtMatrix<N>& A){
-    return PtMatrix<N>(A) *= alpha;
+    return PtMatrix<N>{A} *= alpha;
   }
 
   template <int N>
   inline PtMatrix<N> operator*(const bgf::AbelianBgf& bg, const PtMatrix<N>& A){
-#ifdef HAVE_CXX0X
-    PtMatrix<N> result(A);
+    PtMatrix<N> result{A};
     for (auto& e : result) { e = bg.ApplyFromLeft(e); }
-#else
-    PtMatrix<N> result;
-    for (int i = 0; i < N; ++i)
-      result[i] = bg.ApplyFromLeft(A[i]);
-#endif
     return result;
   }
   template <int N>
   inline PtMatrix<N> operator*(const bgf::ScalarBgf& bg, const PtMatrix<N>& A){
-#ifdef HAVE_CXX0X
-    PtMatrix<N> result(A);
+    PtMatrix<N> result{A};
     for (auto& e : result) { e = bg.ApplyFromLeft(e); }
-#else
-    PtMatrix<N> result;
-    for (int i = 0; i < N; ++i)
-      result[i] = bg.ApplyFromLeft(A[i]);
-#endif
     return result;
   }
 

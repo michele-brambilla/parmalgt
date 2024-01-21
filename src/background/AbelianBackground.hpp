@@ -509,8 +509,8 @@ inline B unit() { return B(); }
 
 template <>
 inline AbelianBgf unit<AbelianBgf>() {
-    three_vec_t alpha_v = {1, 1, 1};
-    return AbelianBgf(alpha_v);
+    // three_vec_t alpha_v = {1, 1, 1};
+    return AbelianBgf{three_vec_t{1, 1, 1}};
 };
 
 template <class B>

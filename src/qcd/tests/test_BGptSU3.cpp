@@ -3,10 +3,6 @@
 #include <common/Helper.hpp>
 #include <common/Utils.hpp>
 
-#include <random>
-
-// static std::random_device rd;
-// static std::mt19937 gen{rd()};
 
 #include "gtest/gtest.h"
 
@@ -24,95 +20,6 @@ int T = std::rand() % 100;
 // initialize the background field
 
 
-// Simple test base class defining two random 
-// perturbative SU3s ,,,
-
-class AbelianBgfTest: public ::testing::Test {
-public:
-  AbelianBgfTest() { 
-    for(auto& matrix : MyPtSU3A) {
-      matrix = makeRandomSU3();
-    }
-    for(auto& matrix : MyPtSU3B) {
-      matrix = makeRandomSU3();
-    }
-  }
-  ptSU3 MyPtSU3A{bgf::random()};
-  ptSU3 MyPtSU3B{bgf::random()};
-};
-
-// Multiplication of two ptSU3s of the form
-// A = V(t1) + g_0^2 A1 + ... ,
-// B = V(t2) + g_0^2 B1 + ... , and
-// One = 1
-
-TEST_F(AbelianBgfTest, SimpleMultiply){
-  ptSU3 One(bgf::unit<bgf::AbelianBgf>()); // unit matrix
-  // to be extra safe, check multiplication from left and right
-  ptSU3 ACopy = One*MyPtSU3A;
-  ptSU3 BCopy = MyPtSU3B*One;
-  for (int i = 0; i < MYORD; ++i){
-    ASSERT_TRUE( SU3Cmp(ACopy[i], MyPtSU3A[i])() );
-    ASSERT_TRUE( SU3Cmp(BCopy[i], MyPtSU3B[i])() );
-  }
-}
-
-TEST(AbelianBgf, Multiply){
-  ptSU3 A(bgf::unit<bgf::AbelianBgf>());
-  ptSU3 B(bgf::unit<bgf::AbelianBgf>());
-  SU3 One;
-  SU3 Zero;
-  for (int i = 0; i < 3; ++i)
-    One(i,i) = Cplx(1,0);
-  A[2] = One*2;
-  B[4] = One*3;
-  ptSU3 AB = A * B;
-  ASSERT_TRUE( SU3Cmp(AB[0], Zero)() );
-  ASSERT_TRUE( SU3Cmp(AB[1], Zero)() );
-  ASSERT_TRUE( SU3Cmp(AB[2], One*2)() );
-  ASSERT_TRUE( SU3Cmp(AB[3], Zero)() );
-  ASSERT_TRUE( SU3Cmp(AB[4], One*3)() );
-  ASSERT_TRUE( SU3Cmp(AB[5], Zero)() );
-  ASSERT_TRUE( SU3Cmp(AB[6], Zero)() );
-  ASSERT_TRUE( SU3Cmp(AB[7], One*6)() );
-}
-
-// // Test the addition,
-// // A+A == 2*A
-
-TEST_F(AbelianBgfTest, Add){
-  auto A_times_2 = MyPtSU3A*2.;
-  auto A_plus_A = MyPtSU3A + MyPtSU3A;
-
-  ASSERT_TRUE( A_times_2.bgf() ==  A_plus_A.bgf() );
-  for (int i = 0; i < MYORD; ++i)
-    ASSERT_TRUE( SU3Cmp(A_times_2[i], A_plus_A[i])() );
-}
-
-
-// Testing the scalar multiplicatiohn
-
-TEST_F(AbelianBgfTest, ScalarMultiply){
-  
-  std::normal_distribution<double> distrib(0, 1);
-  Cplx alpha{distrib(gen),distrib(gen)};
-  Cplx beta{distrib(gen),distrib(gen)};
-  
-  auto beta_B = MyPtSU3B;
-  beta_B *= beta;
-  for (int i = 0; i < MYORD; ++i){
-    auto a = MyPtSU3A[i];
-    auto b = MyPtSU3B[i];
-    // multipy 'by hand'
-    for (auto ait = a.begin(), bit = b.begin();
-         ait != a.end(); ++ait, ++bit){
-      *ait *= alpha;
-      *bit *= beta;
-    }
-    EXPECT_TRUE ( SU3Cmp( (MyPtSU3A*alpha)[i], a)());
-    EXPECT_TRUE ( SU3Cmp( beta_B[i], b)());
-  }
-}
 
 // //TEST(BGptCVector, ArithmeticPlusSelf){
 // //  ptCVector u, v, w;
@@ -177,16 +84,17 @@ TEST_F(AbelianBgfTest, ScalarMultiply){
 // //        ASSERT_TRUE(chi[i][j] == ZeroV);
 // //}
 
-// //TEST(BGptSU3Test, dag){
-// //  ptSU3 A(bgf::random()), B;
-// //  A.randomize();
-// //  B = dag(A);
-// //  for (int r = 0; r < MYORD; ++r)
-// //    for (int i = 0; i < 3; ++i)
-// //      for (int j = 0; j < 3; ++j){
-// //        ASSERT_DOUBLE_EQ( B[r](i,j).re, A[r](j,i).re );
-// //      }
-// //}
+TEST(BGptSU3Test, dag){
+ ptSU3 A{bgf::random()};
+ ptSU3 B;
+ A.randomize();
+ B = dag(A);
+ for (int r = 0; r < MYORD; ++r)
+   for (int i = 0; i < 3; ++i)
+     for (int j = 0; j < 3; ++j){
+       ASSERT_DOUBLE_EQ( B[r](i,j).real(), A[r](j,i).real() );
+     }
+}
 
 // TEST(BGptSU3Test, exp){
 //   ptt::PtMatrix<MYORD> A = ptt::get_random_pt_matrix<MYORD>();
@@ -235,8 +143,7 @@ TEST(BGptSU3Test, inverse){
 TEST(BGptSU3Test, expUnitMore){
   for (int _n = 0; _n < 1000; ++_n){
     ptt::PtMatrix<MYORD> A = ptt::get_random_pt_matrix<MYORD>();
-    ptSU3 a;
-    ptSU3 b;
+    ptSU3 a, b;
     a.randomize(); a.bgf() = bgf::random();
     b.randomize(); b.bgf() = bgf::random();
     ptSU3 d = b;
