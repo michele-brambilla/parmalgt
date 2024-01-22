@@ -35,12 +35,14 @@ class Direction {
         return *this;
     }
     bool is_good() const { return mu>=0 && mu < DIM; }
-    explicit operator int() const { return mu; }
+    //explicit 
+    operator int() const { return mu; }
     template <typename A, typename B>
     A deref_fwd(B b) const { return b[DIM + mu]; }
     template <typename A, typename B>
     A deref_bkw(B b) const { return b[mu]; }
     Direction operator-() const { return Direction((mu + DIM) % (2 * DIM)); }
+    bool operator!=(const Direction &direction) const { return mu != direction.mu; }
     bool operator<(const int &direction) const { return mu < direction; }
     bool operator>(const int &direction) const { return mu > direction; }
     bool operator>=(const int &direction) const { return mu > direction; }

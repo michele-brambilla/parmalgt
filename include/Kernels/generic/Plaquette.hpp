@@ -4,14 +4,6 @@
 #include <Kernels.hpp>
 #include <Background.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#else
-namespace plaq {
-  int omp_get_max_threads() { return 1; }
-  int omp_get_thread_num() { return 0; }
-}
-#endif
 
 namespace plaq {
 
@@ -32,7 +24,7 @@ namespace plaq {
       ptSU3 tmp;
       for (Direction k(1); k.is_good(); ++k)
 	for (Direction l(k + 1); l.is_good(); ++l)
-	  val[omp_get_thread_num()] +=  U[n][k] * U[n + k][l] 
+	  val[kernels::omp_get_thread_num()] +=  U[n][k] * U[n + k][l] 
             * dag( U[n][l] * U[n + l][k] );
     }
     void reduce() {
@@ -59,7 +51,7 @@ namespace plaq {
       ptSU3 tmp;
       Direction t(0);
       for (Direction k(1); k.is_good(); ++k)
-        val[omp_get_thread_num()] +=  U[n][t] * U[n + t][k] 
+        val[kernels::omp_get_thread_num()] +=  U[n][t] * U[n + t][k] 
           * dag( U[n][k] * U[n + k][t] );
     }
     void reduce() {

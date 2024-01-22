@@ -1,10 +1,5 @@
-#ifndef _KERNELS_H
-#define _KERNELS_H
-
-#include "IO.hpp"
-#include "uparam.hpp"
-#include "util.hpp"
-
+#ifndef _KERNELS_KERNELS_HPP_
+#define _KERNELS_KERNELS_HPP_
 #include <background/AbelianBackground.hpp>
 #include <background/ScalarBackground.hpp>
 #include <background/TrivialBackground.hpp>
@@ -14,7 +9,19 @@
 #include <qcd/newQCDpt.hpp>
 #include <types/PtTypes.hpp>
 
-#include <numeric>
+#include "IO.hpp"
+#include "uparam.hpp"
+#include <types/Types.hpp>
+
+#define FLD_INFO(F)                                       \
+    typedef typename std_types<F>::ptGluon_t ptGluon;     \
+    typedef typename std_types<F>::ptSU3_t ptSU3;         \
+    typedef typename std_types<F>::ptsu3_t ptsu3;         \
+    typedef typename std_types<F>::bgf_t BGF;             \
+    typedef typename std_types<F>::point_t Point;         \
+    typedef typename std_types<F>::direction_t Direction; \
+    static const int ORD = std_types<F>::order;           \
+    static const int DIM = std_types<F>::n_dim;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -30,7 +37,7 @@
 namespace dirac {
 
 // Indices of Dirac Gamma matrices
-constexpr int gmuind[15][4] = {
+int gmuind[15][4] = {
     {3, 2, 1, 0}, // gm1
     {3, 2, 1, 0},
     {2, 3, 0, 1},
@@ -49,7 +56,7 @@ constexpr int gmuind[15][4] = {
 };
 
 // Values of Dirac Gamma matrices
-const Cplx gmuval[15][4] = {
+Cplx gmuval[15][4] = {
     {Cplx(0, -1), Cplx(0, -1), Cplx(0, 1), Cplx(0, 1)}, // gm1
     {-1, 1, 1, -1},
     {Cplx(0, -1), Cplx(0, 1), Cplx(0, 1), Cplx(0, -1)},
@@ -86,55 +93,58 @@ namespace kernels {
 
 template <class Field_t>
 struct base_types {
-    using data_t = typename Field_t::data_t;
+    typedef typename Field_t::data_t data_t;
     static const int order = data_t::order;
     static const int n_dim = Field_t::dim;
-    using direction_t = pt::Direction<n_dim>;
-    using point_t = pt::Point<n_dim>;
+    typedef pt::Point<n_dim> point_t;
+    typedef pt::Direction<n_dim> direction_t;
 };
 
 /// struct to extract information on the field from the field type.
 template <class Field_t>
-struct std_types : public base_types<Field_t> {
-    using ptGluon_t = typename Field_t::data_t;
-    using ptSU3_t = typename ptGluon_t::pt_su3_t;
-    using ptsu3_t = typename ptSU3_t::pt_matrix_t;
-    using SU3_t = typename ptSU3_t::pt_matrix_t::SU3_t;
-    using bgf_t = typename ptGluon_t::bgf_t;
+struct std_types {
+    typedef typename Field_t::data_t ptGluon_t;
+    typedef typename ptGluon_t::pt_su3_t ptSU3_t;
+    typedef typename ptSU3_t::pt_matrix_t ptsu3_t;
+    typedef typename ptSU3_t::pt_matrix_t::SU3_t SU3_t;
+    typedef typename ptGluon_t::bgf_t bgf_t;
+    static const int order = ptGluon_t::order;
+    static const int n_dim = Field_t::dim;
+    typedef pt::Point<n_dim> point_t;
+    typedef pt::Direction<n_dim> direction_t;
 };
 
 template <class Field_t>
 struct StapleSqKernel {
     // collect info about the field
-    using value_t = typename Field_t::value_type::value_type;
-    using direction_t = pt::Direction<Field_t::dim>;
-    using point_t = pt::Point<Field_t::dim>;
-    // FLD_INFO(Field_t);
+    FLD_INFO(Field_t);
 
-    // using ptsu3_array_t = typename array_t<ptSU3, 1>::Type;
+    typedef typename array_t<ptSU3, 1>::Type ptsu3_array_t;
+
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
     static const int n_cb = 1;
 
-    value_t val;
-    direction_t mu;
+    ptsu3_array_t val;
+    Direction mu;
 
-    explicit StapleSqKernel(const direction_t &nu) : mu(nu) {}
+    StapleSqKernel(const Direction &nu) : mu(nu) {}
 
-    void operator()(const Field_t &U, const point_t &n) {
-        val.zero();
-
-        for (direction_t nu; nu.is_good(); ++nu)
+    void operator()(const Field_t &U, const Point &n) {
+        // std::cout << val[0][0] << "\n";
+        val[0].zero();
+        // std::cout << val[0][0] << "\n";
+        for (Direction nu; nu.is_good(); ++nu)
             if (nu != mu) {
-                val += U[n + mu][nu] * dag(U[n][nu] * U[n + nu][mu]);
-                val += dag(U[n - nu][mu] * U[n + mu - nu][nu]) * U[n - nu][nu];
+                val[0] += U[n + mu][nu] * dag(U[n][nu] * U[n + nu][mu]);
+                val[0] += dag(U[n - nu][mu] * U[n + mu - nu][nu]) * U[n - nu][nu];
             }
         // Close the staple
-        val = U[n][mu] * val;
+        val[0] = U[n][mu] * val[0];
     }
 
-    value_t &reduce() {
-        return val;
+    ptSU3 &reduce() {
+        return val[0];
     }
 };
 
@@ -159,11 +169,6 @@ void inplace_add(SUN &s, const bgf::TrivialBgf &) {
     for (int i = 0; i < SUN::size; ++i)
         s(i, i) += 1;
 }
-// template <class SUN, class BGF>
-// void inplace_add(SUN& s, const BGF&){
-//   for (int i = 0; i < SUN::size; ++i)
-//     s(i,i) += 1;
-// }
 
 ////////////////////////////////////////////////////////////
 //
@@ -736,7 +741,7 @@ struct RSU3Kernel {
     static const int n_cb = 0;
 
     void operator()(Field_t &U, const Point &n) const {
-        U[n] = sun::SU3rand(rands[n]);
+        U[n] = sun::SU3rand(rands[int(n)]);
     }
 };
 
@@ -933,7 +938,7 @@ struct SetBgfKernel {
             // #ifdef HIGHER_ORDER_INT
             // U[n][mu].bgf() =  bgf::get_abelian_bgf(t, 0);
             // #else
-            U[n][mu].bgf() = bgf::get_abelian_bgf(t, mu);
+            U[n][mu].bgf() = bgf::get_abelian_bgf(t, int(mu));
         // #endif
     }
 
@@ -1336,16 +1341,15 @@ template <class Field_t, template <class C> class init_helper_t>
 struct GammaLowerKernel {
 
     // collect info about the field
-    
-    using ptGluon =  typename std_types<Field_t>::ptGluon_t;
-    using ptSU3 = typename std_types<Field_t>::ptSU3_t;
-    using ptsu3= typename std_types<Field_t>::ptsu3_t;
-    using BGF = typename std_types<Field_t>::bgf_t;
-    using Point = typename std_types<Field_t>::point_t;
-    using Direction = typename std_types<Field_t>::direction_t;
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
-    
+
     // checker board hyper cube size
     // c.f. geometry and localfield for more info
     static const int n_cb = 0;
@@ -1362,11 +1366,10 @@ struct GammaLowerKernel {
         Direction t(0);
         ptSU3 tmp(bgf::zero<BGF>());
         for (Direction k(1); k.is_good(); ++k)
-            tmp += //Ctilde * 
-            dag(U[n][k]) * U[n][t] *
+            tmp += dag(U[n][k]) * U[n][t] *
                    U[n + t][k] * dag(U[n + k][t]);
 #pragma omp critical
-        val += tmp;
+        val += tmp * Ctilde;
     }
 };
 
@@ -1375,12 +1378,12 @@ template <class Field_t, template <class C> class init_helper_t>
 struct GammaUpperKernel {
 
     // collect info about the field
-    using ptGluon =  typename std_types<Field_t>::ptGluon_t;
-    using ptSU3 = typename std_types<Field_t>::ptSU3_t;
-    using ptsu3= typename std_types<Field_t>::ptsu3_t;
-    using BGF = typename std_types<Field_t>::bgf_t;
-    using Point = typename std_types<Field_t>::point_t;
-    using Direction = typename std_types<Field_t>::direction_t;
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
@@ -1399,9 +1402,10 @@ struct GammaUpperKernel {
         Direction t(0);
         ptSU3 tmp(bgf::zero<BGF>());
         for (Direction k(1); k.is_good(); ++k)
-            tmp += /*Ctilde * */ U[n + t][k] * dag(U[n + k][t]) * dag(U[n][k]) * U[n][t];
+            tmp += //Ctilde * 
+            U[n + t][k] * dag(U[n + k][t]) * dag(U[n][k]) * U[n][t];
 #pragma omp critical
-        val += tmp;
+        val += tmp * Ctilde;
     }
 };
 #endif
@@ -1418,17 +1422,17 @@ template <class Field_t>
 class FileWriterKernel {
   public:
     // collect info about the field
-    using ptGluon =  typename std_types<Field_t>::ptGluon_t;
-    using ptSU3 = typename std_types<Field_t>::ptSU3_t;
-    using ptsu3= typename std_types<Field_t>::ptsu3_t;
-    using BGF = typename std_types<Field_t>::bgf_t;
-    using Point = typename std_types<Field_t>::point_t;
-    using Direction = typename std_types<Field_t>::direction_t;
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
     // This may NOT be executed in parallel, so ...
-    using NoPar = void;
+    typedef void NoPar;
 
     explicit FileWriterKernel(uparam::Param &p) : o(p) {}
 
@@ -1457,17 +1461,17 @@ template <class Field_t>
 struct FileReaderKernel {
   public:
     // collect info about the field
-    using ptGluon =  typename std_types<Field_t>::ptGluon_t;
-    using ptSU3 = typename std_types<Field_t>::ptSU3_t;
-    using ptsu3= typename std_types<Field_t>::ptsu3_t;
-    using BGF = typename std_types<Field_t>::bgf_t;
-    using Point = typename std_types<Field_t>::point_t;
-    using Direction = typename std_types<Field_t>::direction_t;
+    typedef typename std_types<Field_t>::ptGluon_t ptGluon;
+    typedef typename std_types<Field_t>::ptSU3_t ptSU3;
+    typedef typename std_types<Field_t>::ptsu3_t ptsu3;
+    typedef typename std_types<Field_t>::bgf_t BGF;
+    typedef typename std_types<Field_t>::point_t Point;
+    typedef typename std_types<Field_t>::direction_t Direction;
     static const int ORD = std_types<Field_t>::order;
     static const int DIM = std_types<Field_t>::n_dim;
 
     // This may NOT be executed in parallel, so ...
-    using NoPar = void;
+    typedef void NoPar;
 
     explicit FileReaderKernel(uparam::Param &p) : i(p) {}
 
@@ -2040,4 +2044,4 @@ struct Wilson5Kernel : public base_types<Field_t> {
 
 } // namespace kernels
 
-#endif
+#endif // _KERNELS_KERNELS_HPP_

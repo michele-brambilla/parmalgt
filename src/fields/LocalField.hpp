@@ -9,6 +9,7 @@
 
 #include <geometry/Geometry.hpp>
 #include <geometry/Point.hpp>
+#include <kernels/util.hpp>
 
 #include <common/Communicator.hpp>
 #ifdef USE_MPI
@@ -17,16 +18,7 @@
 
 #endif
 #include <algorithm>
-#ifdef _OPENMP
-#include <omp.h>
-#else
-namespace fields {
-namespace detail {
-int omp_get_max_threads() { return 1; }
-int omp_get_thread_num() { return 0; }
-} // namespace detail
-} // namespace fields
-#endif
+
 
 namespace kernels {
 template <class Field_t, class OutputIterator>
@@ -49,6 +41,9 @@ struct Unbuffer;
 namespace fields {
 
 namespace detail {
+
+
+
 
 template <class Field_t>
 class inplace_add {
@@ -108,10 +103,10 @@ class inner_prod {
   public:
     static const int dim = Field_t::dim;
     static const int n_cb = 0;
-    inner_prod(const Field_t &F) : result(omp_get_max_threads(), basic_type{0, 0}), other(&F) {}
+    inner_prod(const Field_t &F) : result(kernels::omp_get_max_threads(), basic_type{0, 0}), other(&F) {}
 
     void operator()(const Field_t &F, const pt::Point<dim> &n) {
-        result[omp_get_thread_num()] += F[n] * (*other)[n];
+        result[kernels::omp_get_thread_num()] += F[n] * (*other)[n];
     }
 
     basic_type reduce() const {
@@ -140,10 +135,10 @@ class prod {
   public:
     static const int dim = Field_t::dim;
     static const int n_cb = 0;
-    prod(const Field_t &F) : result(omp_get_max_threads(), basic_type{0, 0}), other(&F) {}
+    prod(const Field_t &F) : result(kernels::omp_get_max_threads(), basic_type{0, 0}), other(&F) {}
 
     void operator()(const Field_t &F, const pt::Point<dim> &n) {
-        result[omp_get_thread_num()] += F[n] ^ (*other)[n];
+        result[kernels::omp_get_thread_num()] += F[n] ^ (*other)[n];
     }
 
     basic_type reduce() const {
@@ -268,20 +263,19 @@ class LocalField {
     template <class M>
     M &apply_everywhere(M &f) {
         for (int t = 0; t < g[0]; ++t){
-std::cout << t << "\n";
             apply_on_timeslice(f, t);}
         return f;
     }
     template <class M>
     M &apply_everywhere(M &f) const {
         for (int t = 0; t < g[0]; ++t)
-{std::cout << t << "\n";            apply_on_timeslice(f, t);
+{            apply_on_timeslice(f, t);
 }        return f;
     }
     template <class M>
     const M &apply_everywhere(const M &f) {
         for (int t = 0; t < g[0]; ++t)
-            {std::cout << t << "\n";apply_on_timeslice(f, t);}
+            {apply_on_timeslice(f, t);}
         return f;
     }
     template <class M>

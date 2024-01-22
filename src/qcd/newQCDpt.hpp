@@ -4,6 +4,7 @@
 #include <background/AbelianBackground.hpp>
 #include <background/ScalarBackground.hpp>
 #include <background/TrivialBackground.hpp>
+#include <geometry/Point.hpp>
 #include <types/PtTypes.hpp>
 #include <types/Types.hpp>
 
@@ -544,8 +545,8 @@ public:
   static const int storage_size = DIM*pt_su3_t::storage_size + BGF::storage_size;
  
   // access
-  pt_su3_t& operator[](const int& i){ return U_[i]; }
-  const pt_su3_t& operator[](const int& i) const { return U_[i]; }
+  pt_su3_t& operator[](const pt::Direction<DIM>& direction){ return U_[int(direction)]; }
+  const pt_su3_t& operator[](const pt::Direction<DIM>& direction) const { return U_[int(direction)]; }
   // iterators
   iterator begin(){return U_.begin();}
   const_iterator begin() const {return U_.begin();}

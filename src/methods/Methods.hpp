@@ -363,7 +363,7 @@ void RK3_update(Fld_t &U, const double &eps) {
     int T = U.extent(0) - 1;
     std::vector<wf1_t> wf1;
     for (Direction mu; mu.is_good(); ++mu)
-        wf1.push_back(wf1_t(mu, eps, F, R[mu]));
+        wf1.push_back(wf1_t(int(mu), eps, F, R[int(mu)]));
     U.apply_on_timeslice(wf1[0], 0);
     for (int t = 1; t < T; ++t)
         for (Direction mu; mu.is_good(); ++mu)
@@ -440,7 +440,7 @@ void RK2_update(Fld_t &U, const double &eps) {
     // FIRST STEP
     std::vector<wf1_t> wf1;
     for (Direction mu; mu.is_good(); ++mu)
-        wf1.push_back(wf1_t(mu, eps, F, R[mu], Util));
+        wf1.push_back(wf1_t(mu, eps, F, R[int(mu)], Util));
     // t = 0, mu = 0
     typename bnd_kernel<Fld_t, do_ct>::wf1t_t bndk1(Direction(0), eps, F, R[0], Util);
     U.apply_on_timeslice(bndk1, 0);

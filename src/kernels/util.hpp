@@ -1,14 +1,18 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#ifdef _OPENMP
-#include <omp.h>
-#else
+#include <iostream>
+
+#include <string>
+
+// #ifdef _OPENMP
+// #include <omp.h>
+// #else
 namespace kernels {
-  int omp_get_max_threads() { return 1; }
-  int omp_get_thread_num() { return 0; }
+  inline int omp_get_max_threads() { return 1; }
+  inline int omp_get_thread_num() { return 0; }
 }
-#endif
+// #endif
 
 #define FLD_INFO(F) \
   typedef typename std_types<F>::ptGluon_t ptGluon;	\

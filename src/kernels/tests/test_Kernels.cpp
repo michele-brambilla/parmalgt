@@ -20,23 +20,35 @@ std::ostream& operator<<(std::ostream& os, const SU3& v) {
         }
         std::cout << "\n";   
     }
+    return os;
 }
 
 TEST(Kernels, test_Staple_square_kernel){
     using bgf_t = bgf::ScalarBgf;
-    using field_t = fields::LocalField<BGptGluon<bgf_t, 0, DIM>, DIM>;
+    using field_t = fields::LocalField<BGptGluon<bgf_t, 2, DIM>, DIM>;
     geometry::Geometry<DIM>::extents_t extents;
     std::fill(extents.begin(), extents.end(), L);
     field_t field{extents,1,0, {}};
-    pt::Direction<DIM> direction;
+    // pt::Direction<DIM> direction;
     geometry::Geometry<DIM>::raw_pt_t coords{0,0,0,0};
-
     auto point = field.mk_point(coords);
 
-    // std::iota(U.begin(), U.end(),1);
-
-    kernels::StapleSqKernel<field_t> kernel{direction};
+    kernels::StapleSqKernel<field_t> kernel{pt::Direction<DIM>{}};
     kernel(field, point);
-    auto value = kernel.val;
-    std::cout << value << "\n";
+    std::cout << kernel.reduce() << "\n";
+}
+
+TEST(Kernels, test_gamma_upper_kernel){
+    using bgf_t = bgf::ScalarBgf;
+    using field_t = fields::LocalField<BGptGluon<bgf_t, 2, DIM>, DIM>;
+    geometry::Geometry<DIM>::extents_t extents;
+    std::fill(extents.begin(), extents.end(), L);
+    field_t field{extents,1,0, {}};
+    // pt::Direction<DIM> direction;
+    geometry::Geometry<DIM>::raw_pt_t coords{0,0,0,0};
+    auto point = field.mk_point(coords);
+
+    kernels::StapleSqKernel<field_t> kernel{pt::Direction<DIM>{}};
+    kernel(field, point);
+    std::cout << kernel.reduce() << "\n";
 }
