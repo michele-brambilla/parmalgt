@@ -172,8 +172,10 @@ public:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:41:26 2012
 
-  template <class C> self_t& operator*=(const C &z) {
-    return mul_assign_impl(z, typename ptt::ScalarMultiplyable<C>::type());
+  template <class C> 
+  typename std::enable_if<ptt::is_scalar_multipliable<C>::value, self_t&>::type
+  operator*=(const C &z) {
+    return mul_assign_impl(z);
   };
   
   //////////////////////////////////////////////////////////////////////
@@ -185,8 +187,10 @@ public:
   ///
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Wed Jan 11 18:42:49 2012
-  template <class C> self_t& operator/=(const C &z) {
-    return div_assign_impl(z, typename ptt::ScalarMultiplyable<C>::type());
+  template <class C> 
+    typename std::enable_if<ptt::is_scalar_multipliable<C>::value, self_t>::type&
+    operator/=(const C &z) {
+    return div_assign_impl(z);
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -332,12 +336,12 @@ private:
   ///  \author Dirk Hesse <herr.dirk.hesse@gmail.com>
   ///  \date Fri Feb 17 12:39:55 2012
   
-  template <class C> self_t& div_assign_impl(const C &z, ptt::True) {
+  template <class C> self_t& div_assign_impl(const C &z) {
     ptU_ /= z;
     bgf_ /= z;
     return *this;
   }
-  template <class C> self_t& mul_assign_impl(const C& z, ptt::True){
+  template <class C> self_t& mul_assign_impl(const C& z){
     ptU_ *= z;
     bgf_ *= z;
     return *this;

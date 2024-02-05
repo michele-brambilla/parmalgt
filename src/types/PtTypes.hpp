@@ -13,10 +13,12 @@ namespace ptt {
 
   struct True {};
   struct False {};
-  template <typename T> struct ScalarMultiplyable { typedef False type; };
-  template <> struct ScalarMultiplyable<int> { typedef True type; };
-  template <> struct ScalarMultiplyable<double> { typedef True type; };
-  template <> struct ScalarMultiplyable<Cplx> { typedef True type; };
+
+  template <typename T> struct is_scalar_multipliable : public std::false_type {};
+  template <> struct is_scalar_multipliable<int> : public std::true_type {};
+  template <> struct is_scalar_multipliable<double> : public std::true_type {};
+  template <> struct is_scalar_multipliable<Cplx> : public std::true_type {};
+
 
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -181,20 +183,28 @@ namespace ptt {
     // make a small detour through a separate implementation function,
     // whose second argument determines if we have a scalar
     // multiplication. For which types T this is the case, the
-    // class template member ScalarMultiplyable<T>::type decides for us.
-
-    template <typename T> self_t& operator*=(const T& other) {
-      return mul_assign_impl(other, typename ScalarMultiplyable<T>::type());
-    }
+    // class template member is_scalar_multipliable<T>::type decides for us.
 
     self_t& operator*=(const self_t& other) {
       *this = *this * other;
       return *this;
     }
 
-    template <typename T> self_t& operator/=(const T& other) {
-      return div_assign_impl(other, typename ScalarMultiplyable<T>::type());
+    template <typename T> 
+    typename std::enable_if<is_scalar_multipliable<T>::value, self_t>::type& 
+    operator*=(const T& other) {
+      return mul_assign_impl(other);
     }
+
+    template <typename T> 
+    typename std::enable_if<is_scalar_multipliable<T>::value, self_t>::type&
+    operator/=(const T& other) {
+      return div_assign_impl(other);
+    }
+
+    // template <typename T> self_t& operator/=(const T& other) {
+    //   return div_assign_impl(other, typename is_scalar_multipliable<T>::type());
+    // }
 
     self_t& reH() {
       //Cplx tr;
@@ -215,11 +225,11 @@ namespace ptt {
 
     // implementation of *= and /=. For an explaination c.f. above.
 
-    template <typename T> self_t& mul_assign_impl(const T& other, True){
+    template <typename T> self_t& mul_assign_impl(const T& other){
       std::for_each(begin(), end(), pta::mul(other));
       return *this;
     }
-    template <typename T> self_t& div_assign_impl(const T& other, True){
+    template <typename T> self_t& div_assign_impl(const T& other){
       std::for_each(begin(), end(), pta::div(other));
       return *this;
     }
