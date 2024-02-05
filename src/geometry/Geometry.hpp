@@ -161,9 +161,9 @@ struct End {
     bool adv(pt::Point<N> &,
              pt::Direction<N> &) { return false; }
     bool is_good() { return false; }
-    bool operator==(const End &other) const { return true; }
+    bool operator==(const End &) const { return true; }
     template <int D>
-    static int get_start(int N, const Geometry<D> &) { return 0; }
+    static int get_start(int, const Geometry<D> &) { return 0; }
 };
 
 #define TWO_POLICY_ITER(A, B) \
@@ -173,13 +173,9 @@ struct End {
 #define FOUR_POLICY_ITER(A, B, C, D) \
     Pair<A, THREE_POLICY_ITER(B, C, D)>
 
-typedef TWO_POLICY_ITER(PeriodicPolicy,
-                        PeriodicPolicy) PeriodicTwoDimIter;
-typedef THREE_POLICY_ITER(PeriodicPolicy,
-                          PeriodicPolicy,
-                          ConstPolicy) PeriodicConstThreeDimIter;
-typedef FOUR_POLICY_ITER(BulkPolicy<2>, PeriodicPolicy,
-                         PeriodicPolicy, ConstPolicy) RawZBulkTimeSliceIter;
+using PeriodicTwoDimIter = TWO_POLICY_ITER(PeriodicPolicy, PeriodicPolicy);
+using PeriodicConstThreeDimIter = THREE_POLICY_ITER(PeriodicPolicy, PeriodicPolicy, ConstPolicy);
+using RawZBulkTimeSliceIter = FOUR_POLICY_ITER(BulkPolicy<2>, PeriodicPolicy, PeriodicPolicy, ConstPolicy);
 ////////////////////////////////////////////////////////////
 //
 //  Template class to make a time silce iterator with arbitrary
@@ -233,7 +229,7 @@ struct TBndIterList {
 template <int D, class IteratorList>
 class Iterator {
   public:
-    typedef typename pt::Point<D> Point;
+    using Point = typename pt::Point<D>;
     Iterator(const Iterator &other) : x(other.x), i(other.i) {}
     Iterator(const Point &n,
              const typename Geometry<D>::extents_t &e) : x(n), i(e.rbegin()) {}
@@ -302,9 +298,8 @@ class Geometry {
     /// helper function to create the parameter.
     explicit Geometry(const extents_t &lattice_extents)
         : extents(lattice_extents),
-          V(detail::product<DIM>(lattice_extents)),
-          neighbors(detail::product<DIM>(lattice_extents),
-                    std::array<int, 2 * DIM>{}) {
+          neighbors(detail::product<DIM>(lattice_extents), std::array<int, 2 * DIM>{}),
+          V(detail::product<DIM>(lattice_extents)) {
         // initialize neighbors
         fill_neighbors();
         // boundary volumes

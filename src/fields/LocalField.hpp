@@ -191,8 +191,8 @@ class LocalField {
     using raw_pt = typename geometry::Geometry<DIM>::raw_pt_t;
     LocalField(const extents_t &e,
                const int &number_of_threads,
-               const int &mpi_process_id,
-               const neighbors_t &mpi_neighbors) : g{e}, rep{g.vol()}, n_th{number_of_threads}, comm{e} {
+               const int &,
+               const neighbors_t &) : g{e}, rep{g.vol()}, n_th{number_of_threads}, comm{e} {
                 pid = comm.rank();
                 neighbors = comm.nb();
     }
@@ -390,10 +390,10 @@ class LocalField {
     template <class M, class Iter>
     M &apply_on_timeslice_impl(M &f, const int &t, True) {
         // parallelize with a simple checker-board scheme ...
-        typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::slice slice;
-        typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::bin bin;
+        // typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::slice slice;
+        // typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::bin bin;
         geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
-        for (typename slice::const_iterator s = cb[t].begin();
+        for (auto s = cb[t].begin();
              s != cb[t].end(); ++s) {
             int N = s->size();
 #pragma omp parallel for
@@ -405,10 +405,10 @@ class LocalField {
     template <class M, class Iter>
     M &apply_on_timeslice_impl(M &f, const int &t, True) const {
         // parallelize with a simple checker-board scheme ...
-        typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::slice slice;
-        typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::bin bin;
+        // typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::slice slice;
+        // typedef typename geometry::CheckerBoard<DIM, M::n_cb, Iter>::bin bin;
         static geometry::CheckerBoard<DIM, M::n_cb, Iter> cb(g);
-        for (typename slice::const_iterator s = cb[t].begin();
+        for (auto s = cb[t].begin();
              s != cb[t].end(); ++s) {
             int N = s->size();
 #pragma omp parallel for

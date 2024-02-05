@@ -57,12 +57,12 @@ template <int DIM>
   buffer (  std::vector<double>::iterator& j ) const {
 /*     for (const_iterator i = begin(); i != end(); ++i) */
 /*       i->buffer(j); */
-/*     return j; */
+  return j;
 
   }
 
   template <class Writer_t>
-  void write(Writer_t& o) const {
+  void write(Writer_t&) const {
 /*     for (const_iterator i = begin(); i != end(); ++i) */
 /*       i->write(o); */
   }
@@ -72,7 +72,7 @@ template <int DIM>
   unbuffer (  std::vector<double>::const_iterator& j ) {
 /*     for (iterator i = begin(); i != end(); ++i) */
 /*       i->unbuffer(j); */
-/*     return j; */
+     return j;
   }
 
 

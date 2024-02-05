@@ -215,7 +215,7 @@ std::string to_string(const T& x){
 }
 
 
-int main(int, char **) {
+int main(int, char *[]) {
 #ifdef IMP_ACT
   //TODO: CROSS CHECK THESE
   StK::weights[0] = 1. - 8.*c_1;

@@ -942,7 +942,7 @@ struct SetBgfKernel {
         // #endif
     }
 
-    void impl(Field_t &U, const Point &n, const bgf::ScalarBgf &)
+    void impl(Field_t &, const Point &, const bgf::ScalarBgf &)
         const {}
 };
 

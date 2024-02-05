@@ -362,11 +362,12 @@ namespace kernels {
       Direction mu;
       double taug;
       double staug;
-      Field_t *F, *Utilde;
+      Field_t *F;
+      Field_t *Utilde;
       RF_t *R;
       
       GU_RK2_1(const Direction& nu, const double& t, Field_t& FF, RF_t &RR, Field_t& Util) :
-        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), R(&RR), Utilde(&Util) { }
+        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), Utilde(&Util), R(&RR) { }
   
       void operator()(Field_t& U, const Point& n) {
         // Make a Kernel to calculate and store the plaquette(s)
@@ -398,11 +399,12 @@ namespace kernels {
       Direction mu;
       double taug;
       double staug;
-      Field_t *F, *Utilde;
+      Field_t *F;
+      Field_t *Utilde;
       RF_t *R;
       
       GU_RK2_2(const Direction& nu, const double& t, Field_t& FF, RF_t &RR, Field_t& Util) :
-        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), R(&RR), Utilde(&Util) { }
+        mu(nu), taug(t), staug(std::sqrt(t)), F(&FF), Utilde(&Util), R(&RR) { }
   
       void operator()(Field_t& U, const Point& n) {
         // Make a Kernel to calculate and store the plaquette(s)

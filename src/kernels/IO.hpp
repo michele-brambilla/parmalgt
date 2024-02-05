@@ -125,11 +125,11 @@ class CheckedIo {
     ///  \date Wed May 30 18:38:39 2012
     std::string md5() {
         finalize();
-        unsigned char *w = reinterpret_cast<unsigned char *>(h);
+        unsigned char *word = reinterpret_cast<unsigned char *>(h);
         std::stringstream s;
         s << std::hex;
         for (int i = 0; i < 16; i++)
-            s << (int)w[i];
+            s << (int)word[i];
         s << std::dec;
         return s.str();
     }

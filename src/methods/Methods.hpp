@@ -101,13 +101,13 @@ void ApplyOnSfDOF(Field_t &U, KernelVector_t &K) {
 //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
 template <class Fld_t>
 void RK3_flow(Fld_t &U, const double &eps) {
-    typedef typename kernels::flow::WF_RK_1<Fld_t, kernels::StapleSqKernel<Fld_t>> wf1_t;
-    typedef typename kernels::flow::WF_RK_2<Fld_t, kernels::StapleSqKernel<Fld_t>> wf2_t;
-    typedef typename kernels::flow::WF_RK_3<Fld_t, kernels::StapleSqKernel<Fld_t>> wf3_t;
-    typedef typename kernels::flow::ApplyForceKernel<Fld_t> ApplyForceKernel;
-    typedef typename kernels::std_types<Fld_t>::direction_t Direction;
+    using wf1_t = typename kernels::flow::WF_RK_1<Fld_t, kernels::StapleSqKernel<Fld_t>>;
+    using wf2_t = typename kernels::flow::WF_RK_2<Fld_t, kernels::StapleSqKernel<Fld_t>>;
+    using wf3_t = typename kernels::flow::WF_RK_3<Fld_t, kernels::StapleSqKernel<Fld_t>>;
+    using ApplyForceKernel = typename kernels::flow::ApplyForceKernel<Fld_t>;
+    using Direction = typename kernels::std_types<Fld_t>::direction_t;
     Fld_t F(U);
-    int T = U.extent(0) - 1;
+    // int T = U.extent(0) - 1;
     std::vector<ApplyForceKernel> afk;
     for (Direction mu; mu.is_good(); ++mu)
         afk.push_back(ApplyForceKernel(mu, eps, F));
@@ -142,10 +142,12 @@ void RK3_flow(Fld_t &U, const double &eps) {
 //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
 template <class Fld_t>
 void RK2_flow(Fld_t &U, const double &eps) {
-    typedef typename kernels::flow::WF_RK2_1<Fld_t, kernels::StapleSqKernel<Fld_t>> wf1_t;
-    typedef typename kernels::flow::WF_RK2_2<Fld_t, kernels::StapleSqKernel<Fld_t>> wf2_t;
-    typedef typename kernels::std_types<Fld_t>::direction_t Direction;
-    Fld_t F(U), Util(U);
+    using wf1_t = typename kernels::flow::WF_RK2_1<Fld_t, kernels::StapleSqKernel<Fld_t>>;
+    using wf2_t =  typename kernels::flow::WF_RK2_2<Fld_t, kernels::StapleSqKernel<Fld_t>>;
+    using Direction = typename kernels::std_types<Fld_t>::direction_t;
+    
+    Fld_t F(U);
+    Fld_t Util(U);
     int T = U.extent(0) - 1;
     std::vector<wf1_t> wf1;
     for (Direction mu; mu.is_good(); ++mu)
@@ -198,9 +200,9 @@ void euler_flow(Fld_t &U, const double &eps) {
 namespace proj {
 template <class Fld_t>
 void ProjectSUN(Fld_t &U) {
-    typedef typename kernels::proj::ProjectSUN<Fld_t> Kernel_t;
-    typedef typename kernels::std_types<Fld_t>::direction_t Direction;
-    int T = U.extent(0) - 1;
+    using  Kernel_t = typename kernels::proj::ProjectSUN<Fld_t>;
+    using Direction = typename kernels::std_types<Fld_t>::direction_t;
+    // int T = U.extent(0) - 1;
     std::vector<Kernel_t> proj;
     for (Direction mu; mu.is_good(); ++mu)
         proj.push_back(Kernel_t(mu));
@@ -227,11 +229,13 @@ namespace detail {
 //  \author   Dirk Hesse <dirk.hesse@fis.unipr.it>
 template <class Fld_t>
 struct euler_ {
-    typedef kernels::StapleSqKernel<Fld_t> StK;
-    typedef kernels::TrivialPreProcess<Fld_t> PrK;
-    typedef kernels::GaugeUpdateKernel<Fld_t, StK, PrK> GaugeUpdateKernel;
-    typedef typename kernels::std_types<Fld_t>::direction_t Direction;
-    int T, L;
+    using StK = kernels::StapleSqKernel<Fld_t>;
+    using PrK = kernels::TrivialPreProcess<Fld_t>;
+    using GaugeUpdateKernel = kernels::GaugeUpdateKernel<Fld_t, StK, PrK>;
+    using Direction = typename kernels::std_types<Fld_t>::direction_t;
+    int L;
+    int T;
+    
     std::vector<GaugeUpdateKernel> gu;
     euler_(const Fld_t &U, const double &eps) : T(U.extent(0) - 1), L(U.extent(1)) {
         StK::weights[0] = 1.;
@@ -250,7 +254,7 @@ struct euler_ {
     //  \date      Thu Feb 21 18:18:22 2013
     //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
     void operator()(Fld_t &U) {
-        int T = U.extent(0) - 1;
+        // int T = U.extent(0) - 1;
         // for x_0 = 0 update the temporal direction only
         U.apply_on_timeslice(gu[0], 0);
         // for x_0 != 0 update all directions
@@ -273,16 +277,16 @@ struct euler_ {
 //  \author    Dirk Hesse <dirk.hesse@fis.unipr.it>
 template <class Fld_t>
 struct rand_gen_ {
-    typedef typename kernels::std_types<Fld_t>::SU3_t SU3;
+    using SU3 = typename kernels::std_types<Fld_t>::SU3_t;
     static const int DIM = kernels::std_types<Fld_t>::n_dim;
-    typedef fields::LocalField<SU3, DIM> RandField;
-    typedef kernels::RSU3Kernel<RandField> RandKernel;
-    typedef typename Fld_t::neighbors_t nt;
+    using  RandField = fields::LocalField<SU3, DIM>;
+    using  RandKernel = kernels::RSU3Kernel<RandField>;
+    using  nt = typename Fld_t::neighbors_t;
     std::vector<RandField> R;
-    int L, T;
+    int L;
+    int T;
 
-    rand_gen_(const Fld_t &U) : T(U.extent(0) - 1),
-                                L(U.extent(1)) {
+    explicit rand_gen_(const Fld_t &U) : L(U.extent(1)), T(U.extent(0) - 1) {
         //*/
         // Using RANLUX
         long vol = (L * L * L * (T + 1));
